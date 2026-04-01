@@ -346,6 +346,133 @@ body:not(.mode-search) .search-view { display: none; }
 .sv-card-last { font-size: 11px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; }
 .sv-card-actions { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 
+/* ── Report View ── */
+.report-view {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--bg);
+}
+body.mode-report .layout { display: none; }
+body.mode-report .search-view { display: none; }
+body.mode-report .report-view { display: flex !important; }
+body:not(.mode-report) .report-view { display: none !important; }
+
+.rp-toolbar {
+  display: flex; align-items: center; gap: 0;
+  background: var(--primary); color: white; padding: 10px 12px;
+  flex-shrink: 0;
+}
+.rp-nav-btn {
+  background: rgba(255,255,255,.18); border: none; color: white;
+  width: 40px; height: 40px; border-radius: 50%; font-size: 20px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.rp-nav-btn:active { opacity: .7; }
+.rp-period-wrap { flex: 1; text-align: center; }
+.rp-period { font-size: 15px; font-weight: 700; color: white; }
+.rp-period-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 1px; }
+
+.rp-format-strip {
+  display: flex; background: white; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.rp-fmt {
+  flex: 1; padding: 10px 4px; text-align: center; font-size: 12px; font-weight: 700;
+  color: var(--muted); cursor: pointer; border: none; background: none;
+  border-bottom: 3px solid transparent; transition: all .15s; font-family: inherit;
+  min-height: 44px;
+}
+.rp-fmt.active { color: var(--primary); border-bottom-color: var(--primary); background: #ebf3ff; }
+
+.rp-body {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 14px 14px; padding-bottom: 0;
+}
+.rp-empty {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+
+/* Report blocks */
+.rp-section { margin-bottom: 16px; }
+.rp-section-title {
+  font-size: 13px; font-weight: 700; color: var(--primary);
+  padding: 6px 10px; background: #ebf3ff; border-radius: 6px 6px 0 0;
+  border-left: 3px solid var(--primary);
+}
+.rp-section-body {
+  background: white; border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 6px 6px; padding: 10px 12px;
+}
+.rp-summary-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px;
+}
+.rp-stat {
+  background: var(--bg); border-radius: 8px; padding: 10px 8px; text-align: center;
+}
+.rp-stat-val { font-size: 22px; font-weight: 700; color: var(--primary); }
+.rp-stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.rp-day-block { margin-bottom: 12px; }
+.rp-day-hdr {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.rp-act-row {
+  display: flex; gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--border); align-items: flex-start;
+  font-size: 13px;
+}
+.rp-act-row:last-child { border-bottom: none; }
+.rp-act-type {
+  background: var(--primary); color: white; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+  align-self: flex-start; margin-top: 1px;
+}
+.rp-act-type.t-電話  { background: #28A745; }
+.rp-act-type.t-メール { background: #17a2b8; }
+.rp-act-type.t-オンライン { background: #6f42c1; }
+.rp-act-type.t-展示会 { background: #e65c00; }
+.rp-act-type.t-体験会 { background: #e83e8c; }
+.rp-act-name {
+  font-weight: 700; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 90px; flex-shrink: 0; color: var(--text);
+}
+.rp-act-content { flex: 1; color: var(--text); line-height: 1.5; }
+.rp-act-next { font-size: 11px; color: var(--primary); margin-top: 2px; }
+.rp-follow-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.rp-follow-item:last-child { border-bottom: none; }
+.rp-follow-date { font-size: 11px; color: var(--danger); font-weight: 700; flex-shrink: 0; }
+.rp-method-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.rp-method-item:last-child { border-bottom: none; }
+.rp-method-name { font-weight: 700; font-size: 12px; color: var(--primary); margin-bottom: 4px; }
+
+.rp-memo-wrap {
+  padding: 12px 14px 4px; flex-shrink: 0;
+}
+.rp-memo-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.rp-memo {
+  width: 100%; border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-size: 14px; font-family: inherit; color: var(--text);
+  resize: none; min-height: 80px; outline: none; background: white;
+}
+.rp-memo:focus { border-color: var(--primary); }
+
+.rp-action-bar {
+  display: flex; gap: 8px; padding: 10px 14px 20px;
+  background: white; border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Desktop: report view also usable */
+@media (min-width: 768px) {
+  .report-view { display: none; }
+  body.mode-report .layout { display: flex !important; }
+}
+
 /* ── Type Chips (horizontal scroll row) ── */
 .type-chips {
   display: flex; gap: 8px;
@@ -555,6 +682,7 @@ body:not(.mode-search) .search-view { display: none; }
   /* FAB */
   .fab { display: flex; }
   body.mode-search .fab { display: none; }
+  body.mode-report .fab { display: none; }
 
   /* Mobile content area: fill between header and bottom nav */
   .layout, .search-view {
@@ -725,6 +853,42 @@ body:not(.mode-search) .search-view { display: none; }
   </div>
 </div>
 
+<!-- ── Report View (週報) ── -->
+<div class="report-view" id="reportView" style="display:none">
+  <!-- ツールバー: 週選択 -->
+  <div class="rp-toolbar">
+    <button class="rp-nav-btn" onclick="reportWeekOffset(-1)">‹</button>
+    <div class="rp-period-wrap">
+      <div class="rp-period" id="rpPeriod"></div>
+      <div class="rp-period-sub" id="rpPeriodSub"></div>
+    </div>
+    <button class="rp-nav-btn" onclick="reportWeekOffset(1)">›</button>
+  </div>
+  <!-- 出力形式選択 -->
+  <div class="rp-format-strip">
+    <button class="rp-fmt active" data-fmt="daily"  onclick="setReportFmt('daily',this)">📅 日別</button>
+    <button class="rp-fmt"        data-fmt="salon"  onclick="setReportFmt('salon',this)">💇 先方別</button>
+    <button class="rp-fmt"        data-fmt="method" onclick="setReportFmt('method',this)">💡 営業手法</button>
+  </div>
+  <!-- 週報本文 -->
+  <div class="rp-body" id="rpBody">
+    <div class="rp-empty">
+      <div style="font-size:36px;margin-bottom:10px">📊</div>
+      <div>週報を生成してください</div>
+    </div>
+  </div>
+  <!-- 振り返りメモ -->
+  <div class="rp-memo-wrap" id="rpMemoWrap" style="display:none">
+    <div class="rp-memo-label">✏️ 今週の気づき・改善点（任意）</div>
+    <textarea class="rp-memo" id="rpMemo" placeholder="営業手法の気づき、うまくいったこと、次週への改善点など..."></textarea>
+  </div>
+  <!-- アクションバー -->
+  <div class="rp-action-bar">
+    <button class="btn btn-outline" onclick="generateReport()" style="flex:1">🔄 生成</button>
+    <button class="btn btn-primary" onclick="copyReport()" id="rpCopyBtn" style="flex:2" disabled>📋 テキストをコピー</button>
+  </div>
+</div>
+
 <!-- ── Bottom Navigation (Mobile) ── -->
 <nav class="bottom-nav">
   <button class="bn-tab active" id="bnAgent" onclick="switchMode('agent')">
@@ -735,6 +899,9 @@ body:not(.mode-search) .search-view { display: none; }
   </button>
   <button class="bn-tab" id="bnSearch" onclick="switchMode('search')">
     <span class="bn-tab-ico">🔍</span>検索
+  </button>
+  <button class="bn-tab" id="bnReport" onclick="switchMode('report')">
+    <span class="bn-tab-ico">📊</span>週報
   </button>
 </nav>
 
@@ -1899,6 +2066,8 @@ function switchMode(mode) {
     }
   }
 
+  const allBnIds = ['bnAgent','bnSalon','bnSearch','bnReport'];
+
   if (mode === 'search') {
     document.body.className = 'mode-search';
     document.getElementById('tabAgent').classList.remove('active');
@@ -1906,13 +2075,23 @@ function switchMode(mode) {
     document.getElementById('tabSearch').classList.add('active');
     document.getElementById('hdrTitle').textContent = '🔍 サロン検索';
     document.getElementById('hdrTitleCenter').textContent = 'サロン検索';
-    // Bottom nav
-    document.getElementById('bnAgent').classList.remove('active');
-    document.getElementById('bnSalon').classList.remove('active');
+    allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
     document.getElementById('bnSearch').classList.add('active');
-    // Mobile list: hide
     document.getElementById('mobileListView').style.display = 'none';
     renderSearchView();
+    return;
+  }
+
+  if (mode === 'report') {
+    document.body.className = 'mode-report';
+    document.getElementById('hdrTitle').textContent = '📊 週報';
+    document.getElementById('hdrTitleCenter').textContent = '週報';
+    allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById('bnReport').classList.add('active');
+    document.getElementById('mobileListView').style.display = 'none';
+    // 週ヘッダーを初期化してレポート生成
+    updateReportHeader();
+    generateReport();
     return;
   }
 
@@ -1924,21 +2103,293 @@ function switchMode(mode) {
   document.getElementById('hdrTitle').textContent = mode === 'agent' ? '📋 代理店カルテ' : '📋 サロンカルテ';
   const titleCenter = mode === 'agent' ? '代理店カルテ' : 'サロンカルテ';
   document.getElementById('hdrTitleCenter').textContent = titleCenter;
-  // Bottom nav
-  document.getElementById('bnAgent').classList.toggle('active', mode === 'agent');
-  document.getElementById('bnSalon').classList.toggle('active', mode === 'salon');
-  document.getElementById('bnSearch').classList.remove('active');
+  allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(mode === 'agent' ? 'bnAgent' : 'bnSalon').classList.add('active');
 
   currentId = null;
   save();
   renderSidebar();
   renderMain();
 
-  // Mobile: show list view
   if (isMobile()) {
     document.getElementById('mobileListView').style.display = 'flex';
     renderMobileList();
   }
+}
+
+// ── 週報 (Report) ──────────────────────────────────
+let reportWeekOff = 0;  // 0=今週, -1=先週, +1=翌週
+let reportFmt     = 'daily'; // 'daily' | 'salon' | 'method'
+let reportGenText = '';      // コピー用プレーンテキスト
+
+// 週の月曜・日曜を返す（offset: 週オフセット、0=今週）
+function getWeekRange(offset) {
+  // offsetはすでに週数なのでそのまま使う
+  const weekOffset = typeof offset === 'number' ? offset : 0;
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const mondayOffset = dow === 0 ? -6 : 1 - dow;
+  const mon = new Date(now);
+  mon.setDate(now.getDate() + mondayOffset + weekOffset * 7);
+  mon.setHours(0,0,0,0);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  // 活動ログの日付形式(YYYY-MM-DD)に合わせる
+  const fmt  = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fmtDisp = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  const fmtShort = d => `${d.getMonth()+1}/${d.getDate()}`;
+  return {
+    start: fmt(mon), end: fmt(sun),
+    label: `${fmtDisp(mon)} 〜 ${fmtDisp(sun)}`,
+    labelShort: `${fmtShort(mon)}(月)〜${fmtShort(sun)}(日)`,
+    weekNum: getISOWeek(mon),
+    year: mon.getFullYear(),
+  };
+}
+
+function getISOWeek(d) {
+  const tmp = new Date(d.valueOf());
+  tmp.setDate(tmp.getDate() + 3 - (tmp.getDay() + 6) % 7);
+  const w1 = new Date(tmp.getFullYear(), 0, 4);
+  return 1 + Math.round(((tmp - w1) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
+}
+
+// 週内のすべての活動（代理店+サロン）を集める
+function collectWeekActivities(start, end) {
+  const result = [];
+  const allPeople = [
+    ...agentPeople.map(p => ({ ...p, _kind: 'agent' })),
+    ...salonPeople.map(p => ({ ...p, _kind: 'salon' })),
+  ];
+  for (const p of allPeople) {
+    for (const a of (p.activities || [])) {
+      if (a.date >= start && a.date <= end) {
+        result.push({ ...a, _person: p, _kind: p._kind });
+      }
+    }
+  }
+  return result.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function reportWeekOffset(n) {
+  reportWeekOff += n;
+  updateReportHeader();
+  generateReport();
+}
+
+function setReportFmt(fmt, el) {
+  reportFmt = fmt;
+  document.querySelectorAll('.rp-fmt').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (reportGenText) generateReport();
+}
+
+function updateReportHeader() {
+  const rng = getWeekRange(reportWeekOff);
+  document.getElementById('rpPeriod').textContent = rng.label;
+  document.getElementById('rpPeriodSub').textContent = `${rng.year}年 第${rng.weekNum}週`;
+}
+
+function generateReport() {
+  const rng = getWeekRange(reportWeekOff);
+  const acts = collectWeekActivities(rng.start, rng.end);
+
+  // Show memo field
+  document.getElementById('rpMemoWrap').style.display = acts.length ? 'block' : 'none';
+
+  if (!acts.length) {
+    document.getElementById('rpBody').innerHTML =
+      `<div class="rp-empty"><div style="font-size:36px;margin-bottom:10px">📭</div><div>この週の活動記録がありません</div><div style="font-size:12px;margin-top:6px;color:var(--muted)">活動ログを追加するか、‹ で前の週を確認してください</div></div>`;
+    document.getElementById('rpCopyBtn').disabled = true;
+    reportGenText = '';
+    return;
+  }
+
+  let html = '';
+  let text = '';
+  const typeLabel = { agent:'代理店', salon:'サロン' };
+
+  // ── サマリー ────────────────────────────
+  const typeCounts = {};
+  for (const a of acts) { typeCounts[a.type] = (typeCounts[a.type]||0) + 1; }
+  const totalActs = acts.length;
+  const followPending = acts.filter(a => a.fuStatus === 'pending').length;
+  const uniqPersons = new Set(acts.map(a => a._person.id)).size;
+
+  const summaryItems = Object.entries(typeCounts)
+    .sort((a,b) => b[1]-a[1])
+    .map(([k,v]) => `<div class="rp-stat"><div class="rp-stat-val">${v}</div><div class="rp-stat-lbl">${k}</div></div>`)
+    .join('');
+  const summaryText = Object.entries(typeCounts).map(([k,v])=>`${k}:${v}件`).join(' / ');
+
+  html += `<div class="rp-section">
+    <div class="rp-section-title">📊 週次サマリー</div>
+    <div class="rp-section-body">
+      <div class="rp-summary-grid">
+        <div class="rp-stat"><div class="rp-stat-val">${totalActs}</div><div class="rp-stat-lbl">総活動件数</div></div>
+        <div class="rp-stat"><div class="rp-stat-val">${uniqPersons}</div><div class="rp-stat-lbl">接触先数</div></div>
+        <div class="rp-stat"><div class="rp-stat-val" style="color:${followPending>0?'var(--warning)':'var(--success)'}">${followPending}</div><div class="rp-stat-lbl">要フォロー</div></div>
+      </div>
+      <div class="rp-summary-grid" style="margin-bottom:0">${summaryItems}</div>
+    </div>
+  </div>`;
+  text += `【週次サマリー】\n総活動${totalActs}件 / 接触先${uniqPersons}社 / 要フォロー${followPending}件\n${summaryText}\n\n`;
+
+  if (reportFmt === 'daily') {
+    // ── 日別表示 ───────────────────────────
+    html += `<div class="rp-section"><div class="rp-section-title">📅 日別活動ログ</div><div class="rp-section-body">`;
+    text += `【日別活動ログ】\n`;
+    const byDay = {};
+    for (const a of acts) {
+      if (!byDay[a.date]) byDay[a.date] = [];
+      byDay[a.date].push(a);
+    }
+    const dayNames = ['日','月','火','水','木','金','土'];
+    for (const [date, dayActs] of Object.entries(byDay).sort()) {
+      const d = new Date(date.replace(/-/g,'/'));
+      const dn = `${date.replace(/\//g,'-').slice(5)} (${dayNames[d.getDay()]})`;
+      html += `<div class="rp-day-block"><div class="rp-day-hdr">${dn}</div>`;
+      text += `\n■ ${dn}\n`;
+      for (const a of dayActs) {
+        const name = a._kind === 'agent' ? (a._person.name||a._person.company) : a._person.company;
+        html += `<div class="rp-act-row">
+          <span class="rp-act-type t-${a.type}">${esc(a.type)}</span>
+          <span class="rp-act-name">${esc(name)}</span>
+          <div class="rp-act-content">${esc(a.content)}${a.next?`<div class="rp-act-next">→ ${esc(a.next)}</div>`:''}</div>
+        </div>`;
+        text += `  [${a.type}] ${name}\n  ${a.content}\n`;
+        if (a.next) text += `  → ${a.next}\n`;
+      }
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+
+  } else if (reportFmt === 'salon') {
+    // ── 先方（サロン/代理店）別表示 ──────────
+    html += `<div class="rp-section"><div class="rp-section-title">💇 先方別活動ログ</div><div class="rp-section-body">`;
+    text += `【先方別活動ログ】\n`;
+    const byPerson = {};
+    for (const a of acts) {
+      const pid = a._person.id;
+      if (!byPerson[pid]) byPerson[pid] = { person: a._person, acts: [] };
+      byPerson[pid].acts.push(a);
+    }
+    for (const { person: p, acts: pActs } of Object.values(byPerson)) {
+      const displayName = p._kind === 'agent' ? (p.name||p.company) : p.company;
+      const kind = typeLabel[p._kind];
+      html += `<div class="rp-day-block"><div class="rp-day-hdr">${esc(displayName)} <span style="font-weight:400;font-size:10px">(${kind})</span></div>`;
+      text += `\n■ ${displayName} (${kind})\n`;
+      for (const a of pActs.sort((x,y)=>x.date.localeCompare(y.date))) {
+        html += `<div class="rp-act-row">
+          <span class="rp-act-type t-${a.type}">${esc(a.type)}</span>
+          <span class="rp-act-name">${a.date.slice(5)}</span>
+          <div class="rp-act-content">${esc(a.content)}${a.next?`<div class="rp-act-next">→ ${esc(a.next)}</div>`:''}</div>
+        </div>`;
+        text += `  ${a.date.slice(5)} [${a.type}] ${a.content}\n`;
+        if (a.next) text += `  → ${a.next}\n`;
+      }
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+
+  } else if (reportFmt === 'method') {
+    // ── 営業手法分析 ───────────────────────
+    html += `<div class="rp-section"><div class="rp-section-title">💡 営業手法サマリー</div><div class="rp-section-body">`;
+    text += `【営業手法サマリー】\n`;
+    // 種別ごとにグルーピング
+    const byType = {};
+    for (const a of acts) {
+      if (!byType[a.type]) byType[a.type] = [];
+      byType[a.type].push(a);
+    }
+    for (const [type, typeActs] of Object.entries(byType).sort((a,b)=>b[1].length-a[1].length)) {
+      html += `<div class="rp-method-item"><div class="rp-method-name">${esc(type)} (${typeActs.length}件)</div>`;
+      text += `\n■ ${type} (${typeActs.length}件)\n`;
+      for (const a of typeActs) {
+        const name = a._kind === 'agent' ? (a._person.name||a._person.company) : a._person.company;
+        html += `<div style="font-size:12px;color:var(--muted);padding:2px 0">${a.date.slice(5)} ${esc(name)} — ${esc(a.content.slice(0,40))}${a.content.length>40?'…':''}</div>`;
+        text += `  ${a.date.slice(5)} ${name} — ${a.content.slice(0,60)}${a.content.length>60?'…':''}\n`;
+      }
+      html += `</div>`;
+    }
+    html += `</div></div>`;
+
+    // 次のアクション一覧
+    const withNext = acts.filter(a => a.next);
+    if (withNext.length) {
+      html += `<div class="rp-section"><div class="rp-section-title">📌 次のアクション一覧</div><div class="rp-section-body">`;
+      text += `\n【次のアクション一覧】\n`;
+      for (const a of withNext) {
+        const name = a._kind === 'agent' ? (a._person.name||a._person.company) : a._person.company;
+        html += `<div class="rp-method-item" style="display:flex;gap:8px;align-items:baseline"><span style="color:var(--primary);font-weight:700;min-width:80px;font-size:12px">${esc(name)}</span><span>${esc(a.next)}</span></div>`;
+        text += `  ${name}: ${a.next}\n`;
+      }
+      html += `</div></div>`;
+    }
+  }
+
+  // ── フォローアップ一覧（共通）─────────
+  const followActs = acts.filter(a => a.fuStatus === 'pending');
+  if (followActs.length) {
+    html += `<div class="rp-section"><div class="rp-section-title">⚠️ 要フォローアップ</div><div class="rp-section-body">`;
+    text += `\n【要フォローアップ】\n`;
+    for (const a of followActs.sort((x,y) => (x.fuDate||'').localeCompare(y.fuDate||''))) {
+      const name = a._kind === 'agent' ? (a._person.name||a._person.company) : a._person.company;
+      const overdue = a.fuDate && a.fuDate < toDay();
+      html += `<div class="rp-follow-item">
+        <div>
+          <div style="font-weight:700;font-size:13px">${esc(name)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(a.content.slice(0,50))}${a.content.length>50?'…':''}</div>
+          ${a.next ? `<div style="font-size:12px;color:var(--primary);margin-top:2px">→ ${esc(a.next)}</div>` : ''}
+        </div>
+        ${a.fuDate ? `<div class="rp-follow-date" style="color:${overdue?'var(--danger)':'var(--warning)'};margin-left:auto;flex-shrink:0">${a.fuDate.slice(5)}まで</div>` : ''}
+      </div>`;
+      text += `  ${name}${a.fuDate?' ('+a.fuDate+'まで)':''}: ${a.next||a.content.slice(0,40)}\n`;
+    }
+    html += `</div></div>`;
+  }
+
+  // ── 振り返りメモ ──────────────────────
+  const memo = document.getElementById('rpMemo').value.trim();
+  if (memo) {
+    text += `\n【今週の気づき・改善点】\n${memo}\n`;
+  }
+
+  document.getElementById('rpBody').innerHTML = html;
+  document.getElementById('rpCopyBtn').disabled = false;
+
+  // プレーンテキストのヘッダーを構築
+  reportGenText = `━━━━━━━━━━━━━━━━━━━━━━━\n📊 週次営業レポート\n${rng.label}\n━━━━━━━━━━━━━━━━━━━━━━━\n\n` + text +
+    (memo ? '' : '') + // memo is appended above if exists
+    `\n生成: ${toDay()}`;
+}
+
+function copyReport() {
+  const memo = document.getElementById('rpMemo').value.trim();
+  let fullText = reportGenText;
+  // 振り返りメモを末尾に追加（未生成テキストに追記）
+  if (memo && !fullText.includes('【今週の気づき')) {
+    fullText += `\n【今週の気づき・改善点】\n${memo}\n`;
+  }
+  if (!fullText) return;
+  navigator.clipboard.writeText(fullText).then(() => {
+    const btn = document.getElementById('rpCopyBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ コピーしました！';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = fullText;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('rpCopyBtn');
+    btn.textContent = '✓ コピーしました！';
+    setTimeout(() => { btn.textContent = '📋 テキストをコピー'; }, 2000);
+  });
 }
 
 // ── Overlay close ─────────────────────────────────
