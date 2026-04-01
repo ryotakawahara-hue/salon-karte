@@ -254,9 +254,12 @@ body.mode-salon .agent-only { display: none !important; }
 }
 .modal-body { padding: 18px; }
 .modal-footer {
-  padding: 12px 18px; border-top: 1px solid var(--border);
+  padding: 12px 16px; border-top: 1px solid var(--border);
   display: flex; justify-content: flex-end; gap: 7px;
   position: sticky; bottom: 0; background: white;
+}
+@media (max-width: 767px) {
+  .modal-footer { padding: 12px 16px 20px; }
 }
 
 /* ── Form ── */
@@ -342,6 +345,69 @@ body:not(.mode-search) .search-view { display: none; }
 .sv-card-val { color: var(--text); line-height: 1.4; }
 .sv-card-last { font-size: 11px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; }
 .sv-card-actions { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+/* ── Type Chips (horizontal scroll row) ── */
+.type-chips {
+  display: flex; gap: 8px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 4px;
+}
+.type-chips::-webkit-scrollbar { display: none; }
+.type-chip {
+  padding: 9px 16px; border-radius: 22px; font-size: 14px;
+  border: 2px solid var(--border); background: white; cursor: pointer;
+  color: var(--text); transition: all .15s; min-height: 44px;
+  font-family: inherit; line-height: 1; white-space: nowrap; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.type-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+/* ── Follow Status Chips ── */
+.fu-chips {
+  display: flex; gap: 8px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 4px;
+}
+.fu-chips::-webkit-scrollbar { display: none; }
+.fu-chip {
+  padding: 9px 16px; border-radius: 22px; font-size: 14px;
+  border: 2px solid var(--border); background: white; cursor: pointer;
+  color: var(--text); transition: all .15s; min-height: 44px;
+  font-family: inherit; line-height: 1; white-space: nowrap; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.fu-chip.active[data-val="none"]    { background: #6C757D; color: white; border-color: #6C757D; }
+.fu-chip.active[data-val="pending"] { background: #FFC107; color: #856404; border-color: #FFC107; }
+.fu-chip.active[data-val="done"]    { background: var(--success); color: white; border-color: var(--success); }
+
+/* ── Mobile Filter Strip ── */
+.mobile-filter-strip {
+  display: none; padding: 8px 14px 6px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; gap: 6px; white-space: nowrap;
+  flex-shrink: 0;
+}
+.mobile-filter-strip::-webkit-scrollbar { display: none; }
+.mf-chip {
+  display: inline-flex; align-items: center; padding: 6px 14px;
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--muted); transition: all .15s; min-height: 34px;
+  font-family: inherit; white-space: nowrap;
+}
+.mf-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+.mf-sort {
+  display: inline-flex; align-items: center; padding: 6px 14px;
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--text); transition: all .15s; min-height: 34px;
+  font-family: inherit; white-space: nowrap; margin-left: 6px;
+}
+.mf-sort.active { border-color: var(--primary); color: var(--primary); }
+
+/* ── Last Activity Info on cards ── */
+.mb-card-last { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
 /* ── FAB ── */
 .fab {
@@ -468,6 +534,7 @@ body:not(.mode-search) .search-view { display: none; }
 
   /* Mobile list */
   .mobile-list-search { display: block; }
+  .mobile-filter-strip { display: flex; }
   .mb-list-wrap {
     flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
     display: flex; flex-direction: column;
@@ -598,6 +665,12 @@ body:not(.mode-search) .search-view { display: none; }
       <span class="mobile-search-ico">🔍</span>
       <input type="text" id="mobileSearchInput" placeholder="名前・会社名で検索..." oninput="syncMobileSearch()">
     </div>
+  </div>
+  <div class="mobile-filter-strip" id="mobileFilterStrip">
+    <button class="mf-chip active" data-filter="all"   onclick="setMobileFilter('all',this)">すべて</button>
+    <button class="mf-chip"        data-filter="follow" onclick="setMobileFilter('follow',this)">⚠ 要フォロー</button>
+    <button class="mf-chip"        data-filter="watch"  onclick="setMobileFilter('watch',this)">👁 要観察</button>
+    <button class="mf-sort" id="mfSort" onclick="toggleMobileSort()">↕ 名前順</button>
   </div>
   <div class="mb-list-wrap" id="mbListWrap" style="overflow-y:auto; flex:1; -webkit-overflow-scrolling:touch; padding-bottom:var(--bottom-nav-h);">
     <!-- populated by renderMobileList() -->
@@ -779,35 +852,46 @@ body:not(.mode-search) .search-view { display: none; }
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="frow">
-        <div class="fg"><label class="flbl">日付 *</label><input class="finput" id="aDate" type="date"></div>
-        <div class="fg">
-          <label class="flbl">種別</label>
-          <select class="finput" id="aType">
-            <option>訪問</option><option>電話</option><option>メール</option>
-            <option>オンライン商談</option><option>展示会</option><option>体験会</option><option>その他</option>
-          </select>
-        </div>
+      <div class="fg">
+        <label class="flbl">日付 *</label>
+        <input class="finput" id="aDate" type="date">
       </div>
-      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容..." style="min-height:120px"></textarea></div>
-      <div class="fg"><label class="flbl">次のアクション</label><input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪"></div>
-      <div class="frow">
-        <div class="fg"><label class="flbl">フォロー期限</label><input class="finput" id="aFuDate" type="date"></div>
-        <div class="fg">
-          <label class="flbl">フォロー状況</label>
-          <select class="finput" id="aFuStatus">
-            <option value="none">なし</option><option value="pending">フォロー必要</option><option value="done">完了</option>
-          </select>
+      <div class="fg">
+        <label class="flbl">種別</label>
+        <div class="type-chips" id="aTypeChips">
+          <button type="button" class="type-chip active" data-val="訪問"       onclick="selectActType(this)">🚶 訪問</button>
+          <button type="button" class="type-chip"        data-val="電話"       onclick="selectActType(this)">📞 電話</button>
+          <button type="button" class="type-chip"        data-val="メール"     onclick="selectActType(this)">📧 メール</button>
+          <button type="button" class="type-chip"        data-val="オンライン" onclick="selectActType(this)">💻 オンライン</button>
+          <button type="button" class="type-chip"        data-val="展示会"     onclick="selectActType(this)">🎪 展示会</button>
+          <button type="button" class="type-chip"        data-val="体験会"     onclick="selectActType(this)">✨ 体験会</button>
+          <button type="button" class="type-chip"        data-val="その他"     onclick="selectActType(this)">📌 その他</button>
         </div>
+        <input type="hidden" id="aType" value="訪問">
+      </div>
+      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容..." style="min-height:90px"></textarea></div>
+      <div class="fg"><label class="flbl">次のアクション</label><input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪"></div>
+      <div class="fg">
+        <label class="flbl">フォロー状況</label>
+        <div class="fu-chips" id="aFuChips">
+          <button type="button" class="fu-chip active" data-val="none"    onclick="selectFuStatus(this)">なし</button>
+          <button type="button" class="fu-chip"        data-val="pending" onclick="selectFuStatus(this)">⚠ フォロー必要</button>
+          <button type="button" class="fu-chip"        data-val="done"    onclick="selectFuStatus(this)">✓ 完了</button>
+        </div>
+        <input type="hidden" id="aFuStatus" value="none">
+      </div>
+      <div class="fg" id="aFuDateWrap" style="display:none">
+        <label class="flbl">フォロー期限</label>
+        <input class="finput" id="aFuDate" type="date">
       </div>
       <div class="frow salon-only">
         <div class="fg"><label class="flbl">担当者</label><input class="finput" id="aRepName" placeholder="自社担当者名"></div>
         <div class="fg"><label class="flbl">議事録リンク</label><input class="finput" id="aMinutesUrl" type="url" placeholder="https://..."></div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeActModal()">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveAct()">追加</button>
+    <div class="modal-footer" style="gap:10px">
+      <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveAct()" style="flex:2;font-size:15px;min-height:52px">✓ 保存する</button>
     </div>
   </div>
 </div>
@@ -936,6 +1020,8 @@ let salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
 let currentId = null;
 let currentTags = [];
 let editingId = null;
+let mobileFilter = 'all';  // 'all' | 'follow' | 'watch'
+let mobileSort   = 'name'; // 'name' | 'recent' | 'follow'
 
 const getPeople = () => currentMode === 'agent' ? agentPeople : salonPeople;
 const setPeople = arr => { if (currentMode === 'agent') agentPeople = arr; else salonPeople = arr; };
@@ -971,17 +1057,62 @@ function mobileBack() {
   currentId = null;
 }
 
+// ── Mobile Filter / Sort helpers ─────────────────
+function setMobileFilter(val, el) {
+  mobileFilter = val;
+  document.querySelectorAll('#mobileFilterStrip .mf-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderMobileList();
+}
+
+function toggleMobileSort() {
+  const order = ['name','recent','follow'];
+  const labels = { name:'名前順', recent:'最終活動順', follow:'フォロー優先' };
+  const idx = (order.indexOf(mobileSort) + 1) % order.length;
+  mobileSort = order[idx];
+  const btn = document.getElementById('mfSort');
+  if (btn) btn.textContent = '↕ ' + labels[mobileSort];
+  renderMobileList();
+}
+
 // ── Mobile List ───────────────────────────────────
 function renderMobileList() {
   if (!isMobile()) return;
   const q = (document.getElementById('mobileSearchInput').value || document.getElementById('searchInput').value || '').toLowerCase();
-  let filtered = getPeople().filter(p =>
-    !q || p.name.toLowerCase().includes(q) || p.company.toLowerCase().includes(q)
-  ).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+
+  let filtered = getPeople().filter(p => {
+    // text search
+    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q)) return false;
+    // filter chip
+    if (mobileFilter === 'follow') {
+      const hasPending = (p.activities||[]).some(a => a.fuStatus === 'pending');
+      if (!hasPending) return false;
+    } else if (mobileFilter === 'watch') {
+      if (p.status !== 'watch') return false;
+    }
+    return true;
+  });
+
+  // sort
+  if (mobileSort === 'name') {
+    filtered.sort((a, b) => (a.company||a.name).localeCompare(b.company||b.name, 'ja'));
+  } else if (mobileSort === 'recent') {
+    filtered.sort((a, b) => {
+      const aLast = (a.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
+      const bLast = (b.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
+      return bLast.localeCompare(aLast);
+    });
+  } else if (mobileSort === 'follow') {
+    filtered.sort((a, b) => {
+      const aOv = (a.activities||[]).some(x => x.fuStatus==='pending' && x.fuDate && x.fuDate < toDay()) ? 0 : (a.activities||[]).some(x=>x.fuStatus==='pending') ? 1 : 2;
+      const bOv = (b.activities||[]).some(x => x.fuStatus==='pending' && x.fuDate && x.fuDate < toDay()) ? 0 : (b.activities||[]).some(x=>x.fuStatus==='pending') ? 1 : 2;
+      return aOv - bOv;
+    });
+  }
 
   const wrap = document.getElementById('mbListWrap');
   if (!filtered.length) {
-    wrap.innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>該当なし</div></div>';
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>該当なし</div></div>';
     return;
   }
   const isAgent = currentMode === 'agent';
@@ -990,19 +1121,23 @@ function renderMobileList() {
     const subLabel  = isAgent ? p.company : (p.name ? 'オーナー: ' + p.name : '');
     const hasPending = (p.activities || []).some(a => a.fuStatus === 'pending');
     const overdue    = (p.activities || []).some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
+    const lastAct    = (p.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
     const avatarTxt  = esc((mainLabel || '?').slice(0,2));
     const phoneBtn   = (currentMode === 'salon' && p.phone)
       ? `<a class="mb-card-phone" href="tel:${esc(p.phone)}" onclick="event.stopPropagation()">📞</a>` : '';
     const badges = [
-      overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : '',
+      overdue ? '<span class="badge badge-fu" style="background:#f8d7da;color:#721c24">⚠ 期限超過</span>'
+              : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : '',
       ...(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`)
     ].filter(Boolean).join('');
+    const lastActHtml = lastAct ? `<div class="mb-card-last">最終活動: ${lastAct}</div>` : '';
     return `<div class="mb-card" onclick="selectPerson('${p.id}')">
-      <div class="mb-card-avatar">${avatarTxt}</div>
+      <div class="mb-card-avatar" style="${overdue?'background:#DC3545':hasPending?'background:#e65c00':''}">${avatarTxt}</div>
       <div class="mb-card-body">
         <div class="mb-card-name">${esc(mainLabel)}</div>
         <div class="mb-card-sub">${esc(subLabel)}</div>
         ${badges ? `<div class="mb-card-badges">${badges}</div>` : ''}
+        ${lastActHtml}
       </div>
       <div class="mb-card-right">
         ${phoneBtn}
@@ -1121,7 +1256,7 @@ function renderMain() {
 
   document.getElementById('main').innerHTML = `
     <div class="profile">
-      <div class="avatar">${esc(profileMain.slice(0,2))}</div>
+      <div class="avatar" style="background:${statusColor}">${esc(profileMain.slice(0,2))}</div>
       <div class="profile-info">
         <div class="profile-name">${esc(profileMain)}</div>
         <div class="profile-company">${esc(profileSub)}</div>
@@ -1129,6 +1264,7 @@ function renderMain() {
           <span class="badge" style="background:${statusColor}22;color:${statusColor}">${statusLabel}</span>
           ${(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
         </div>
+        ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
       </div>
       <div class="profile-actions">
         <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">編集</button>
@@ -1530,13 +1666,39 @@ function handleTag(e) {
 function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
 
 // ── Activity Modal ────────────────────────────────
+// ── Activity type/fu chip selectors ───────────────
+function selectActType(el) {
+  document.querySelectorAll('#aTypeChips .type-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('aType').value = el.dataset.val;
+}
+
+function selectFuStatus(el) {
+  document.querySelectorAll('#aFuChips .fu-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const val = el.dataset.val;
+  document.getElementById('aFuStatus').value = val;
+  // show/hide date field
+  document.getElementById('aFuDateWrap').style.display = val === 'pending' ? 'block' : 'none';
+  if (val !== 'pending') document.getElementById('aFuDate').value = '';
+}
+
 function openActModal() {
   document.getElementById('aDate').value = toDay();
+  // Reset type chips
   document.getElementById('aType').value = '訪問';
+  document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === '訪問');
+  });
   document.getElementById('aContent').value = '';
   document.getElementById('aNext').value = '';
   document.getElementById('aFuDate').value = '';
+  // Reset fu chips
   document.getElementById('aFuStatus').value = 'none';
+  document.querySelectorAll('#aFuChips .fu-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === 'none');
+  });
+  document.getElementById('aFuDateWrap').style.display = 'none';
   document.getElementById('aRepName').value = '';
   document.getElementById('aMinutesUrl').value = '';
   document.getElementById('actModal').classList.add('open');
