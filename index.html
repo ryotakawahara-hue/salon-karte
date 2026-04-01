@@ -1097,51 +1097,121 @@ body:not(.mode-report) .report-view { display: none !important; }
 // ── Google Sheets 同期設定 ──────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
 
+// サロン行 → オブジェクト変換
+function parseSalonRow(row) {
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    company:      String(row['サロン名']        || ''),
+    legalName:    String(row['法人名']          || ''),
+    name:         String(row['代表者/担当者']   || ''),
+    phone:        String(row['電話番号']         || ''),
+    address:      String(row['所在地']           || ''),
+    hpbUrl:       String(row['HPBリンク']        || ''),
+    agentName:    String(row['担当代理店']       || ''),
+    agentBranch:  String(row['代理店支店']       || ''),
+    agentContact: String(row['代理店担当者']     || ''),
+    salesRep:     String(row['担当営業']         || ''),
+    salonType:    String(row['サロンタイプ']     || ''),
+    target:       String(row['ターゲット層']     || ''),
+    staffCount:   parseInt(row['スタッフ数'])   || 0,
+    groupStores:  parseInt(row['グループ店舗数']) || 0,
+    annualTarget: String(row['年間取引額目安']  || ''),
+    memo:         String(row['メモ']             || ''),
+    activities: [], sales: [], tags: [],
+    status: 'active', title: '', email: '', area: '',
+    targetSistri: 0, targetSales: 0,
+  };
+}
+
+// 代理店行 → オブジェクト変換
+function parseAgentRow(row) {
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    company:  String(row['代理店名']  || row['company']  || ''),
+    name:     String(row['担当者名']  || row['name']     || ''),
+    title:    String(row['役職']      || row['title']    || ''),
+    phone:    String(row['電話']      || row['tel']      || ''),
+    email:    String(row['メール']    || row['email']    || ''),
+    area:     String(row['エリア']    || row['area']     || ''),
+    address:  String(row['住所']      || row['address']  || ''),
+    memo:     String(row['メモ']      || row['memo']     || ''),
+    activities: [], sales: [], tags: [],
+    status: 'active', targetSistri: 0, targetSales: 0,
+  };
+}
+
+// マージ共通処理（key=company で重複排除）
+function mergeByCompanyName(existing, loaded) {
+  const names = new Set(existing.map(p => p.company));
+  const merged = [...existing];
+  let added = 0;
+  for (const p of loaded) {
+    if (p.company && !names.has(p.company)) { merged.push(p); names.add(p.company); added++; }
+  }
+  return { merged, added };
+}
+
+// 起動時サイレント自動ロード（alert なし）
+async function autoLoadFromSheet() {
+  try {
+    const [sRes, aRes] = await Promise.all([
+      fetch(GAS_URL + '?action=getAll&type=salon'),
+      fetch(GAS_URL + '?action=getAll&type=agent'),
+    ]);
+    const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
+
+    if (sJson.ok && sJson.data.length > 0) {
+      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company);
+      const existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+      const { merged } = mergeByCompanyName(existing, loaded);
+      localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
+      salonPeople = merged;
+    }
+    if (aJson.ok && aJson.data.length > 0) {
+      const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
+      const existing = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
+      const { merged } = mergeByCompanyName(existing, loaded);
+      localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
+      agentPeople = merged;
+    }
+    renderSidebar(); renderMobileList(); renderMain();
+  } catch(e) {
+    console.warn('自動読込スキップ:', e.message);
+  }
+}
+
+// 手動ロードボタン（両方読込 + 結果を通知）
 async function loadFromSheet() {
   const btn = document.getElementById('loadBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
   try {
-    const sRes = await fetch(GAS_URL + '?action=getAll&type=salon');
-    const sJson = await sRes.json();
-    if (sJson.ok && sJson.data.length > 0) {
-      const loaded = sJson.data.map(row => ({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-        company:      String(row['サロン名']       || ''),
-        legalName:    String(row['法人名']         || ''),
-        name:         String(row['代表者/担当者']  || ''),
-        phone:        String(row['電話番号']        || ''),
-        address:      String(row['所在地']          || ''),
-        hpbUrl:       String(row['HPBリンク']       || ''),
-        agentName:    String(row['担当代理店']      || ''),
-        agentBranch:  String(row['代理店支店']      || ''),
-        agentContact: String(row['代理店担当者']    || ''),
-        salesRep:     String(row['担当営業']        || ''),
-        salonType:    String(row['サロンタイプ']    || ''),
-        target:       String(row['ターゲット層']    || ''),
-        staffCount:   parseInt(row['スタッフ数'])  || 0,
-        groupStores:  parseInt(row['グループ店舗数']) || 0,
-        annualTarget: String(row['年間取引額目安'] || ''),
-        memo:         String(row['メモ']            || ''),
-        activities: [], sales: [], tags: [],
-        status: 'active', title: '', email: '', area: '',
-        targetSistri: 0, targetSales: 0,
-      })).filter(p => p.company);
+    const [sRes, aRes] = await Promise.all([
+      fetch(GAS_URL + '?action=getAll&type=salon'),
+      fetch(GAS_URL + '?action=getAll&type=agent'),
+    ]);
+    const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
 
+    let sAdded = 0, aAdded = 0;
+
+    if (sJson.ok && sJson.data.length > 0) {
+      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company);
       const existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-      const existingNames = new Set(existing.map(p => p.company));
-      const merged = [...existing];
-      let added = 0;
-      for (const p of loaded) {
-        if (!existingNames.has(p.company)) { merged.push(p); added++; }
-      }
+      const { merged, added } = mergeByCompanyName(existing, loaded);
+      sAdded = added;
       localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
       salonPeople = merged;
-      if (currentMode === 'salon') { renderSidebar(); renderMobileList(); renderMain(); }
-      alert(`サロンカルテ: ${added}件追加しました（既存 ${existing.length}件）`);
-    } else {
-      alert('サロンカルテのデータが見つかりませんでした');
     }
+    if (aJson.ok && aJson.data.length > 0) {
+      const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
+      const existing = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
+      const { merged, added } = mergeByCompanyName(existing, loaded);
+      aAdded = added;
+      localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
+      agentPeople = merged;
+    }
+    renderSidebar(); renderMobileList(); renderMain();
+    alert(`読込完了\nサロン: ${sAdded}件追加\n代理店: ${aAdded}件追加`);
   } catch(e) {
     alert('読込に失敗しました: ' + e.message);
   } finally {
@@ -2453,6 +2523,8 @@ document.querySelectorAll('.overlay').forEach(o => {
     document.getElementById('mobileListView').style.display = 'flex';
     renderMobileList();
   }
+  // 起動時にスプシから自動読込（サイレント）
+  autoLoadFromSheet();
 })();
 </script>
 </body>
