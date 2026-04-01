@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>代理店営業カルテ</title>
+<style>
+:root {
+  --primary: #2D5A8E;
+  --primary-light: #3A71B0;
+  --success: #28A745;
+  --warning: #FFC107;
+  --danger: #DC3545;
+  --bg: #F0F2F5;
+  --card: #FFFFFF;
+  --border: #E0E4E8;
+  --text: #2C3E50;
+  --muted: #7F8C8D;
+  --sidebar: 270px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Mode bar */
+.mode-bar { display: flex; background: #1E3F63; flex-shrink: 0; padding: 0 16px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.mode-tab-top { padding: 8px 20px; font-size: 13px; font-weight: 700; color: rgba(255,255,255,.55); cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; }
+.mode-tab-top.active { color: white; border-bottom-color: #7BAFD4; }
+.mode-tab-top:hover:not(.active) { color: rgba(255,255,255,.85); }
+
+/* Mode-specific visibility */
+body.mode-agent .salon-only { display: none !important; }
+body.mode-salon .agent-only { display: none !important; }
+
+/* Header */
+.hdr { background: var(--primary); color: white; height: 54px; padding: 0 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.25); z-index: 100; flex-shrink: 0; }
+.hdr-title { font-size: 17px; font-weight: 700; white-space: nowrap; }
+.hdr-search { flex: 1; max-width: 380px; position: relative; }
+.hdr-search input { width: 100%; padding: 7px 10px 7px 32px; border: none; border-radius: 18px; background: rgba(255,255,255,.2); color: white; font-size: 13px; outline: none; }
+.hdr-search input::placeholder { color: rgba(255,255,255,.65); }
+.hdr-search input:focus { background: rgba(255,255,255,.3); }
+.hdr-search-ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+.hdr-btn { background: white; color: var(--primary); border: none; padding: 6px 14px; border-radius: 18px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.hdr-btn:hover { background: #eee; }
+
+/* Layout */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: var(--sidebar); background: var(--card); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+.sb-count { padding: 6px 12px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.sb-list { overflow-y: auto; flex: 1; }
+.sb-item { padding: 11px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+.sb-item:hover { background: #f8f9fa; }
+.sb-item.active { background: #ebf3ff; border-left: 3px solid var(--primary); }
+.sb-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.sb-company { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.sb-badges { display: flex; gap: 3px; flex-wrap: wrap; }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.badge-fu { background: #fff3cd; color: #856404; }
+.badge-tag { background: #ebf3ff; color: var(--primary); }
+
+/* Main */
+.main { flex: 1; overflow-y: auto; padding: 18px; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted); gap: 10px; }
+.empty-ico { font-size: 44px; }
+.empty-title { font-size: 17px; font-weight: 600; }
+
+/* Card */
+.card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 14px; overflow: hidden; }
+.card-hdr { padding: 13px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--primary); }
+.card-body { padding: 14px 18px; }
+
+/* Profile */
+.profile { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 14px; }
+.avatar { width: 54px; height: 54px; border-radius: 50%; background: var(--primary); color: white; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.profile-info { flex: 1; }
+.profile-name { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+.profile-company { font-size: 13px; color: var(--muted); margin-bottom: 7px; }
+.profile-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+.profile-actions { display: flex; gap: 6px; }
+
+/* Tabs */
+.tabs { display: flex; background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+.tab { flex: 1; padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; transition: all .15s; }
+.tab.active { color: var(--primary); background: #ebf3ff; border-bottom-color: var(--primary); }
+.tab:hover:not(.active) { background: #f8f9fa; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Info grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.info-item label { display: block; font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
+.info-item span { font-size: 13px; }
+
+/* Activity */
+.act-list { display: flex; flex-direction: column; gap: 10px; }
+.act-item { padding: 12px; background: var(--bg); border-radius: 8px; border-left: 3px solid var(--primary); }
+.act-item.fu-pending { border-left-color: var(--warning); }
+.act-item.fu-done { border-left-color: var(--success); }
+.act-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; }
+.act-type { font-size: 10px; font-weight: 700; background: var(--primary); color: white; padding: 2px 7px; border-radius: 10px; }
+.act-date { font-size: 11px; color: var(--muted); }
+.act-content { font-size: 13px; margin-bottom: 4px; }
+.act-next { font-size: 12px; color: var(--primary); background: rgba(45,90,142,.08); padding: 5px 9px; border-radius: 5px; margin-top: 5px; }
+.act-next::before { content: "→ "; }
+.act-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.add-btn { width: 100%; padding: 9px; border: 2px dashed var(--border); border-radius: 8px; background: none; color: var(--muted); font-size: 13px; cursor: pointer; text-align: center; transition: all .15s; }
+.add-btn:hover { border-color: var(--primary); color: var(--primary); background: #ebf3ff; }
+
+/* Sales */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat { padding: 12px; background: var(--bg); border-radius: 8px; text-align: center; }
+.stat-val { font-size: 26px; font-weight: 700; color: var(--primary); }
+.stat-unit { font-size: 13px; font-weight: 400; }
+.stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.prog-wrap { margin-bottom: 14px; }
+.prog-lbl { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+.prog-bar { height: 9px; background: var(--border); border-radius: 5px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 5px; background: var(--success); transition: width .4s ease; }
+.prog-fill.warn { background: var(--warning); }
+.prog-fill.bad { background: var(--danger); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl th { background: #f8f9fa; padding: 8px 10px; text-align: left; font-weight: 600; color: var(--muted); border-bottom: 2px solid var(--border); }
+.tbl td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: #f8f9fa; }
+.ach { font-weight: 700; }
+.ach.good { color: var(--success); }
+.ach.ok { color: #e65c00; }
+.ach.bad { color: var(--danger); }
+
+/* Buttons */
+.btn { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all .12s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
+.btn-outline:hover { background: #ebf3ff; }
+.btn-danger { background: white; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: #fff0f0; }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #218838; }
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+
+/* Modal */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; align-items: center; justify-content: center; }
+.overlay.open { display: flex; }
+.modal { background: white; border-radius: 12px; width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.modal-hdr { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; }
+.modal-title { font-size: 15px; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); padding: 2px 6px; }
+.modal-body { padding: 18px; }
+.modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 7px; position: sticky; bottom: 0; background: white; }
+
+/* Form */
+.fg { margin-bottom: 12px; }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.flbl { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+.finput { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; }
+.finput:focus { border-color: var(--primary); }
+textarea.finput { resize: vertical; min-height: 72px; }
+select.finput { background: white; }
+.fsec { font-size: 12px; font-weight: 700; color: var(--primary); margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 2px solid var(--border); }
+
+/* Tags */
+.tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border: 1px solid var(--border); border-radius: 6px; min-height: 36px; align-items: center; cursor: text; }
+.tag-chip { background: #ebf3ff; color: var(--primary); padding: 2px 7px; border-radius: 10px; font-size: 11px; display: flex; align-items: center; gap: 3px; }
+.tag-rm { cursor: pointer; color: var(--muted); }
+.tag-rm:hover { color: var(--danger); }
+.tag-field { border: none; outline: none; font-size: 12px; flex: 1; min-width: 70px; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 3px; }
+
+/* Search View */
+body.mode-search .layout { display: none; }
+.search-view { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+body:not(.mode-search) .search-view { display: none; }
+
+.sv-toolbar { padding: 12px 18px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sv-search { flex: 1; min-width: 200px; position: relative; }
+.sv-search input { width: 100%; padding: 8px 10px 8px 34px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
+.sv-search input:focus { border-color: var(--primary); }
+.sv-search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+.sv-filter { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; background: white; cursor: pointer; outline: none; font-family: inherit; color: var(--text); }
+.sv-filter:focus { border-color: var(--primary); }
+.sv-count { font-size: 12px; color: var(--muted); white-space: nowrap; margin-left: 4px; }
+
+.sv-grid { flex: 1; overflow-y: auto; padding: 16px 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-content: start; }
+.sv-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s; }
+.sv-card:hover { border-color: var(--primary); box-shadow: 0 4px 14px rgba(45,90,142,.12); transform: translateY(-1px); }
+.sv-card-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.sv-card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.sv-card-rows { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.sv-card-row { display: flex; align-items: baseline; gap: 6px; font-size: 12px; }
+.sv-card-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; min-width: 52px; flex-shrink: 0; }
+.sv-card-val { color: var(--text); line-height: 1.4; }
+.sv-card-last { font-size: 11px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; }
+.sv-card-actions { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+</style>
+</head>
+<body class="mode-agent">
+
+<div class="hdr">
+  <div class="hdr-title" id="hdrTitle">📋 代理店カルテ</div>
+  <div class="hdr-search">
+    <span class="hdr-search-ico">🔍</span>
+    <input type="text" id="searchInput" placeholder="担当者名・会社名で検索..." oninput="renderSidebar()">
+  </div>
+  <button class="hdr-btn" onclick="openAddModal()">＋ 新規登録</button>
+</div>
+
+<div class="mode-bar">
+  <div class="mode-tab-top active" id="tabAgent" onclick="switchMode('agent')">代理店カルテ</div>
+  <div class="mode-tab-top" id="tabSalon" onclick="switchMode('salon')">サロンカルテ</div>
+  <div class="mode-tab-top" id="tabSearch" onclick="switchMode('search')">🔍 サロン検索</div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-count" id="sbCount">0名</div>
+    <div class="sb-list" id="sbList"></div>
+  </div>
+  <div class="main" id="main">
+    <div class="empty">
+      <div class="empty-ico">📋</div>
+      <div class="empty-title">カルテを選択してください</div>
+      <div style="font-size:13px">左から担当者を選ぶか、新規登録してください</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search View -->
+<div class="search-view">
+  <div class="sv-toolbar">
+    <div class="sv-search">
+      <span class="sv-search-ico">🔍</span>
+      <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所で検索..." oninput="renderSearchView()">
+    </div>
+    <select class="sv-filter" id="svType" onchange="renderSearchView()">
+      <option value="">タイプ: すべて</option>
+      <option value="ヘアサロン">ヘアサロン</option>
+      <option value="ネイルサロン">ネイルサロン</option>
+      <option value="エステサロン">エステサロン</option>
+      <option value="アイラッシュ">アイラッシュ</option>
+      <option value="トータルビューティー">トータルビューティー</option>
+      <option value="その他">その他</option>
+    </select>
+    <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
+      <option value="">ステータス: すべて</option>
+      <option value="active">アクティブ</option>
+      <option value="watch">要観察</option>
+      <option value="inactive">休眠</option>
+    </select>
+    <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
+      <option value="">担当営業: すべて</option>
+    </select>
+    <span class="sv-count" id="svCount"></span>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
+  </div>
+  <div class="sv-grid" id="svGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
+      <div style="font-size:36px;margin-bottom:10px">🔍</div>
+      <div style="font-size:15px">サロンカルテにデータを登録すると、ここに表示されます</div>
+    </div>
+  </div>
+</div>
+
+<!-- Person Modal -->
+<div class="overlay" id="personModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="personModalTitle">新規カルテ登録</div>
+      <button class="modal-close" onclick="closePersonModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fsec">基本情報</div>
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl"><span class="agent-only">担当者名</span><span class="salon-only">オーナー名</span> *</label>
+          <input class="finput" id="pName" placeholder="">
+        </div>
+        <div class="fg">
+          <label class="flbl"><span class="agent-only">代理店名</span><span class="salon-only">サロン名</span> *</label>
+          <select class="finput agent-only" id="pCompanySelect" onchange="handleCompanySelect()">
+            <option value="">-- 代理店を選択 --</option>
+            <option value="__new__">＋ 新規代理店を入力...</option>
+          </select>
+          <input class="finput agent-only" id="pCompanyNew" placeholder="新しい代理店名を入力" style="display:none;margin-top:6px">
+          <input class="finput salon-only" id="pCompany" placeholder="">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl"><span class="agent-only">役職</span><span class="salon-only">席数</span></label>
+          <input class="finput" id="pTitle" placeholder="">
+        </div>
+        <div class="fg"><label class="flbl">電話番号</label><input class="finput" id="pPhone" type="tel" placeholder="090-1234-5678"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">メール</label><input class="finput" id="pEmail" type="email" placeholder="tanaka@example.com"></div>
+        <div class="fg"><label class="flbl">エリア</label><input class="finput" id="pArea" placeholder="関東・東北"></div>
+      </div>
+      <div class="fg salon-only">
+        <label class="flbl">担当代理店</label>
+        <input class="finput" id="pAgentName" list="agentNameList" placeholder="代理店名を選択または入力">
+        <datalist id="agentNameList"></datalist>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg"><label class="flbl">代理店支店</label><input class="finput" id="pAgentBranch" placeholder="渋谷支店"></div>
+        <div class="fg"><label class="flbl">代理店担当者</label><input class="finput" id="pAgentContact" placeholder="鈴木 花子"></div>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg"><label class="flbl">担当営業</label><input class="finput" id="pSalesRep" placeholder="自社担当者名"></div>
+        <div class="fg"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
+      </div>
+      <div class="fg salon-only"><label class="flbl">サロン法人名</label><input class="finput" id="pLegalName" placeholder="株式会社〇〇"></div>
+      <div class="fg"><label class="flbl">住所</label><input class="finput" id="pAddress" placeholder="東京都渋谷区〇〇 1-2-3"></div>
+
+      <div class="fsec salon-only">サロン特性・規模</div>
+      <div class="frow salon-only">
+        <div class="fg">
+          <label class="flbl">サロンタイプ</label>
+          <select class="finput" id="pSalonType">
+            <option value="">選択してください</option>
+            <option value="ヘアサロン">ヘアサロン</option>
+            <option value="ネイルサロン">ネイルサロン</option>
+            <option value="エステサロン">エステサロン</option>
+            <option value="アイラッシュ">アイラッシュ</option>
+            <option value="トータルビューティー">トータルビューティー</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">ターゲット層</label><input class="finput" id="pTarget" placeholder="20-30代女性"></div>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg"><label class="flbl">スタッフ数</label><input class="finput" id="pStaffCount" type="number" placeholder="5" min="0"></div>
+        <div class="fg"><label class="flbl">グループ店舗数</label><input class="finput" id="pGroupStores" type="number" placeholder="1" min="0"></div>
+      </div>
+      <div class="fg salon-only"><label class="flbl">年間取引目安</label><input class="finput" id="pAnnualTarget" placeholder="例: 年間200万円"></div>
+
+      <div class="fsec">関係性</div>
+      <div class="fg">
+        <label class="flbl">ステータス</label>
+        <select class="finput" id="pStatus">
+          <option value="active">アクティブ</option>
+          <option value="watch">要観察</option>
+          <option value="inactive">休眠</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="flbl">タグ（Enterで追加）</label>
+        <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagField').focus()">
+          <input type="text" id="tagField" class="tag-field" placeholder="タグを入力..." onkeydown="handleTag(event)">
+        </div>
+      </div>
+
+      <div class="fsec agent-only">販売目標（月間）</div>
+      <div class="frow agent-only">
+        <div class="fg"><label class="flbl">シストリ目標数（本/月）</label><input class="finput" id="pTargetSistri" type="number" placeholder="10" min="0"></div>
+        <div class="fg"><label class="flbl">売上目標（万円/月）</label><input class="finput" id="pTargetSales" type="number" placeholder="50" min="0"></div>
+      </div>
+      <div class="fg"><label class="flbl">メモ</label><textarea class="finput" id="pMemo" placeholder="自由記述..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePersonModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="savePerson()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Modal -->
+<div class="overlay" id="actModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">活動ログを追加</div>
+      <button class="modal-close" onclick="closeActModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="flbl">日付 *</label><input class="finput" id="aDate" type="date"></div>
+        <div class="fg">
+          <label class="flbl">種別</label>
+          <select class="finput" id="aType">
+            <option>訪問</option><option>電話</option><option>メール</option>
+            <option>オンライン商談</option><option>展示会</option><option>体験会</option><option>その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容..."></textarea></div>
+      <div class="fg"><label class="flbl">次のアクション</label><input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">フォロー期限</label><input class="finput" id="aFuDate" type="date"></div>
+        <div class="fg">
+          <label class="flbl">フォロー状況</label>
+          <select class="finput" id="aFuStatus">
+            <option value="none">なし</option><option value="pending">フォロー必要</option><option value="done">完了</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg"><label class="flbl">担当者</label><input class="finput" id="aRepName" placeholder="自社担当者名"></div>
+        <div class="fg"><label class="flbl">議事録リンク</label><input class="finput" id="aMinutesUrl" type="url" placeholder="https://..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeActModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveAct()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sales Modal -->
+<div class="overlay" id="salesModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">実績を入力</div>
+      <button class="modal-close" onclick="closeSalesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label class="flbl">対象月 *</label><input class="finput" id="sMonth" type="month"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">シストリ販売数（本）</label><input class="finput" id="sSistri" type="number" placeholder="0" min="0"></div>
+        <div class="fg"><label class="flbl">売上実績（万円）</label><input class="finput" id="sSales" type="number" placeholder="0" min="0" step="0.1"></div>
+      </div>
+      <div class="fg"><label class="flbl">メモ</label><input class="finput" id="sMemo" placeholder="例: 新規サロン開拓で増加"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSalesModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveSales()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────
+let currentMode = localStorage.getItem('karte_mode') || 'agent';
+let agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || localStorage.getItem('karte_v1') || '[]');
+let salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+let currentId = null;
+let currentTags = [];
+let editingId = null;
+
+const getPeople = () => currentMode === 'agent' ? agentPeople : salonPeople;
+const setPeople = arr => { if (currentMode === 'agent') agentPeople = arr; else salonPeople = arr; };
+const save = () => {
+  localStorage.setItem('karte_agent_v1', JSON.stringify(agentPeople));
+  localStorage.setItem('karte_salon_v1', JSON.stringify(salonPeople));
+  localStorage.setItem('karte_mode', currentMode);
+};
+const getPerson = id => getPeople().find(p => p.id === id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const toDay = () => new Date().toISOString().slice(0, 10);
+const toMonth = () => new Date().toISOString().slice(0, 7);
+const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+
+// ── Sidebar ───────────────────────────────────────
+function renderSidebar() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+
+  let filtered = getPeople().filter(p =>
+    !q || p.name.toLowerCase().includes(q) || p.company.toLowerCase().includes(q)
+  ).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+
+  document.getElementById('sbCount').textContent = `${filtered.length}名`;
+
+  if (!filtered.length) {
+    document.getElementById('sbList').innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">該当なし</div>';
+    return;
+  }
+
+  document.getElementById('sbList').innerHTML = filtered.map(p => {
+    const hasPending = (p.activities || []).some(a => a.fuStatus === 'pending');
+    const overdue = (p.activities || []).some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
+    const isAgent = currentMode === 'agent';
+    const mainLabel = isAgent ? p.name : p.company;
+    const subLabel = isAgent ? p.company : (p.name ? 'オーナー: ' + p.name : '');
+    return `<div class="sb-item ${p.id === currentId ? 'active' : ''}" onclick="selectPerson('${p.id}')">
+      <div class="sb-name">${esc(mainLabel)}</div>
+      <div class="sb-company">${esc(subLabel)}${isAgent && p.title ? ' · ' + esc(p.title) : ''}</div>
+      <div class="sb-badges">
+        ${overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : ''}
+        ${(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Select Person ─────────────────────────────────
+function selectPerson(id) {
+  currentId = id;
+  renderSidebar();
+  renderMain();
+}
+
+// ── Main Render ───────────────────────────────────
+function renderMain() {
+  const p = getPerson(currentId);
+  if (!p) {
+    document.getElementById('main').innerHTML = `<div class="empty"><div class="empty-ico">📋</div><div class="empty-title">カルテを選択してください</div><div style="font-size:13px">左から担当者を選ぶか、新規登録してください</div></div>`;
+    return;
+  }
+
+  const isAgent = currentMode === 'agent';
+  const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' }[p.status] || '';
+  const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' }[p.status] || '#6C757D';
+  const profileMain = isAgent ? p.name : p.company;
+  const profileSub = isAgent
+    ? (p.company + (p.title ? ' · ' + p.title : ''))
+    : (p.name ? 'オーナー: ' + p.name : '');
+
+  document.getElementById('main').innerHTML = `
+    <div class="profile">
+      <div class="avatar">${esc(profileMain.slice(0,2))}</div>
+      <div class="profile-info">
+        <div class="profile-name">${esc(profileMain)}</div>
+        <div class="profile-company">${esc(profileSub)}</div>
+        <div class="profile-badges">
+          <span class="badge" style="background:${statusColor}22;color:${statusColor}">${statusLabel}</span>
+          ${(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">編集</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePerson('${p.id}')">削除</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'tb-basic')">基本情報</div>
+      <div class="tab" onclick="switchTab(this,'tb-act')">活動ログ（${(p.activities||[]).length}）</div>
+      <div class="tab" onclick="switchTab(this,'tb-sales')">販売実績</div>
+    </div>
+
+    <div class="tab-content active" id="tb-basic">${renderBasic(p)}</div>
+    <div class="tab-content" id="tb-act">${renderAct(p)}</div>
+    <div class="tab-content" id="tb-sales">${renderSales(p)}</div>
+  `;
+}
+
+function renderBasic(p) {
+  const isAgent = currentMode === 'agent';
+  const memo = p.memo ? `<div class="card"><div class="card-hdr"><div class="card-title">メモ</div></div><div class="card-body"><div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${esc(p.memo)}</div></div></div>` : '';
+
+  if (!isAgent) {
+    return `
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">基本情報</div></div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><label>サロン名</label><span>${esc(p.company) || '—'}</span></div>
+          <div class="info-item"><label>サロン法人名</label><span>${esc(p.legalName) || '—'}</span></div>
+          <div class="info-item"><label>代表者/キー担当者</label><span>${esc(p.name) || '—'}</span></div>
+          <div class="info-item"><label>電話番号</label><span>${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:var(--primary)">${esc(p.phone)}</a>` : '—'}</span></div>
+          <div class="info-item" style="grid-column:span 2"><label>住所</label><span>${esc(p.address) || '—'}</span></div>
+          <div class="info-item" style="grid-column:span 2"><label>HPBリンク</label><span>${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" style="color:var(--primary);word-break:break-all">${esc(p.hpbUrl)}</a>` : '—'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">担当情報</div></div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><label>担当代理店</label><span>${esc(p.agentName) || '—'}</span></div>
+          <div class="info-item"><label>代理店支店</label><span>${esc(p.agentBranch) || '—'}</span></div>
+          <div class="info-item"><label>代理店担当者</label><span>${esc(p.agentContact) || '—'}</span></div>
+          <div class="info-item"><label>担当営業</label><span>${esc(p.salesRep) || '—'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">サロン特性・規模</div></div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><label>サロンタイプ</label><span>${esc(p.salonType) || '—'}</span></div>
+          <div class="info-item"><label>ターゲット層</label><span>${esc(p.target) || '—'}</span></div>
+          <div class="info-item"><label>席数</label><span>${p.title ? esc(p.title) + ' 席' : '—'}</span></div>
+          <div class="info-item"><label>スタッフ数</label><span>${p.staffCount ? p.staffCount + ' 名' : '—'}</span></div>
+          <div class="info-item"><label>グループ店舗数</label><span>${p.groupStores ? p.groupStores + ' 店舗' : '—'}</span></div>
+          <div class="info-item"><label>年間取引目安</label><span>${esc(p.annualTarget) || '—'}</span></div>
+        </div>
+      </div>
+    </div>
+    ${memo}`;
+  }
+
+  return `<div class="card">
+    <div class="card-hdr"><div class="card-title">基本情報</div></div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div class="info-item"><label>電話番号</label><span>${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:var(--primary)">${esc(p.phone)}</a>` : '—'}</span></div>
+        <div class="info-item"><label>メール</label><span>${p.email ? `<a href="mailto:${esc(p.email)}" style="color:var(--primary)">${esc(p.email)}</a>` : '—'}</span></div>
+        <div class="info-item"><label>エリア</label><span>${esc(p.area) || '—'}</span></div>
+        <div class="info-item"><label>住所</label><span>${esc(p.address) || '—'}</span></div>
+        <div class="info-item"><label>役職</label><span>${esc(p.title) || '—'}</span></div>
+      </div>
+    </div>
+  </div>
+  ${memo}`;
+}
+
+function renderAct(p) {
+  const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
+  const listHtml = acts.length ? acts.map(a => {
+    const cls = a.fuStatus === 'pending' ? 'fu-pending' : a.fuStatus === 'done' ? 'fu-done' : '';
+    return `<div class="act-item ${cls}">
+      <div class="act-hdr">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="act-type">${esc(a.type)}</span>
+          <span class="act-date">${a.date}</span>
+        </div>
+        <div class="act-actions">
+          ${a.fuStatus === 'pending' ? `<span class="badge badge-fu">要フォロー${a.fuDate ? ' ('+a.fuDate+')' : ''}</span><button class="btn btn-success btn-sm" onclick="markDone('${a.id}')">完了</button>` : ''}
+          ${a.fuStatus === 'done' ? `<span class="badge" style="background:#d4edda;color:#155724">✓ 完了</span>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">削除</button>
+        </div>
+      </div>
+      ${a.repName ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">👤 担当: ${esc(a.repName)}</div>` : ''}
+      <div class="act-content">${esc(a.content)}</div>
+      ${a.next ? `<div class="act-next">${esc(a.next)}</div>` : ''}
+      ${a.minutesUrl ? `<div style="font-size:12px;margin-top:5px"><a href="${esc(a.minutesUrl)}" target="_blank" style="color:var(--primary)">📄 議事録を開く</a></div>` : ''}
+    </div>`;
+  }).join('') : `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📝</div><div>活動記録がありません</div></div>`;
+
+  return `<div class="card">
+    <div class="card-hdr"><div class="card-title">活動ログ</div><button class="btn btn-primary btn-sm" onclick="openActModal()">＋ 追加</button></div>
+    <div class="card-body"><div class="act-list">${listHtml}</div></div>
+  </div>`;
+}
+
+function renderSales(p) {
+  const sales = [...(p.sales || [])].sort((a, b) => b.ym.localeCompare(a.ym));
+  const tgt = p.targetSistri || 0;
+  const cm = toMonth();
+  const cur = sales.find(s => s.ym === cm);
+  const last12 = sales.slice(0, 12);
+  const totalSistri = last12.reduce((s, r) => s + (r.sistri || 0), 0);
+  const avg = last12.length ? Math.round(totalSistri / last12.length * 10) / 10 : 0;
+  const pct = tgt > 0 && cur ? Math.round((cur.sistri || 0) / tgt * 100) : null;
+  const pClass = pct === null ? '' : pct >= 100 ? '' : pct >= 70 ? 'warn' : 'bad';
+  const achClass = pct === null ? '' : pct >= 100 ? 'good' : pct >= 70 ? 'ok' : 'bad';
+
+  const rows = sales.map(s => {
+    const sp = tgt > 0 ? Math.round((s.sistri || 0) / tgt * 100) : null;
+    const sc = sp === null ? '' : sp >= 100 ? 'good' : sp >= 70 ? 'ok' : 'bad';
+    return `<tr>
+      <td>${s.ym}</td>
+      <td>${s.sistri || 0}</td>
+      <td>${sp !== null ? `<span class="ach ${sc}">${sp}%</span>` : '—'}</td>
+      <td>${s.sales != null ? s.sales : '—'}</td>
+      <td style="color:var(--muted)">${esc(s.memo) || ''}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteSales('${s.ym}')">削除</button></td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-hdr"><div class="card-title">今月の実績</div><button class="btn btn-primary btn-sm" onclick="openSalesModal()">＋ 実績入力</button></div>
+    <div class="card-body">
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-val">${cur ? (cur.sistri || 0) : '—'}<span class="stat-unit"> 本</span></div><div class="stat-lbl">シストリ販売（今月）</div></div>
+        <div class="stat"><div class="stat-val">${pct !== null ? `<span class="ach ${achClass}">${pct}%</span>` : '—'}</div><div class="stat-lbl">目標達成率（${tgt}本目標）</div></div>
+        <div class="stat"><div class="stat-val">${avg}<span class="stat-unit"> 本</span></div><div class="stat-lbl">月平均（直近12ヶ月）</div></div>
+      </div>
+      ${pct !== null ? `<div class="prog-wrap"><div class="prog-lbl"><span>目標達成率</span><span>${pct}%</span></div><div class="prog-bar"><div class="prog-fill ${pClass}" style="width:${Math.min(pct,100)}%"></div></div></div>` : ''}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">月別実績</div></div>
+    <div class="card-body" style="padding:0">
+      ${!sales.length ? `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📊</div><div>実績データがありません</div></div>` :
+        `<table class="tbl"><thead><tr><th>対象月</th><th>シストリ（本）</th><th>達成率</th><th>売上（万円）</th><th>メモ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
+    </div>
+  </div>`;
+}
+
+// ── Tab ───────────────────────────────────────────
+function switchTab(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Agent Datalist & Company Select ───────────────
+function refreshAgentList() {
+  const names = [...new Set(agentPeople.map(p => p.company).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
+  // サロンフォームの担当代理店 datalist
+  const dl = document.getElementById('agentNameList');
+  if (dl) dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+  // 代理店フォームの代理店名 select
+  const sel = document.getElementById('pCompanySelect');
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- 代理店を選択 --</option>' +
+    names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') +
+    '<option value="__new__">＋ 新規代理店を入力...</option>';
+  if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+}
+
+function handleCompanySelect() {
+  const sel = document.getElementById('pCompanySelect');
+  const inp = document.getElementById('pCompanyNew');
+  const isNew = sel.value === '__new__';
+  inp.style.display = isNew ? 'block' : 'none';
+  if (isNew) { inp.value = ''; inp.focus(); }
+}
+
+// ── CSV Import ────────────────────────────────────
+function parseCSV(text) {
+  // 複数行クォートフィールドに対応した文字単位パーサー
+  const rows = [];
+  let row = [], field = '', inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i+1];
+    if (inQuote) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQuote = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQuote = true; }
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\r' && next === '\n') { row.push(field); field = ''; rows.push(row); row = []; i++; }
+      else if (ch === '\n' || ch === '\r') { row.push(field); field = ''; rows.push(row); row = []; }
+      else { field += ch; }
+    }
+  }
+  if (row.length || field) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function importSalonCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const rows = parseCSV(e.target.result);
+    // エリア別リスト形式:
+    //   行0: エリア名ヘッダー
+    //   行1: 都道府県詳細（複数行クォートで1行扱い）
+    //   行2: サロン名（かな）ヘッダー
+    //   行3: カタカナ/リンク/備考 列ヘッダー
+    //   行4以降: データ
+    const regions = ['近畿', '関東・北関東', '中部（東海・甲信越）', '中国・四国', '九州・沖縄', '東北・北陸', '北海道'];
+    const colStarts = [0, 4, 8, 12, 16, 20, 24];
+    const dataRows = rows.slice(4);
+    const existingNames = new Set(salonPeople.map(p => p.company));
+    const newSalons = [];
+
+    for (const row of dataRows) {
+      for (let ri = 0; ri < regions.length; ri++) {
+        const base = colStarts[ri];
+        const name = (row[base] || '').trim();
+        if (!name || existingNames.has(name)) continue;
+        const memo = (row[base + 2] || '').trim();
+        newSalons.push({
+          id: uid(), company: name, name: '', area: regions[ri],
+          memo, status: 'active', activities: [], sales: [], tags: [],
+          agentName: '', agentBranch: '', agentContact: '', salesRep: '',
+          legalName: '', salonType: '', target: '', phone: '', email: '',
+          title: '', address: '', hpbUrl: '', staffCount: 0, groupStores: 0, annualTarget: '',
+        });
+        existingNames.add(name);
+      }
+    }
+
+    event.target.value = '';
+    if (!newSalons.length) { alert('インポートできる新規サロンが見つかりませんでした\n（既存データとの重複を除いた結果）'); return; }
+    if (confirm(`${newSalons.length}件のサロンをインポートします。よろしいですか？`)) {
+      salonPeople.push(...newSalons);
+      save();
+      renderSearchView();
+      alert(`✅ ${newSalons.length}件のサロンをインポートしました`);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ── Person Modal ──────────────────────────────────
+function openAddModal() {
+  editingId = null; currentTags = [];
+  refreshAgentList();
+  const isAgent = currentMode === 'agent';
+  document.getElementById('personModalTitle').textContent = isAgent ? '新規カルテ登録（代理店）' : '新規カルテ登録（サロン）';
+  document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
+  document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : 'Hair Salon〇〇';
+  document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
+  ['pName','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pSalonType').value = '';
+  document.getElementById('pCompanySelect').value = '';
+  document.getElementById('pCompanyNew').value = '';
+  document.getElementById('pCompanyNew').style.display = 'none';
+  document.getElementById('pStatus').value = 'active';
+  document.getElementById('pTargetSistri').value = '';
+  document.getElementById('pTargetSales').value = '';
+  renderTags();
+  const modal = document.getElementById('personModal');
+  modal.classList.add('open');
+  modal.querySelector('.modal').scrollTop = 0;
+}
+
+function openEditModal(id) {
+  const p = getPerson(id);
+  if (!p) return;
+  refreshAgentList();
+  editingId = id; currentTags = [...(p.tags || [])];
+  document.getElementById('personModalTitle').textContent = 'カルテを編集';
+  document.getElementById('pName').value = p.name || '';
+  // 代理店モード: セレクト or 新規入力
+  if (currentMode === 'agent') {
+    const sel = document.getElementById('pCompanySelect');
+    const inp = document.getElementById('pCompanyNew');
+    const exists = [...sel.options].some(o => o.value === p.company);
+    if (exists) { sel.value = p.company || ''; inp.style.display = 'none'; inp.value = ''; }
+    else { sel.value = '__new__'; inp.style.display = 'block'; inp.value = p.company || ''; }
+  }
+  document.getElementById('pCompany').value = p.company || '';
+  document.getElementById('pTitle').value = p.title || '';
+  document.getElementById('pPhone').value = p.phone || '';
+  document.getElementById('pEmail').value = p.email || '';
+  document.getElementById('pArea').value = p.area || '';
+  document.getElementById('pAddress').value = p.address || '';
+  document.getElementById('pStatus').value = p.status || 'active';
+  document.getElementById('pTargetSistri').value = p.targetSistri || '';
+  document.getElementById('pTargetSales').value = p.targetSales || '';
+  document.getElementById('pMemo').value = p.memo || '';
+  document.getElementById('pAgentName').value = p.agentName || '';
+  document.getElementById('pAgentBranch').value = p.agentBranch || '';
+  document.getElementById('pAgentContact').value = p.agentContact || '';
+  document.getElementById('pSalesRep').value = p.salesRep || '';
+  document.getElementById('pHpbUrl').value = p.hpbUrl || '';
+  document.getElementById('pLegalName').value = p.legalName || '';
+  document.getElementById('pSalonType').value = p.salonType || '';
+  document.getElementById('pTarget').value = p.target || '';
+  document.getElementById('pStaffCount').value = p.staffCount || '';
+  document.getElementById('pGroupStores').value = p.groupStores || '';
+  document.getElementById('pAnnualTarget').value = p.annualTarget || '';
+  renderTags();
+  const modal2 = document.getElementById('personModal');
+  modal2.classList.add('open');
+  modal2.querySelector('.modal').scrollTop = 0;
+}
+
+function closePersonModal() { document.getElementById('personModal').classList.remove('open'); }
+
+function savePerson() {
+  const name = document.getElementById('pName').value.trim();
+  let company;
+  if (currentMode === 'agent') {
+    const sel = document.getElementById('pCompanySelect');
+    company = sel.value === '__new__'
+      ? document.getElementById('pCompanyNew').value.trim()
+      : sel.value;
+  } else {
+    company = document.getElementById('pCompany').value.trim();
+  }
+  if (!company) { alert(currentMode === 'agent' ? '代理店名は必須です' : 'サロン名は必須です'); return; }
+
+  const data = {
+    name, company,
+    title: document.getElementById('pTitle').value.trim(),
+    phone: document.getElementById('pPhone').value.trim(),
+    email: document.getElementById('pEmail').value.trim(),
+    area: document.getElementById('pArea').value.trim(),
+    address: document.getElementById('pAddress').value.trim(),
+    agentName: document.getElementById('pAgentName').value.trim(),
+    agentBranch: document.getElementById('pAgentBranch').value.trim(),
+    agentContact: document.getElementById('pAgentContact').value.trim(),
+    salesRep: document.getElementById('pSalesRep').value.trim(),
+    hpbUrl: document.getElementById('pHpbUrl').value.trim(),
+    legalName: document.getElementById('pLegalName').value.trim(),
+    salonType: document.getElementById('pSalonType').value,
+    target: document.getElementById('pTarget').value.trim(),
+    staffCount: parseInt(document.getElementById('pStaffCount').value) || 0,
+    groupStores: parseInt(document.getElementById('pGroupStores').value) || 0,
+    annualTarget: document.getElementById('pAnnualTarget').value.trim(),
+    status: document.getElementById('pStatus').value,
+    targetSistri: parseInt(document.getElementById('pTargetSistri').value) || 0,
+    targetSales: parseFloat(document.getElementById('pTargetSales').value) || 0,
+    memo: document.getElementById('pMemo').value.trim(),
+    tags: [...currentTags],
+  };
+
+  const pArr = getPeople();
+  if (editingId) {
+    const idx = pArr.findIndex(p => p.id === editingId);
+    if (idx >= 0) pArr[idx] = { ...pArr[idx], ...data };
+    currentId = editingId;
+  } else {
+    const np = { id: uid(), activities: [], sales: [], ...data };
+    pArr.push(np);
+    currentId = np.id;
+  }
+
+  save(); closePersonModal(); renderSidebar(); renderMain();
+}
+
+function deletePerson(id) {
+  if (!confirm('このカルテを削除しますか？')) return;
+  setPeople(getPeople().filter(p => p.id !== id));
+  currentId = null;
+  save(); renderSidebar(); renderMain();
+}
+
+// ── Tags ──────────────────────────────────────────
+function renderTags() {
+  const wrap = document.getElementById('tagsWrap');
+  wrap.querySelectorAll('.tag-chip').forEach(c => c.remove());
+  const field = document.getElementById('tagField');
+  currentTags.forEach((tag, i) => {
+    const el = document.createElement('div');
+    el.className = 'tag-chip';
+    el.innerHTML = `${esc(tag)} <span class="tag-rm" onclick="removeTag(${i})">×</span>`;
+    wrap.insertBefore(el, field);
+  });
+}
+
+function handleTag(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const v = e.target.value.trim();
+  if (v && !currentTags.includes(v)) { currentTags.push(v); e.target.value = ''; renderTags(); }
+}
+
+function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
+
+// ── Activity Modal ────────────────────────────────
+function openActModal() {
+  document.getElementById('aDate').value = toDay();
+  document.getElementById('aType').value = '訪問';
+  document.getElementById('aContent').value = '';
+  document.getElementById('aNext').value = '';
+  document.getElementById('aFuDate').value = '';
+  document.getElementById('aFuStatus').value = 'none';
+  document.getElementById('aRepName').value = '';
+  document.getElementById('aMinutesUrl').value = '';
+  document.getElementById('actModal').classList.add('open');
+}
+
+function closeActModal() { document.getElementById('actModal').classList.remove('open'); }
+
+function saveAct() {
+  const date = document.getElementById('aDate').value;
+  const content = document.getElementById('aContent').value.trim();
+  if (!date || !content) { alert('日付と内容は必須です'); return; }
+
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.activities = p.activities || [];
+  p.activities.push({
+    id: uid(), date,
+    type: document.getElementById('aType').value,
+    content,
+    next: document.getElementById('aNext').value.trim(),
+    fuDate: document.getElementById('aFuDate').value,
+    fuStatus: document.getElementById('aFuStatus').value,
+    repName: document.getElementById('aRepName').value.trim(),
+    minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
+  });
+
+  save(); closeActModal(); renderMain(); renderSidebar();
+  setTimeout(() => { const t = [...document.querySelectorAll('.tab')].find(t => t.textContent.includes('活動ログ')); if (t) t.click(); }, 50);
+}
+
+function markDone(actId) {
+  const p = getPerson(currentId);
+  if (!p) return;
+  const a = (p.activities || []).find(a => a.id === actId);
+  if (a) { a.fuStatus = 'done'; save(); renderMain(); renderSidebar(); }
+}
+
+function deleteAct(actId) {
+  if (!confirm('この活動ログを削除しますか？')) return;
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.activities = (p.activities || []).filter(a => a.id !== actId);
+  save(); renderMain(); renderSidebar();
+}
+
+// ── Sales Modal ───────────────────────────────────
+function openSalesModal() {
+  document.getElementById('sMonth').value = toMonth();
+  document.getElementById('sSistri').value = '';
+  document.getElementById('sSales').value = '';
+  document.getElementById('sMemo').value = '';
+  document.getElementById('salesModal').classList.add('open');
+}
+
+function closeSalesModal() { document.getElementById('salesModal').classList.remove('open'); }
+
+function saveSales() {
+  const ym = document.getElementById('sMonth').value;
+  if (!ym) { alert('対象月を選択してください'); return; }
+
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.sales = p.sales || [];
+  const existing = p.sales.find(s => s.ym === ym);
+  const data = {
+    ym,
+    sistri: parseInt(document.getElementById('sSistri').value) || 0,
+    sales: parseFloat(document.getElementById('sSales').value) || null,
+    memo: document.getElementById('sMemo').value.trim(),
+  };
+
+  if (existing) Object.assign(existing, data);
+  else p.sales.push(data);
+
+  save(); closeSalesModal(); renderMain();
+  setTimeout(() => { const t = [...document.querySelectorAll('.tab')].find(t => t.textContent.includes('販売実績')); if (t) t.click(); }, 50);
+}
+
+function deleteSales(ym) {
+  if (!confirm(`${ym}の実績を削除しますか？`)) return;
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.sales = (p.sales || []).filter(s => s.ym !== ym);
+  save(); renderMain();
+}
+
+// ── Search View ───────────────────────────────────
+function renderSearchView() {
+  const q = (document.getElementById('svSearch').value || '').toLowerCase();
+  const filterType = document.getElementById('svType').value;
+  const filterStatus = document.getElementById('svStatus').value;
+  const filterRep = document.getElementById('svSalesRep').value;
+
+  // Populate 担当営業 filter options dynamically
+  const repSel = document.getElementById('svSalesRep');
+  const currentRep = repSel.value;
+  const reps = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort();
+  repSel.innerHTML = '<option value="">担当営業: すべて</option>' +
+    reps.map(r => `<option value="${esc(r)}" ${r === currentRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
+
+  const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
+  const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
+
+  let results = salonPeople.filter(p => {
+    const matchQ = !q ||
+      (p.company || '').toLowerCase().includes(q) ||
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.agentName || '').toLowerCase().includes(q) ||
+      (p.agentBranch || '').toLowerCase().includes(q) ||
+      (p.salesRep || '').toLowerCase().includes(q) ||
+      (p.address || '').toLowerCase().includes(q) ||
+      (p.salonType || '').toLowerCase().includes(q);
+    const matchType = !filterType || p.salonType === filterType;
+    const matchStatus = !filterStatus || (p.status || 'active') === filterStatus;
+    const matchRep = !filterRep || p.salesRep === filterRep;
+    return matchQ && matchType && matchStatus && matchRep;
+  }).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+
+  document.getElementById('svCount').textContent = `${results.length} 件`;
+
+  if (!results.length) {
+    document.getElementById('svGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><div style="font-size:36px;margin-bottom:10px">🔍</div><div>該当するサロンが見つかりません</div></div>`;
+    return;
+  }
+
+  document.getElementById('svGrid').innerHTML = results.map(p => {
+    const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
+    const lastAct = acts[0];
+    const hasPending = acts.some(a => a.fuStatus === 'pending');
+    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
+    const sc = p.status || 'active';
+
+    return `<div class="sv-card" onclick="openSalonFromSearch('${p.id}')">
+      <div class="sv-card-name">${esc(p.company)}</div>
+      <div class="sv-card-badges">
+        ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
+        <span class="badge" style="background:${statusColor[sc]}22;color:${statusColor[sc]}">${statusLabel[sc] || sc}</span>
+        ${overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : ''}
+      </div>
+      <div class="sv-card-rows">
+        ${p.agentName ? `<div class="sv-card-row"><span class="sv-card-label">代理店</span><span class="sv-card-val">${esc(p.agentName)}${p.agentBranch ? '　' + esc(p.agentBranch) : ''}</span></div>` : ''}
+        ${p.salesRep ? `<div class="sv-card-row"><span class="sv-card-label">担当営業</span><span class="sv-card-val">${esc(p.salesRep)}</span></div>` : ''}
+        ${p.name ? `<div class="sv-card-row"><span class="sv-card-label">オーナー</span><span class="sv-card-val">${esc(p.name)}</span></div>` : ''}
+        ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${esc(p.address)}</span></div>` : ''}
+        ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
+      </div>
+      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0, 40))}${lastAct.content.length > 40 ? '…' : ''}</div>` : ''}
+      <div class="sv-card-actions">
+        ${p.phone ? `<a href="tel:${esc(p.phone)}" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📞 電話</a>` : ''}
+        ${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">HPB</a>` : ''}
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openSalonFromSearch('${p.id}')">カルテを開く →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openSalonFromSearch(id) {
+  currentMode = 'salon';
+  currentId = id;
+  document.body.className = 'mode-salon';
+  document.getElementById('tabAgent').classList.remove('active');
+  document.getElementById('tabSalon').classList.add('active');
+  document.getElementById('tabSearch').classList.remove('active');
+  document.getElementById('hdrTitle').textContent = '📋 サロンカルテ';
+  save();
+  renderSidebar();
+  renderMain();
+}
+
+// ── Mode switch ───────────────────────────────────
+function switchMode(mode) {
+  if (mode === 'search') {
+    document.body.className = 'mode-search';
+    document.getElementById('tabAgent').classList.remove('active');
+    document.getElementById('tabSalon').classList.remove('active');
+    document.getElementById('tabSearch').classList.add('active');
+    document.getElementById('hdrTitle').textContent = '🔍 サロン検索';
+    renderSearchView();
+    return;
+  }
+  currentMode = mode;
+  document.body.className = 'mode-' + mode;
+  document.getElementById('tabAgent').classList.toggle('active', mode === 'agent');
+  document.getElementById('tabSalon').classList.toggle('active', mode === 'salon');
+  document.getElementById('tabSearch').classList.remove('active');
+  document.getElementById('hdrTitle').textContent = mode === 'agent' ? '📋 代理店カルテ' : '📋 サロンカルテ';
+  currentId = null;
+  save();
+  renderSidebar();
+  renderMain();
+}
+
+// ── Overlay close ─────────────────────────────────
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── Init ──────────────────────────────────────────
+switchMode(currentMode);
+</script>
+</body>
+</html>
