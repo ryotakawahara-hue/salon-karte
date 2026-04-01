@@ -436,6 +436,47 @@ body:not(.mode-search) .search-view { display: none; }
 </div>
 
 <script>
+// ── Google Sheets 同期設定 ──────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
+
+function syncToSheet(type, data) {
+  const record = type === 'salon' ? {
+    createdAt:    new Date().toISOString().slice(0, 10),
+    name:         data.company,
+    legalName:    data.legalName    || '',
+    owner:        data.name         || '',
+    tel:          data.phone        || '',
+    address:      data.address      || '',
+    hpbUrl:       data.hpbUrl       || '',
+    agentName:    data.agentName    || '',
+    agentBranch:  data.agentBranch  || '',
+    agentContact: data.agentContact || '',
+    salesRep:     data.salesRep     || '',
+    salonType:    data.salonType    || '',
+    target:       data.target       || '',
+    seats:        '',
+    staffCount:   data.staffCount   || '',
+    groupStores:  data.groupStores  || '',
+    annualTarget: data.annualTarget || '',
+    memo:         data.memo         || '',
+  } : {
+    createdAt: new Date().toISOString().slice(0, 10),
+    company:  data.company || '',
+    name:     data.name    || '',
+    branch:   '',
+    tel:      data.phone   || '',
+    email:    data.email   || '',
+    address:  data.address || '',
+    memo:     data.memo    || '',
+  };
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type, record }),
+  }).catch(err => console.warn('スプレッドシート同期失敗:', err));
+}
+
 // ── Data ──────────────────────────────────────────
 let currentMode = localStorage.getItem('karte_mode') || 'agent';
 let agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || localStorage.getItem('karte_v1') || '[]');
@@ -895,6 +936,7 @@ function savePerson() {
   }
 
   save(); closePersonModal(); renderSidebar(); renderMain();
+  syncToSheet(currentMode, data);
 }
 
 function deletePerson(id) {
