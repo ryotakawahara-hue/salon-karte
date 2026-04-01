@@ -536,6 +536,29 @@ body:not(.mode-report) .report-view { display: none !important; }
 /* ── Last Activity Info on cards ── */
 .mb-card-last { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
+/* ── Checkbox group (稼働メニューなど) ── */
+.check-group {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+.check-opt {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 20px; font-size: 13px;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--text); transition: all .15s; user-select: none;
+}
+.check-opt input[type="checkbox"] { display: none; }
+.check-opt.checked { background: var(--primary); color: white; border-color: var(--primary); }
+.bool-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 10px; font-size: 14px;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--muted); transition: all .15s; margin-top: 4px; user-select: none;
+  width: 100%;
+}
+.bool-opt input[type="checkbox"] { display: none; }
+.bool-opt .bool-icon { font-size: 16px; }
+.bool-opt.checked { background: #d4edda; color: #155724; border-color: #28a745; }
+
 /* ── Agent group header in mobile list ── */
 .mb-agent-group-hdr {
   padding: 5px 14px 4px; font-size: 11px; font-weight: 700;
@@ -988,6 +1011,38 @@ body:not(.mode-report) .report-view { display: none !important; }
         <div class="fg"><label class="flbl">グループ店舗数</label><input class="finput" id="pGroupStores" type="number" placeholder="1" min="0"></div>
       </div>
       <div class="fg salon-only"><label class="flbl">年間取引目安</label><input class="finput" id="pAnnualTarget" placeholder="例: 年間200万円"></div>
+
+      <div class="fsec salon-only">取り扱い・施術情報</div>
+      <div class="fg salon-only">
+        <label class="flbl">基本情報入力日</label>
+        <input class="finput" id="pCreatedDate" type="date">
+      </div>
+      <div class="fg salon-only">
+        <label class="flbl">稼働メニュー</label>
+        <div class="check-group" id="pActiveMenus">
+          <label class="check-opt" onclick="toggleCheckOpt(this)"><input type="checkbox" value="矯正">矯正</label>
+          <label class="check-opt" onclick="toggleCheckOpt(this)"><input type="checkbox" value="微還元">微還元</label>
+          <label class="check-opt" onclick="toggleCheckOpt(this)"><input type="checkbox" value="酸熱">酸熱</label>
+          <label class="check-opt" onclick="toggleCheckOpt(this)"><input type="checkbox" value="髪質改善カラー">髪質改善カラー</label>
+          <label class="check-opt" onclick="toggleCheckOpt(this)"><input type="checkbox" value="シストリ">シストリ</label>
+        </div>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg">
+          <label class="flbl">美髪の掟</label>
+          <label class="bool-opt" id="pBihatuOkiteLabel" onclick="toggleBoolOpt(this,'pBihatuOkite')">
+            <input type="checkbox" id="pBihatuOkite">
+            <span class="bool-icon">📜</span><span id="pBihatuOkiteText">未申し込み</span>
+          </label>
+        </div>
+        <div class="fg">
+          <label class="flbl">取り扱い一覧</label>
+          <label class="bool-opt" id="pHandlingLabel" onclick="toggleBoolOpt(this,'pHandlingList')">
+            <input type="checkbox" id="pHandlingList">
+            <span class="bool-icon">📋</span><span id="pHandlingListText">未掲載</span>
+          </label>
+        </div>
+      </div>
 
       <div class="fsec">関係性</div>
       <div class="fg">
@@ -1600,6 +1655,21 @@ function renderBasic(p) {
         </div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">取り扱い・施術情報</div></div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><label>基本情報入力日</label><span>${p.createdDate || '—'}</span></div>
+          <div class="info-item" style="grid-column:span 2"><label>稼働メニュー</label><span>${
+            (p.activeMenus && p.activeMenus.length)
+              ? p.activeMenus.map(m => `<span style="display:inline-block;padding:2px 9px;margin:2px;border-radius:12px;background:var(--primary);color:white;font-size:12px">${esc(m)}</span>`).join('')
+              : '—'
+          }</span></div>
+          <div class="info-item"><label>美髪の掟</label><span>${p.bihatuOkite ? '<span style="color:#155724;font-weight:700">✓ 申し込み済み</span>' : '<span style="color:var(--muted)">未申し込み</span>'}</span></div>
+          <div class="info-item"><label>取り扱い一覧</label><span>${p.inHandlingList ? '<span style="color:#155724;font-weight:700">✓ 掲載済み</span>' : '<span style="color:var(--muted)">未掲載</span>'}</span></div>
+        </div>
+      </div>
+    </div>
     ${memo}`;
   }
 
@@ -1818,6 +1888,10 @@ function openAddModal() {
   document.getElementById('pStatus').value = 'active';
   document.getElementById('pTargetSistri').value = '';
   document.getElementById('pTargetSales').value = '';
+  document.getElementById('pCreatedDate').value = toDay();
+  resetCheckGroup('pActiveMenus');
+  setBoolOpt('pBihatuOkite', false);
+  setBoolOpt('pHandlingList', false);
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
@@ -1859,6 +1933,10 @@ function openEditModal(id) {
   document.getElementById('pStaffCount').value = p.staffCount || '';
   document.getElementById('pGroupStores').value = p.groupStores || '';
   document.getElementById('pAnnualTarget').value = p.annualTarget || '';
+  document.getElementById('pCreatedDate').value = p.createdDate || '';
+  setCheckGroup('pActiveMenus', p.activeMenus || []);
+  setBoolOpt('pBihatuOkite', p.bihatuOkite || false);
+  setBoolOpt('pHandlingList', p.inHandlingList || false);
   renderTags();
   const modal2 = document.getElementById('personModal');
   modal2.classList.add('open');
@@ -1903,6 +1981,10 @@ function savePerson() {
     targetSales: parseFloat(document.getElementById('pTargetSales').value) || 0,
     memo: document.getElementById('pMemo').value.trim(),
     tags: [...currentTags],
+    createdDate: document.getElementById('pCreatedDate').value || toDay(),
+    activeMenus: [...document.querySelectorAll('#pActiveMenus input:checked')].map(c => c.value),
+    bihatuOkite: document.getElementById('pBihatuOkite').checked,
+    inHandlingList: document.getElementById('pHandlingList').checked,
   };
 
   const pArr = getPeople();
@@ -1939,6 +2021,49 @@ function renderTags() {
     el.innerHTML = `${esc(tag)} <span class="tag-rm" onclick="removeTag(${i})">×</span>`;
     wrap.insertBefore(el, field);
   });
+}
+
+// ── Checkbox / Bool opt helpers ──────────────────
+function toggleCheckOpt(label) {
+  const cb = label.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+}
+function toggleBoolOpt(label, cbId) {
+  const cb = document.getElementById(cbId);
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+  const textId = cbId === 'pBihatuOkite' ? 'pBihatuOkiteText' : 'pHandlingListText';
+  const texts = cbId === 'pBihatuOkite'
+    ? ['未申し込み', '申し込み済み']
+    : ['未掲載', '掲載済み'];
+  document.getElementById(textId).textContent = cb.checked ? texts[1] : texts[0];
+}
+function resetCheckGroup(groupId) {
+  document.querySelectorAll(`#${groupId} .check-opt`).forEach(l => {
+    l.querySelector('input').checked = false;
+    l.classList.remove('checked');
+  });
+}
+function setCheckGroup(groupId, values) {
+  document.querySelectorAll(`#${groupId} .check-opt`).forEach(l => {
+    const cb = l.querySelector('input');
+    const on = (values || []).includes(cb.value);
+    cb.checked = on;
+    l.classList.toggle('checked', on);
+  });
+}
+function setBoolOpt(cbId, val) {
+  const cb = document.getElementById(cbId);
+  if (!cb) return;
+  cb.checked = !!val;
+  const labelId = cbId === 'pBihatuOkite' ? 'pBihatuOkiteLabel' : 'pHandlingLabel';
+  document.getElementById(labelId).classList.toggle('checked', !!val);
+  const textId = cbId === 'pBihatuOkite' ? 'pBihatuOkiteText' : 'pHandlingListText';
+  const texts = cbId === 'pBihatuOkite'
+    ? ['未申し込み', '申し込み済み']
+    : ['未掲載', '掲載済み'];
+  document.getElementById(textId).textContent = val ? texts[1] : texts[0];
 }
 
 function handleTag(e) {
