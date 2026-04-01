@@ -945,8 +945,9 @@ body:not(.mode-report) .report-view { display: none !important; }
       </div>
       <div class="fg salon-only">
         <label class="flbl">担当代理店</label>
-        <input class="finput" id="pAgentName" list="agentNameList" placeholder="代理店名を選択または入力">
-        <datalist id="agentNameList"></datalist>
+        <select class="finput" id="pAgentName">
+          <option value="">-- 代理店を選択 --</option>
+        </select>
       </div>
       <div class="frow salon-only">
         <div class="fg"><label class="flbl">代理店支店</label><input class="finput" id="pAgentBranch" placeholder="渋谷支店"></div>
@@ -1181,6 +1182,9 @@ function syncToSheet(type, data) {
 }
 
 // ── Data ──────────────────────────────────────────
+// ── 固定代理店リスト ───────────────────────────────
+const AGENT_NAMES = ['ミツイ','カトレア','アイビックス','かすが','ピュア商会','フジシン','菊地','GOROI','リリー','FIT','ガモウ広島','キクヤ'];
+
 let currentMode = localStorage.getItem('karte_mode') || 'agent';
 let agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || localStorage.getItem('karte_v1') || '[]');
 let salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
@@ -1600,15 +1604,27 @@ function switchTab(el, id) {
 
 // ── Agent Datalist & Company Select ───────────────
 function refreshAgentList() {
-  const names = [...new Set(agentPeople.map(p => p.company).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
-  const dl = document.getElementById('agentNameList');
-  if (dl) dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+  // 固定リスト ＋ データに独自登録がある場合はマージ
+  const extra = agentPeople.map(p => p.company).filter(Boolean)
+    .filter(n => !AGENT_NAMES.includes(n));
+  const names = [...AGENT_NAMES, ...new Set(extra)];
+
+  // サロンフォームの担当代理店 select を更新
+  const agentSel = document.getElementById('pAgentName');
+  if (agentSel && agentSel.tagName === 'SELECT') {
+    const prev = agentSel.value;
+    agentSel.innerHTML = '<option value="">-- 代理店を選択 --</option>' +
+      names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if (prev) agentSel.value = prev;
+  }
+
+  // 代理店カルテの会社名 select を更新
   const sel = document.getElementById('pCompanySelect');
   if (!sel) return;
   const prev = sel.value;
   sel.innerHTML = '<option value="">-- 代理店を選択 --</option>' +
     names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') +
-    '<option value="__new__">＋ 新規代理店を入力...</option>';
+    '<option value="__new__">＋ その他（自由入力）</option>';
   if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
 }
 
