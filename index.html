@@ -536,6 +536,13 @@ body:not(.mode-report) .report-view { display: none !important; }
 /* ── Last Activity Info on cards ── */
 .mb-card-last { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
+/* ── Agent group header in mobile list ── */
+.mb-agent-group-hdr {
+  padding: 5px 14px 4px; font-size: 11px; font-weight: 700;
+  color: var(--primary); background: #EEF4FB;
+  border-bottom: 1px solid var(--border); letter-spacing: .04em;
+}
+
 /* ── FAB ── */
 .fab {
   display: none;
@@ -1167,9 +1174,10 @@ function syncToSheet(type, data) {
     createdAt: new Date().toISOString().slice(0, 10),
     company:  data.company || '',
     name:     data.name    || '',
-    branch:   '',
+    title:    data.title   || '',
     tel:      data.phone   || '',
     email:    data.email   || '',
+    area:     data.area    || '',
     address:  data.address || '',
     memo:     data.memo    || '',
   };
@@ -1237,8 +1245,9 @@ function setMobileFilter(val, el) {
 }
 
 function toggleMobileSort() {
-  const order = ['name','recent','follow'];
-  const labels = { name:'名前順', recent:'最終活動順', follow:'フォロー優先' };
+  const isAgent = currentMode === 'agent';
+  const order  = isAgent ? ['name','recent','follow','agent'] : ['name','recent','follow'];
+  const labels = { name:'名前順', recent:'最終活動順', follow:'フォロー優先', agent:'代理店順' };
   const idx = (order.indexOf(mobileSort) + 1) % order.length;
   mobileSort = order[idx];
   const btn = document.getElementById('mfSort');
@@ -1279,6 +1288,11 @@ function renderMobileList() {
       const bOv = (b.activities||[]).some(x => x.fuStatus==='pending' && x.fuDate && x.fuDate < toDay()) ? 0 : (b.activities||[]).some(x=>x.fuStatus==='pending') ? 1 : 2;
       return aOv - bOv;
     });
+  } else if (mobileSort === 'agent') {
+    filtered.sort((a, b) => {
+      const cmp = (a.company||'').localeCompare(b.company||'', 'ja');
+      return cmp !== 0 ? cmp : (a.name||'').localeCompare(b.name||'', 'ja');
+    });
   }
 
   const wrap = document.getElementById('mbListWrap');
@@ -1287,7 +1301,9 @@ function renderMobileList() {
     return;
   }
   const isAgent = currentMode === 'agent';
-  wrap.innerHTML = filtered.map(p => {
+
+  // helper: render single card HTML
+  const cardHtml = p => {
     const mainLabel = isAgent ? p.name : p.company;
     const subLabel  = isAgent ? p.company : (p.name ? 'オーナー: ' + p.name : '');
     const hasPending = (p.activities || []).some(a => a.fuStatus === 'pending');
@@ -1315,7 +1331,23 @@ function renderMobileList() {
         <span class="mb-card-arrow">›</span>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  // 代理店順: group by company with section headers
+  if (mobileSort === 'agent' && isAgent) {
+    let lastCo = null;
+    const parts = [];
+    for (const p of filtered) {
+      if (p.company !== lastCo) {
+        lastCo = p.company;
+        parts.push(`<div class="mb-agent-group-hdr">🏢 ${esc(p.company||'未設定')}</div>`);
+      }
+      parts.push(cardHtml(p));
+    }
+    wrap.innerHTML = parts.join('');
+  } else {
+    wrap.innerHTML = filtered.map(cardHtml).join('');
+  }
 }
 
 // ── Sidebar ───────────────────────────────────────
@@ -1812,10 +1844,10 @@ function savePerson() {
     const np = { id: uid(), activities: [], sales: [], ...data };
     pArr.push(np);
     currentId = np.id;
+    syncToSheet(currentMode, data); // 新規追加時のみ同期
   }
 
   save(); closePersonModal(); renderSidebar(); renderMobileList(); renderMain();
-  syncToSheet(currentMode, data);
 }
 
 function deletePerson(id) {
