@@ -1075,6 +1075,7 @@ body:not(.mode-report) .report-view { display: none !important; }
 </div>
 
 <!-- ── Activity Modal ── -->
+<datalist id="repNameList"></datalist>
 <div class="overlay" id="actModal">
   <div class="modal">
     <div class="modal-hdr">
@@ -1082,9 +1083,15 @@ body:not(.mode-report) .report-view { display: none !important; }
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="fg">
-        <label class="flbl">日付 *</label>
-        <input class="finput" id="aDate" type="date">
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl">日付 *</label>
+          <input class="finput" id="aDate" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">担当営業 *</label>
+          <input class="finput" id="aRepName" list="repNameList" placeholder="担当者名" autocomplete="off">
+        </div>
       </div>
       <div class="fg">
         <label class="flbl">種別</label>
@@ -1095,11 +1102,17 @@ body:not(.mode-report) .report-view { display: none !important; }
           <button type="button" class="type-chip"        data-val="オンライン" onclick="selectActType(this)">💻 オンライン</button>
           <button type="button" class="type-chip"        data-val="展示会"     onclick="selectActType(this)">🎪 展示会</button>
           <button type="button" class="type-chip"        data-val="体験会"     onclick="selectActType(this)">✨ 体験会</button>
+          <button type="button" class="type-chip"        data-val="講師"       onclick="selectActType(this)">📚 講師</button>
           <button type="button" class="type-chip"        data-val="その他"     onclick="selectActType(this)">📌 その他</button>
         </div>
         <input type="hidden" id="aType" value="訪問">
       </div>
-      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容..." style="min-height:90px"></textarea></div>
+      <!-- 講師選択時のみ表示 -->
+      <div class="fg" id="aLecturerWrap" style="display:none">
+        <label class="flbl">講師名</label>
+        <input class="finput" id="aLecturer" placeholder="例: 山田先生">
+      </div>
+      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容 / 受講した研修内容..." style="min-height:90px"></textarea></div>
       <div class="fg"><label class="flbl">次のアクション</label><input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪"></div>
       <div class="fg">
         <label class="flbl">フォロー状況</label>
@@ -1114,10 +1127,7 @@ body:not(.mode-report) .report-view { display: none !important; }
         <label class="flbl">フォロー期限</label>
         <input class="finput" id="aFuDate" type="date">
       </div>
-      <div class="frow salon-only">
-        <div class="fg"><label class="flbl">担当者</label><input class="finput" id="aRepName" placeholder="自社担当者名"></div>
-        <div class="fg"><label class="flbl">議事録リンク</label><input class="finput" id="aMinutesUrl" type="url" placeholder="https://..."></div>
-      </div>
+      <div class="fg"><label class="flbl">議事録リンク</label><input class="finput" id="aMinutesUrl" type="url" placeholder="https://..."></div>
     </div>
     <div class="modal-footer" style="gap:10px">
       <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
@@ -1704,7 +1714,8 @@ function renderAct(p) {
           <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">削除</button>
         </div>
       </div>
-      ${a.repName ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">👤 担当: ${esc(a.repName)}</div>` : ''}
+      ${a.repName ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">👤 担当営業: ${esc(a.repName)}</div>` : ''}
+      ${a.lecturer ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">📚 講師: ${esc(a.lecturer)}</div>` : ''}
       <div class="act-content">${esc(a.content)}</div>
       ${a.next ? `<div class="act-next">${esc(a.next)}</div>` : ''}
       ${a.minutesUrl ? `<div style="font-size:12px;margin-top:5px"><a href="${esc(a.minutesUrl)}" target="_blank" style="color:var(--primary)">📄 議事録を開く</a></div>` : ''}
@@ -2080,7 +2091,11 @@ function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
 function selectActType(el) {
   document.querySelectorAll('#aTypeChips .type-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('aType').value = el.dataset.val;
+  const val = el.dataset.val;
+  document.getElementById('aType').value = val;
+  // 講師選択時だけ講師名フィールドを表示
+  document.getElementById('aLecturerWrap').style.display = val === '講師' ? 'block' : 'none';
+  if (val !== '講師') document.getElementById('aLecturer').value = '';
 }
 
 function selectFuStatus(el) {
@@ -2091,6 +2106,16 @@ function selectFuStatus(el) {
   // show/hide date field
   document.getElementById('aFuDateWrap').style.display = val === 'pending' ? 'block' : 'none';
   if (val !== 'pending') document.getElementById('aFuDate').value = '';
+}
+
+function refreshRepNameList() {
+  const allActs = [
+    ...(agentPeople.flatMap(p => p.activities||[])),
+    ...(salonPeople.flatMap(p => p.activities||[])),
+  ];
+  const names = [...new Set(allActs.map(a => a.repName).filter(Boolean))];
+  const dl = document.getElementById('repNameList');
+  if (dl) dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
 function openActModal() {
@@ -2109,8 +2134,12 @@ function openActModal() {
     c.classList.toggle('active', c.dataset.val === 'none');
   });
   document.getElementById('aFuDateWrap').style.display = 'none';
-  document.getElementById('aRepName').value = '';
+  // 前回の担当営業名を自動セット
+  document.getElementById('aRepName').value = localStorage.getItem('karte_last_rep') || '';
   document.getElementById('aMinutesUrl').value = '';
+  document.getElementById('aLecturer').value = '';
+  document.getElementById('aLecturerWrap').style.display = 'none';
+  refreshRepNameList();
   document.getElementById('actModal').classList.add('open');
 }
 
@@ -2124,6 +2153,8 @@ function saveAct() {
   const p = getPerson(currentId);
   if (!p) return;
   p.activities = p.activities || [];
+  const repName = document.getElementById('aRepName').value.trim();
+  if (repName) localStorage.setItem('karte_last_rep', repName);
   p.activities.push({
     id: uid(), date,
     type: document.getElementById('aType').value,
@@ -2131,7 +2162,8 @@ function saveAct() {
     next: document.getElementById('aNext').value.trim(),
     fuDate: document.getElementById('aFuDate').value,
     fuStatus: document.getElementById('aFuStatus').value,
-    repName: document.getElementById('aRepName').value.trim(),
+    repName,
+    lecturer: document.getElementById('aLecturer').value.trim(),
     minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
   });
 
@@ -2556,6 +2588,26 @@ function generateReport() {
       html += `</div>`;
     }
     html += `</div></div>`;
+
+    // 担当営業別サマリー
+    const byRep = {};
+    for (const a of acts) {
+      const rep = a.repName || '（未記入）';
+      if (!byRep[rep]) byRep[rep] = { total: 0, byType: {} };
+      byRep[rep].total++;
+      byRep[rep].byType[a.type] = (byRep[rep].byType[a.type] || 0) + 1;
+    }
+    const repEntries = Object.entries(byRep).sort((a,b) => b[1].total - a[1].total);
+    if (repEntries.length) {
+      html += `<div class="rp-section"><div class="rp-section-title">👤 担当営業別サマリー</div><div class="rp-section-body">`;
+      text += `\n【担当営業別サマリー】\n`;
+      for (const [rep, dat] of repEntries) {
+        const breakdown = Object.entries(dat.byType).map(([t,n]) => `${t}${n}件`).join(' / ');
+        html += `<div class="rp-method-item"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;color:var(--primary)">${esc(rep)}</span><span style="font-size:12px;color:var(--muted)">計 ${dat.total}件</span></div><div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(breakdown)}</div></div>`;
+        text += `  ${rep}: ${dat.total}件 (${breakdown})\n`;
+      }
+      html += `</div></div>`;
+    }
 
     // 次のアクション一覧
     const withNext = acts.filter(a => a.next);
