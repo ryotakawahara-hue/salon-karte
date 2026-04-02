@@ -804,6 +804,65 @@ body:not(.mode-report) .report-view { display: none !important; }
   .hdr-add-btn { display: flex; }
   .hdr-btn-icon { display: none; }
 }
+
+/* ─────────────── PC RESPONSIVE POLISH (≥900px) ─────────────── */
+@media (min-width: 900px) {
+  /* 検索ボックス：全幅に伸びすぎないよう幅を制限 */
+  .sv-search { flex: 0 1 500px; max-width: 500px; }
+
+  /* Row1：折り返さない */
+  .sv-row1 { flex-wrap: nowrap; gap: 10px; }
+
+  /* Row2：フィルターが折り返さず横スクロール */
+  .sv-row2 {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .sv-row2::-webkit-scrollbar { display: none; }
+  .sv-filter { flex-shrink: 0; }
+
+  /* ツールバー・グリッド余白 */
+  .sv-toolbar { padding: 12px 24px 10px; }
+  .sv-grid    { padding: 20px 24px; }
+}
+
+/* ─────────────── PC WIDE (≥1200px) ─────────────── */
+@media (min-width: 1200px) {
+  /* サイドバーを少し広く */
+  :root { --sidebar: 300px; }
+
+  /* 検索ボックス少し広く */
+  .sv-search { max-width: 560px; }
+
+  /* メインコンテンツの余白 */
+  .main { padding: 22px 28px; }
+
+  /* グリッド：カードを少し大きく */
+  .sv-grid {
+    padding: 20px 28px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+}
+
+/* ─────────────── PC ULTRA WIDE (≥1600px) ─────────────── */
+@media (min-width: 1600px) {
+  :root { --sidebar: 340px; }
+
+  .sv-search { max-width: 640px; }
+
+  .sv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    padding: 24px 36px;
+  }
+
+  .main { padding: 28px 36px; }
+
+  /* ヘッダー検索ボックスも広めに */
+  .hdr-search { max-width: 520px; }
+}
 </style>
 </head>
 <body class="mode-agent">
@@ -2783,11 +2842,20 @@ function renderSearchView(resetPage) {
   const hasMore = results.length > totalShown;
 
   if (!results.length) {
-    document.getElementById('svGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
-      <div style="font-size:36px;margin-bottom:10px">🔍</div>
-      <div style="font-size:15px">該当するサロンが見つかりません</div>
-      ${activeFilters.length ? `<button class="btn btn-outline btn-sm" onclick="clearAllFilters()" style="margin-top:14px">フィルタを解除する</button>` : ''}
-    </div>`;
+    const noSalons = salonPeople.length === 0;
+    document.getElementById('svGrid').innerHTML = noSalons
+      ? `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)">
+          <div style="font-size:52px;margin-bottom:14px">🏪</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">まだサロンが登録されていません</div>
+          <div style="font-size:13px;margin-bottom:20px">「＋ 新規登録」ボタンか CSVインポートからサロンカルテを作成してください</div>
+          <button class="btn btn-primary" onclick="openAddModal()" style="font-size:14px;padding:10px 24px">＋ 新規登録</button>
+        </div>`
+      : `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)">
+          <div style="font-size:36px;margin-bottom:10px">🔍</div>
+          <div style="font-size:15px;margin-bottom:6px">該当するサロンが見つかりません</div>
+          <div style="font-size:12px;margin-bottom:16px">検索条件を変更するか、フィルタを解除してください</div>
+          ${activeFilters.length ? `<button class="btn btn-outline btn-sm" onclick="clearAllFilters()">✕ フィルタをすべて解除</button>` : ''}
+        </div>`;
     return;
   }
 
