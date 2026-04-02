@@ -78,6 +78,7 @@ body.mode-salon .agent-only { display: none !important; }
   min-height: 44px; display: flex; align-items: center;
 }
 .hdr-btn:hover { background: #eee; }
+.load-btn-label { display: none; } /* モバイルでは非表示、PCで上書き */
 .hdr-btn-icon {
   background: rgba(255,255,255,.18); color: white; border: none;
   width: 44px; height: 44px; border-radius: 50%;
@@ -492,6 +493,11 @@ body:not(.mode-report) .report-view { display: none !important; }
   display: flex; gap: 8px; padding: 10px 14px 20px;
   background: white; border-top: 1px solid var(--border);
   flex-shrink: 0;
+  /* モバイル: ボトムナビ分の余白を確保 */
+  padding-bottom: calc(20px + var(--bottom-nav-h, 56px));
+}
+@media (min-width: 768px) {
+  .rp-action-bar { padding-bottom: 20px; }
 }
 
 /* Desktop: report view also usable */
@@ -813,6 +819,8 @@ body:not(.mode-report) .report-view { display: none !important; }
     white-space: nowrap;
   }
   #loadBtn:hover { background: #eee; }
+  /* PC では「読込」テキストラベルを表示 */
+  .load-btn-label { display: inline; }
 }
 
 /* ─────────────── PC RESPONSIVE POLISH (≥900px) ─────────────── */
@@ -1232,9 +1240,10 @@ body:not(.mode-report) .report-view { display: none !important; }
 <div class="overlay" id="actModal">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title">活動ログを追加</div>
+      <div class="modal-title" id="actModalTitle">活動ログを追加</div>
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
+    <input type="hidden" id="aEditId" value="">
     <div class="modal-body">
       <div class="frow">
         <div class="fg">
@@ -1284,7 +1293,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     </div>
     <div class="modal-footer" style="gap:10px">
       <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
-      <button class="btn btn-primary" onclick="saveAct()" style="flex:2;font-size:15px;min-height:52px">✓ 保存する</button>
+      <button class="btn btn-primary" id="actSaveBtn" onclick="saveAct()" style="flex:2;font-size:15px;min-height:52px">✓ 保存する</button>
     </div>
   </div>
 </div>
@@ -2012,6 +2021,7 @@ function renderAct(p) {
         <div class="act-actions">
           ${a.fuStatus === 'pending' ? `<span class="badge badge-fu">要フォロー${a.fuDate ? ' ('+a.fuDate+')' : ''}</span><button class="btn btn-success btn-sm" onclick="markDone('${a.id}')">完了</button>` : ''}
           ${a.fuStatus === 'done' ? `<span class="badge" style="background:#d4edda;color:#155724">✓ 完了</span>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="editAct('${a.id}')">✏️ 編集</button>
           <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">削除</button>
         </div>
       </div>
@@ -2506,7 +2516,10 @@ function refreshRepNameList() {
   if (dl) dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
-function openActModal() {
+function _resetActModal() {
+  document.getElementById('aEditId').value = '';
+  document.getElementById('actModalTitle').textContent = '活動ログを追加';
+  document.getElementById('actSaveBtn').textContent = '✓ 保存する';
   document.getElementById('aDate').value = toDay();
   // Reset type chips
   document.getElementById('aType').value = '訪問';
@@ -2528,6 +2541,47 @@ function openActModal() {
   document.getElementById('aLecturer').value = '';
   document.getElementById('aLecturerWrap').style.display = 'none';
   refreshRepNameList();
+}
+
+function openActModal() {
+  _resetActModal();
+  document.getElementById('actModal').classList.add('open');
+}
+
+function editAct(actId) {
+  const p = getPerson(currentId);
+  if (!p) return;
+  const a = (p.activities || []).find(a => a.id === actId);
+  if (!a) return;
+
+  _resetActModal();
+
+  // 編集モードのタイトル・ボタン
+  document.getElementById('aEditId').value = actId;
+  document.getElementById('actModalTitle').textContent = '活動ログを編集';
+  document.getElementById('actSaveBtn').textContent = '✓ 更新する';
+
+  // 既存データをセット
+  document.getElementById('aDate').value = a.date || '';
+  document.getElementById('aRepName').value = a.repName || '';
+  document.getElementById('aType').value = a.type || '訪問';
+  document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === (a.type || '訪問'));
+  });
+  document.getElementById('aContent').value = a.content || '';
+  document.getElementById('aNext').value = a.next || '';
+  document.getElementById('aFuStatus').value = a.fuStatus || 'none';
+  document.querySelectorAll('#aFuChips .fu-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === (a.fuStatus || 'none'));
+  });
+  if (a.fuStatus === 'pending') {
+    document.getElementById('aFuDateWrap').style.display = '';
+    document.getElementById('aFuDate').value = a.fuDate || '';
+  }
+  document.getElementById('aLecturer').value = a.lecturer || '';
+  if (a.lecturer) document.getElementById('aLecturerWrap').style.display = '';
+  document.getElementById('aMinutesUrl').value = a.minutesUrl || '';
+
   document.getElementById('actModal').classList.add('open');
 }
 
@@ -2582,8 +2636,11 @@ function saveAct() {
   p.activities = p.activities || [];
   const repName = document.getElementById('aRepName').value.trim();
   if (repName) localStorage.setItem('karte_last_rep', repName);
-  const activity = {
-    id: uid(), date,
+
+  const editId = document.getElementById('aEditId').value;
+
+  const actData = {
+    date,
     type: document.getElementById('aType').value,
     content,
     next: document.getElementById('aNext').value.trim(),
@@ -2593,11 +2650,24 @@ function saveAct() {
     lecturer: document.getElementById('aLecturer').value.trim(),
     minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
   };
-  p.activities.push(activity);
-  syncActivityToSheet(p, activity);
+
+  if (editId) {
+    // ── 編集モード: 既存レコードを更新 ──
+    const idx = p.activities.findIndex(a => a.id === editId);
+    if (idx !== -1) {
+      p.activities[idx] = { ...p.activities[idx], ...actData };
+      // GAS同期: 削除→再追加（updateは未実装のため）
+      deleteActivityFromSheet(editId);
+      syncActivityToSheet(p, p.activities[idx]);
+    }
+  } else {
+    // ── 新規追加モード ──
+    const activity = { id: uid(), ...actData };
+    p.activities.push(activity);
+    syncActivityToSheet(p, activity);
+  }
 
   save(); closeActModal(); renderMain(); renderSidebar(); renderMobileList();
-  // On mobile: refresh detail content and keep act tab active
   if (isMobile() && currentId) {
     selectPerson(currentId);
   } else {
