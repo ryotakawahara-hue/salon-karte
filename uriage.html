@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>売上管理ツール | 髪にドラマを。</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #1565C0;
+  --primary-light: #1976D2;
+  --success: #2E7D32;
+  --warning: #E65100;
+  --danger: #C62828;
+  --bg: #F0F2F5;
+  --card: #fff;
+  --border: #E0E4E8;
+  --text: #1A2332;
+  --muted: #6B7280;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* Header */
+.hdr { background: var(--primary); color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+.hdr-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.hdr-sub { font-size: 12px; opacity: .75; }
+.hdr-link { margin-left: auto; color: rgba(255,255,255,.8); font-size: 13px; text-decoration: none; padding: 5px 12px; border: 1px solid rgba(255,255,255,.3); border-radius: 16px; }
+.hdr-link:hover { background: rgba(255,255,255,.12); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+
+/* Card */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+.card-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.card-title { font-weight: 700; font-size: 14px; }
+.card-body { padding: 16px; }
+
+/* Steps */
+.steps { display: flex; gap: 0; margin-bottom: 20px; }
+.step { flex: 1; padding: 10px 16px; text-align: center; font-size: 12px; font-weight: 600;
+  background: #fff; border: 1px solid var(--border); cursor: default; position: relative; }
+.step:not(:last-child)::after { content: '›'; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--muted); z-index: 1; }
+.step.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.step.done { background: #E8F5E9; color: var(--success); border-color: #A5D6A7; }
+.step-num { font-size: 16px; font-weight: 800; }
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: 10px; padding: 40px 20px;
+  text-align: center; cursor: pointer; transition: all .2s;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--primary); background: #EFF6FF; }
+.upload-zone input { display: none; }
+.upload-ico { font-size: 40px; margin-bottom: 10px; }
+.upload-txt { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: var(--muted); }
+
+/* Form grid */
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.fgroup label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.finput {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px; outline: none; background: #fff;
+}
+.finput:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(21,101,192,.15); }
+
+/* Table */
+.tbl-wrap { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { position: sticky; top: 0; background: var(--primary); color: #fff; padding: 7px 10px; text-align: left; white-space: nowrap; }
+td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:hover td { background: #F8FAFF; }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: #E8F5E9; color: #2E7D32; }
+.badge-warn { background: #FFF3E0; color: #E65100; }
+.badge-err { background: #FFEBEE; color: #C62828; }
+
+/* Stats bar */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.stat-box { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
+.stat-num { font-size: 22px; font-weight: 800; color: var(--primary); }
+.stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Btn */
+.btn { padding: 9px 18px; border-radius: 6px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-light); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #388E3C; }
+.btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover:not(:disabled) { background: var(--bg); }
+.btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* Alert */
+.alert { padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 12px; }
+.alert-info { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; }
+.alert-warn { background: #FFF3E0; border: 1px solid #FFCC80; color: #E65100; }
+.alert-success { background: #E8F5E9; border: 1px solid #A5D6A7; color: #2E7D32; }
+.alert-err { background: #FFEBEE; border: 1px solid #FFCDD2; color: #C62828; }
+
+/* Progress */
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--primary); transition: width .3s; }
+
+/* History table */
+.hist-filter { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.hist-filter select, .hist-filter input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .steps { display: none; }
+  .fgrid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="hdr-logo">売上管理ツール</div>
+    <div class="hdr-sub">髪にドラマを。| セルアウトデータ管理</div>
+  </div>
+  <a href="karte.html" class="hdr-link">← サロンカルテ</a>
+</div>
+
+<div class="container">
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-num">1</div>ファイル読込</div>
+    <div class="step" id="step2"><div class="step-num">2</div>設定・確認</div>
+    <div class="step" id="step3"><div class="step-num">3</div>アップロード</div>
+  </div>
+
+  <!-- ① ファイルアップロード -->
+  <div class="card" id="secUpload">
+    <div class="card-hdr"><span>📂</span><div class="card-title">ファイルを読み込む</div></div>
+    <div class="card-body">
+      <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <div class="upload-ico">📊</div>
+        <div class="upload-txt">CSV または Excel ファイルをドロップ</div>
+        <div class="upload-sub">または クリックして選択 (.csv / .xlsx / .xls)</div>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFile(event)">
+      </div>
+      <div id="fileInfo" style="margin-top:12px;display:none">
+        <div class="alert alert-info" id="fileInfoTxt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 設定 -->
+  <div class="card" id="secConfig" style="display:none">
+    <div class="card-hdr"><span>⚙️</span><div class="card-title">代理店・期間を設定</div></div>
+    <div class="card-body">
+      <div class="fgrid" style="margin-bottom:14px">
+        <div class="fgroup">
+          <label>代理店名</label>
+          <select class="finput" id="agentSelect" onchange="onAgentChange()">
+            <option value="">— 選択してください —</option>
+            <option value="フジシン">フジシン</option>
+            <option value="アイビックス">アイビックス</option>
+            <option value="かすが">かすが</option>
+            <option value="ミツイ">ミツイ</option>
+            <option value="GOROI">GOROI</option>
+            <option value="カトレア">カトレア</option>
+            <option value="リリー">リリー</option>
+            <option value="FIT">FIT（EC）</option>
+          </select>
+        </div>
+        <div class="fgroup" id="periodGroup">
+          <label>対象期間（YYYY-MM）</label>
+          <input class="finput" type="month" id="periodInput" value="">
+        </div>
+        <div class="fgroup">
+          <label>代理店担当者</label>
+          <input class="finput" id="agentRepInput" placeholder="代理店担当者名">
+        </div>
+      </div>
+      <div id="mitsuiNote" class="alert alert-info" style="display:none">
+        ⓘ ミツイのデータは日付列がありません。ファイル名から期間を自動取得します（例: ミツイ様202504.xlsx → 2025-04）。
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="normalizeData()" id="normalizeBtn" disabled>データを正規化する</button>
+        <span id="normalizeStatus" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ プレビュー -->
+  <div class="card" id="secPreview" style="display:none">
+    <div class="card-hdr">
+      <span>👁</span>
+      <div class="card-title">データプレビュー</div>
+      <div style="margin-left:auto;font-size:12px;color:var(--muted)" id="previewCount"></div>
+    </div>
+    <div class="card-body">
+      <div class="stats" id="statsBar" style="margin-bottom:14px"></div>
+      <div id="previewAlerts"></div>
+      <div class="tbl-wrap">
+        <table id="previewTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>期間</th>
+              <th>サロン名</th>
+              <th>髪ドラID</th>
+              <th>商品名</th>
+              <th>JAN</th>
+              <th>数量</th>
+              <th>金額</th>
+              <th>代理店担当者</th>
+              <th>拠点</th>
+              <th>状態</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-success" onclick="uploadToSheet()" id="uploadBtn">🚀 売上マスターに書き込む</button>
+        <button class="btn btn-outline" onclick="downloadPreviewCsv()">📥 CSV出力</button>
+        <span id="uploadStatus" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="progress-bar" style="margin-top:8px;display:none" id="progressBar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 履歴・集計 -->
+  <div class="card" id="secHistory">
+    <div class="card-hdr"><span>📈</span><div class="card-title">売上マスター（一覧・集計）</div>
+      <button class="btn btn-outline" style="margin-left:auto;font-size:12px;padding:5px 10px" onclick="loadHistory()">🔄 再読込</button>
+    </div>
+    <div class="card-body">
+      <div class="hist-filter">
+        <select id="hfAgent" onchange="renderHistory()"><option value="">全代理店</option></select>
+        <input type="month" id="hfMonth" onchange="renderHistory()" placeholder="期間フィルター">
+        <input type="text" id="hfSalon" oninput="renderHistory()" placeholder="サロン名検索" style="width:160px">
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:12px" onclick="document.getElementById('hfAgent').value='';document.getElementById('hfMonth').value='';document.getElementById('hfSalon').value='';renderHistory()">クリア</button>
+      </div>
+      <div class="stats" id="histStats" style="margin-bottom:12px"></div>
+      <div id="histAlert" class="alert alert-info" style="display:none"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>期間</th><th>代理店名</th><th>拠点</th><th>サロン名</th>
+              <th>髪ドラID</th><th>商品名</th><th>数量</th><th>金額</th><th>登録日</th>
+            </tr>
+          </thead>
+          <tbody id="histBody"><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">読み込み中...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ─── 設定 ───────────────────────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
+
+// 代理店ごとの列マッピング
+const AGENT_MAP = {
+  'フジシン': {
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', productCode: '商品ｺｰﾄﾞ',
+    jan: 'JAN', rep: '担当者名称', branch: '拠点名',
+  },
+  'アイビックス': {
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', productCode: '商品ｺｰﾄﾞ',
+    jan: 'JAN', rep: '担当者名称', branch: '拠点名',
+  },
+  'かすが': {
+    salon: '得意先名', qty: '数量', amount: '売上金額',
+    date: '売上日付', product: '商品名', productCode: '商品ｺｰﾄﾞ',
+    rep: '担当者名', branch: '拠点名',
+  },
+  'ミツイ': {
+    salon: '得意先略称', qty: '販売返品数量', amount: '税抜純売上高',
+    date: null, // ファイル名から取得
+    product: '商品名', productCode: '商品コード', branch: '部門名',
+  },
+  'GOROI': {
+    salon: '得意先名', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名',
+    rep: '担当者', branch: '拠点名',
+  },
+  'カトレア': {
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', productCode: '商品コード',
+    rep: '担当者',
+  },
+  'リリー': {
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', jan: '商品ｺｰﾄﾞ',
+    rep: '担当者',
+  },
+  'FIT': {
+    salon: '会社名', qty: '個数', amountPer: '価格',
+    date: '受注日', product: '商品名', productCode: '商品コード',
+  },
+};
+
+// ─── 状態 ───────────────────────────────────────────────────────────────────
+let rawData = [];          // 元データ（オブジェクト配列）
+let normalizedData = [];   // 正規化済みデータ
+let fileName = '';
+let historyData = [];      // GASから取得した売上履歴
+
+// ─── ファイル読込 ─────────────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  fileName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      let data;
+      if (ext === 'csv') {
+        const wb = XLSX.read(e.target.result, { type: 'binary', codepage: 932 });
+        data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      } else {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      }
+      rawData = data;
+      onFileLoaded(file.name, data);
+    } catch(err) {
+      alert('ファイルの読み込みに失敗しました: ' + err.message);
+    }
+  };
+  if (ext === 'csv') reader.readAsBinaryString(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function onFileLoaded(name, data) {
+  document.getElementById('fileInfoTxt').innerHTML =
+    `📄 <b>${esc(name)}</b>　${data.length.toLocaleString()}行　列: ${Object.keys(data[0] || {}).slice(0,6).join(', ')}...`;
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('secConfig').style.display = 'block';
+
+  // エージェント自動検出
+  const lower = name.toLowerCase();
+  const autoMap = {
+    'fujishin': 'フジシン', 'フジシン': 'フジシン',
+    'ibix': 'アイビックス', 'アイビックス': 'アイビックス',
+    'kasuga': 'かすが', 'かすが': 'かすが',
+    'mitsui': 'ミツイ', 'ミツイ': 'ミツイ',
+    'goroi': 'GOROI',
+    'katrea': 'カトレア', 'カトレア': 'カトレア',
+    'lily': 'リリー', 'リリー': 'リリー',
+    'fit': 'FIT',
+  };
+  for (const [key, agent] of Object.entries(autoMap)) {
+    if (lower.includes(key.toLowerCase())) {
+      document.getElementById('agentSelect').value = agent;
+      onAgentChange();
+      break;
+    }
+  }
+
+  // 期間自動検出（ファイル名の YYYYMM パターン）
+  const m = name.match(/(\d{4})[_\-年]?(\d{2})[_\-月]?/);
+  if (m) document.getElementById('periodInput').value = m[1] + '-' + m[2];
+
+  setStep(2);
+}
+
+function onAgentChange() {
+  const agent = document.getElementById('agentSelect').value;
+  const mitsuiNote = document.getElementById('mitsuiNote');
+  mitsuiNote.style.display = agent === 'ミツイ' ? 'block' : 'none';
+  document.getElementById('normalizeBtn').disabled = !agent;
+
+  // ミツイはファイル名から期間抽出
+  if (agent === 'ミツイ') {
+    const m = fileName.match(/(\d{4})(\d{2})/);
+    if (m) document.getElementById('periodInput').value = m[1] + '-' + m[2];
+  }
+}
+
+// ─── 正規化 ──────────────────────────────────────────────────────────────────
+function normalizeData() {
+  const agent = document.getElementById('agentSelect').value;
+  const period = document.getElementById('periodInput').value;
+  const agentRep = document.getElementById('agentRepInput').value.trim();
+
+  if (!agent) { alert('代理店を選択してください'); return; }
+  if (!period) { alert('期間を入力してください（YYYY-MM形式）'); return; }
+
+  const map = AGENT_MAP[agent];
+  if (!map) { alert('対応していない代理店です'); return; }
+
+  // ローカルのサロン一覧（髪ドラID突合用）
+  const salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+  const salonByName = {};
+  salonPeople.forEach(s => { salonByName[norm(s.company)] = s; });
+
+  const rows = [];
+  for (const row of rawData) {
+    const salonRaw = str(row[map.salon]);
+    const productRaw = str(row[map.product]);
+    if (!salonRaw || !productRaw) continue;
+
+    // 数量・金額
+    const qty = num(row[map.qty]);
+    let amount;
+    if (map.amountPer) {
+      amount = num(row[map.amountPer]) * qty; // FIT: 単価×個数
+    } else {
+      amount = num(row[map.amount]);
+    }
+    if (qty === 0 && amount === 0) continue;
+
+    // 日付→期間
+    let rowPeriod = period;
+    if (map.date && row[map.date]) {
+      const d = parseDate(row[map.date]);
+      if (d) rowPeriod = d.slice(0, 7);
+    }
+
+    // JAN
+    const jan = map.jan ? cleanJan(str(row[map.jan])) : '';
+    // 商品コード
+    const productCode = map.productCode ? str(row[map.productCode]) : '';
+    // 担当者
+    const rep = agentRep || (map.rep ? str(row[map.rep]) : '');
+    // 拠点
+    const branch = map.branch ? str(row[map.branch]) : '';
+
+    // 髪ドラID 突合
+    const matched = salonByName[norm(salonRaw)];
+    const kamidoraId = matched ? (matched.kamidoraId || '') : '';
+    const matchStatus = kamidoraId ? 'ok' : matched ? 'warn' : 'none';
+
+    rows.push({
+      period: rowPeriod,
+      agentName: agent,
+      agentBranch: branch,
+      agentContact: rep,
+      salonName: salonRaw,
+      kamidoraId,
+      productName: productRaw,
+      productCode,
+      jan,
+      qty,
+      amount,
+      registeredAt: new Date().toISOString().slice(0, 10),
+      _matchStatus: matchStatus,
+    });
+  }
+
+  normalizedData = rows;
+  renderPreview(rows);
+  setStep(3);
+}
+
+function renderPreview(rows) {
+  const ok = rows.filter(r => r._matchStatus === 'ok').length;
+  const warn = rows.filter(r => r._matchStatus === 'warn').length;
+  const none = rows.filter(r => r._matchStatus === 'none').length;
+  const totalAmt = rows.reduce((s, r) => s + r.amount, 0);
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${rows.length.toLocaleString()}</div><div class="stat-lbl">総レコード数</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--success)">${ok.toLocaleString()}</div><div class="stat-lbl">髪ドラID紐付済</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--warning)">${warn.toLocaleString()}</div><div class="stat-lbl">ID未割当</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${none.toLocaleString()}</div><div class="stat-lbl">サロン未登録</div></div>
+    <div class="stat-box"><div class="stat-num" style="font-size:16px">¥${Math.round(totalAmt).toLocaleString()}</div><div class="stat-lbl">合計金額</div></div>
+  `;
+
+  const alerts = document.getElementById('previewAlerts');
+  alerts.innerHTML = '';
+  if (none > 0) alerts.innerHTML += `<div class="alert alert-warn">⚠ ${none}件のサロンがカルテに未登録です。売上マスターにはサロン名のみで記録されます。</div>`;
+  if (warn > 0) alerts.innerHTML += `<div class="alert alert-info">ℹ ${warn}件のサロンは登録済みですが髪ドラIDが未割当です。カルテで発行してください。</div>`;
+
+  const tbody = document.getElementById('previewBody');
+  const statusLabel = { ok: '<span class="badge badge-ok">✓ ID紐付</span>', warn: '<span class="badge badge-warn">ID未割当</span>', none: '<span class="badge badge-err">未登録</span>' };
+  tbody.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td>${esc(r.period)}</td>
+      <td>${esc(r.salonName)}</td>
+      <td style="font-family:monospace;font-weight:700;color:var(--primary)">${esc(r.kamidoraId) || '—'}</td>
+      <td>${esc(r.productName)}</td>
+      <td style="font-family:monospace;font-size:11px">${esc(r.jan) || '—'}</td>
+      <td style="text-align:right">${r.qty.toLocaleString()}</td>
+      <td style="text-align:right">¥${Math.round(r.amount).toLocaleString()}</td>
+      <td>${esc(r.agentContact)}</td>
+      <td>${esc(r.agentBranch)}</td>
+      <td>${statusLabel[r._matchStatus] || ''}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('previewCount').textContent = rows.length + '件';
+  document.getElementById('secPreview').style.display = 'block';
+}
+
+// ─── GAS アップロード ────────────────────────────────────────────────────────
+async function uploadToSheet() {
+  if (normalizedData.length === 0) return;
+  const btn = document.getElementById('uploadBtn');
+  const status = document.getElementById('uploadStatus');
+  const progBar = document.getElementById('progressBar');
+  const progFill = document.getElementById('progressFill');
+
+  btn.disabled = true;
+  progBar.style.display = 'block';
+  progFill.style.width = '0%';
+  status.textContent = '送信中...';
+
+  // バッチ分割（GASの制限対策）
+  const BATCH = 200;
+  const total = normalizedData.length;
+  let sent = 0;
+
+  const records = normalizedData.map(r => ({
+    period: r.period,
+    agentName: r.agentName,
+    agentBranch: r.agentBranch,
+    agentContact: r.agentContact,
+    salonName: r.salonName,
+    kamidoraId: r.kamidoraId,
+    productName: r.productName,
+    productCode: r.productCode,
+    jan: r.jan,
+    qty: r.qty,
+    amount: r.amount,
+    registeredAt: r.registeredAt,
+  }));
+
+  try {
+    for (let i = 0; i < records.length; i += BATCH) {
+      const batch = records.slice(i, i + BATCH);
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ type: 'sales', records: batch }),
+      });
+      sent += batch.length;
+      progFill.style.width = Math.round(sent / total * 100) + '%';
+      status.textContent = `${sent} / ${total} 件送信中...`;
+    }
+    progFill.style.width = '100%';
+    status.textContent = `✅ ${total}件を売上マスターに書き込みました`;
+    status.style.color = 'var(--success)';
+    btn.textContent = '✅ 完了';
+    setTimeout(() => loadHistory(), 1500);
+  } catch(e) {
+    status.textContent = '❌ 送信エラー: ' + e.message;
+    status.style.color = 'var(--danger)';
+    btn.disabled = false;
+  }
+}
+
+// ─── CSV ダウンロード ──────────────────────────────────────────────────────
+function downloadPreviewCsv() {
+  const headers = ['期間','代理店名','代理店拠点','代理店担当者','サロン名','髪ドラID','商品名','商品コード','JAN','売上数量','売上金額','登録日'];
+  const rows = normalizedData.map(r => [r.period,r.agentName,r.agentBranch,r.agentContact,r.salonName,r.kamidoraId,r.productName,r.productCode,r.jan,r.qty,r.amount,r.registeredAt]);
+  const csv = [headers, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `売上_${document.getElementById('agentSelect').value}_${document.getElementById('periodInput').value}.csv`;
+  a.click();
+}
+
+// ─── 履歴読込 ─────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const histBody = document.getElementById('histBody');
+  histBody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">読み込み中...</td></tr>';
+  try {
+    const res = await fetch(GAS_URL + '?action=getAll&type=sales');
+    const json = await res.json();
+    if (json.ok && json.data) {
+      historyData = json.data;
+      populateHistFilters();
+      renderHistory();
+    } else {
+      histBody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">データがありません</td></tr>';
+    }
+  } catch(e) {
+    document.getElementById('histAlert').style.display = 'block';
+    document.getElementById('histAlert').className = 'alert alert-warn';
+    document.getElementById('histAlert').textContent = '⚠ 読み込みに失敗しました。GASが正しくデプロイされているか確認してください。';
+    histBody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">読み込み失敗</td></tr>';
+  }
+}
+
+function populateHistFilters() {
+  const agents = [...new Set(historyData.map(r => r['代理店名'] || r.agentName).filter(Boolean))].sort();
+  const sel = document.getElementById('hfAgent');
+  sel.innerHTML = '<option value="">全代理店</option>' + agents.map(a => `<option>${esc(a)}</option>`).join('');
+}
+
+function renderHistory() {
+  const agentF = document.getElementById('hfAgent').value;
+  const monthF = document.getElementById('hfMonth').value;
+  const salonF = document.getElementById('hfSalon').value.toLowerCase();
+
+  let rows = historyData.filter(r => {
+    const ag = r['代理店名'] || r.agentName || '';
+    const mo = r['期間(YYYY-MM)'] || r.period || '';
+    const sa = (r['サロン名'] || r.salonName || '').toLowerCase();
+    if (agentF && ag !== agentF) return false;
+    if (monthF && !mo.startsWith(monthF)) return false;
+    if (salonF && !sa.includes(salonF)) return false;
+    return true;
+  });
+
+  // 集計
+  const total = rows.length;
+  const totalAmt = rows.reduce((s, r) => s + (parseFloat(r['売上金額'] || r.amount) || 0), 0);
+  const agents = new Set(rows.map(r => r['代理店名'] || r.agentName)).size;
+  const salons = new Set(rows.map(r => r['サロン名'] || r.salonName)).size;
+
+  document.getElementById('histStats').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${total.toLocaleString()}</div><div class="stat-lbl">レコード数</div></div>
+    <div class="stat-box"><div class="stat-num">¥${Math.round(totalAmt).toLocaleString()}</div><div class="stat-lbl">合計金額</div></div>
+    <div class="stat-box"><div class="stat-num">${agents}</div><div class="stat-lbl">代理店数</div></div>
+    <div class="stat-box"><div class="stat-num">${salons}</div><div class="stat-lbl">サロン数</div></div>
+  `;
+
+  const tbody = document.getElementById('histBody');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">該当データなし</td></tr>';
+    return;
+  }
+  // 最新500件のみ表示
+  const disp = rows.slice(0, 500);
+  tbody.innerHTML = disp.map(r => {
+    const period = r['期間(YYYY-MM)'] || r.period || '';
+    const agent = r['代理店名'] || r.agentName || '';
+    const branch = r['代理店拠点'] || r.agentBranch || '';
+    const salon = r['サロン名'] || r.salonName || '';
+    const kid = r['髪ドラID'] || r.kamidoraId || '';
+    const product = r['商品名'] || r.productName || '';
+    const qty = r['売上数量'] || r.qty || '';
+    const amount = parseFloat(r['売上金額'] || r.amount) || 0;
+    const reg = r['登録日'] || r.registeredAt || '';
+    return `<tr>
+      <td>${esc(period)}</td><td>${esc(agent)}</td><td>${esc(branch)}</td>
+      <td>${esc(salon)}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--primary);font-weight:700">${esc(kid) || '—'}</td>
+      <td>${esc(product)}</td>
+      <td style="text-align:right">${qty}</td>
+      <td style="text-align:right">¥${Math.round(amount).toLocaleString()}</td>
+      <td style="color:var(--muted)">${esc(reg)}</td>
+    </tr>`;
+  }).join('');
+
+  if (rows.length > 500) {
+    tbody.innerHTML += `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:10px;font-size:11px">...残り ${rows.length - 500} 件（フィルターで絞り込んでください）</td></tr>`;
+  }
+}
+
+// ─── ユーティリティ ───────────────────────────────────────────────────────
+const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+const str = v => v == null ? '' : String(v).trim();
+const norm = s => str(s).replace(/[\s　]+/g, '').toLowerCase();
+const num = v => {
+  if (v == null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/[,，¥￥]/g, ''));
+  return isNaN(n) ? 0 : n;
+};
+function cleanJan(s) {
+  const n = s.replace(/[^0-9]/g, '');
+  return n.length >= 8 ? n : '';
+}
+function parseDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  // Excel シリアル値
+  if (typeof v === 'number') {
+    const d = new Date((v - 25569) * 86400 * 1000);
+    return d.toISOString().slice(0, 10);
+  }
+  const s = String(v).trim();
+  const m = s.match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return null;
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step' + i);
+    el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+// ─── 初期化 ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // 今月を期間デフォルト
+  document.getElementById('periodInput').value = new Date().toISOString().slice(0, 7);
+  loadHistory();
+});
+</script>
+</body>
+</html>

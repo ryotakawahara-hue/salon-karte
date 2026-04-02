@@ -947,6 +947,13 @@ body:not(.mode-report) .report-view { display: none !important; }
     </div>
     <div class="modal-body">
       <div class="fsec">基本情報</div>
+      <div id="kamidoraIdDisplay" class="salon-only" style="display:none;margin-bottom:10px">
+        <label class="flbl">髪ドラID</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="kamidoraIdValue" style="font-size:16px;font-weight:700;color:var(--primary);letter-spacing:1px;font-family:monospace"></span>
+          <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('kamidoraIdValue').textContent)" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:#f5f5f5;cursor:pointer">コピー</button>
+        </div>
+      </div>
       <div class="frow">
         <div class="fg">
           <label class="flbl"><span class="agent-only">担当者名</span><span class="salon-only">オーナー名</span> *</label>
@@ -1160,12 +1167,13 @@ body:not(.mode-report) .report-view { display: none !important; }
 
 <script>
 // ── Google Sheets 同期設定 ──────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
 
 // サロン行 → オブジェクト変換
 function parseSalonRow(row) {
   return {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    kamidoraId:   String(row['髪ドラID']        || ''),
     company:      String(row['サロン名']        || ''),
     legalName:    String(row['法人名']          || ''),
     name:         String(row['代表者/担当者']   || ''),
@@ -1207,11 +1215,20 @@ function parseAgentRow(row) {
 
 // マージ共通処理（key=company で重複排除）
 function mergeByCompanyName(existing, loaded) {
-  const names = new Set(existing.map(p => p.company));
+  const nameMap = new Map(existing.map(p => [p.company, p]));
   const merged = [...existing];
   let added = 0;
   for (const p of loaded) {
-    if (p.company && !names.has(p.company)) { merged.push(p); names.add(p.company); added++; }
+    if (!p.company) continue;
+    if (!nameMap.has(p.company)) {
+      merged.push(p);
+      nameMap.set(p.company, p);
+      added++;
+    } else {
+      // シートに髪ドラIDがあれば既存に補完（ローカルにあれば優先）
+      const ex = nameMap.get(p.company);
+      if (p.kamidoraId && !ex.kamidoraId) ex.kamidoraId = p.kamidoraId;
+    }
   }
   return { merged, added };
 }
@@ -1288,6 +1305,7 @@ async function loadFromSheet() {
 function syncToSheet(type, data) {
   const record = type === 'salon' ? {
     createdAt:    new Date().toISOString().slice(0, 10),
+    kamidoraId:   data.kamidoraId   || '',
     name:         data.company,
     legalName:    data.legalName    || '',
     owner:        data.name         || '',
@@ -1347,6 +1365,18 @@ const save = () => {
 const getPerson = id => getPeople().find(p => p.id === id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const toDay = () => new Date().toISOString().slice(0, 10);
+
+function genKamidoraId() {
+  const salons = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+  let maxNum = 0;
+  salons.forEach(s => {
+    if (s.kamidoraId && s.kamidoraId.startsWith('KDR-')) {
+      const n = parseInt(s.kamidoraId.slice(4));
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  });
+  return 'KDR-' + String(maxNum + 1).padStart(4, '0');
+}
 const toMonth = () => new Date().toISOString().slice(0, 7);
 const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
 const isMobile = () => window.innerWidth <= 767;
@@ -1457,7 +1487,7 @@ function renderMobileList() {
       <div class="mb-card-avatar" style="${overdue?'background:#DC3545':hasPending?'background:#e65c00':''}">${avatarTxt}</div>
       <div class="mb-card-body">
         <div class="mb-card-name">${esc(mainLabel)}</div>
-        <div class="mb-card-sub">${esc(subLabel)}</div>
+        <div class="mb-card-sub">${esc(subLabel)}${(!isAgent && p.kamidoraId) ? ` <span style="color:var(--primary);font-family:monospace;font-size:11px;font-weight:700">${esc(p.kamidoraId)}</span>` : ''}</div>
         ${badges ? `<div class="mb-card-badges">${badges}</div>` : ''}
         ${lastActHtml}
       </div>
@@ -1600,6 +1630,7 @@ function renderMain() {
         <div class="profile-company">${esc(profileSub)}</div>
         <div class="profile-badges">
           <span class="badge" style="background:${statusColor}22;color:${statusColor}">${statusLabel}</span>
+          ${(!isAgent && p.kamidoraId) ? `<span class="badge" style="background:#E3F0FF;color:var(--primary);font-family:monospace;font-weight:700;letter-spacing:0.5px">${esc(p.kamidoraId)}</span>` : ''}
           ${(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
         </div>
         ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
@@ -1632,6 +1663,7 @@ function renderBasic(p) {
       <div class="card-hdr"><div class="card-title">基本情報</div></div>
       <div class="card-body">
         <div class="info-grid">
+          ${p.kamidoraId ? `<div class="info-item" style="grid-column:span 2"><label>髪ドラID</label><span style="font-size:15px;font-weight:700;color:var(--primary);font-family:monospace;letter-spacing:1px">${esc(p.kamidoraId)} <button onclick="navigator.clipboard.writeText('${esc(p.kamidoraId)}')" style="font-size:11px;padding:1px 7px;border:1px solid var(--border);border-radius:5px;background:#f5f5f5;cursor:pointer;font-family:sans-serif;font-weight:normal">コピー</button></span></div>` : ''}
           <div class="info-item"><label>サロン名</label><span>${esc(p.company) || '—'}</span></div>
           <div class="info-item"><label>サロン法人名</label><span>${esc(p.legalName) || '—'}</span></div>
           <div class="info-item"><label>代表者/キー担当者</label><span>${esc(p.name) || '—'}</span></div>
@@ -1903,6 +1935,7 @@ function openAddModal() {
   resetCheckGroup('pActiveMenus');
   setBoolOpt('pBihatuOkite', false);
   setBoolOpt('pHandlingList', false);
+  document.getElementById('kamidoraIdDisplay').style.display = 'none';
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
@@ -1948,6 +1981,14 @@ function openEditModal(id) {
   setCheckGroup('pActiveMenus', p.activeMenus || []);
   setBoolOpt('pBihatuOkite', p.bihatuOkite || false);
   setBoolOpt('pHandlingList', p.inHandlingList || false);
+  // 髪ドラID表示（サロンのみ）
+  const kidDisp = document.getElementById('kamidoraIdDisplay');
+  if (currentMode === 'salon') {
+    document.getElementById('kamidoraIdValue').textContent = p.kamidoraId || '（未割当）';
+    kidDisp.style.display = 'block';
+  } else {
+    kidDisp.style.display = 'none';
+  }
   renderTags();
   const modal2 = document.getElementById('personModal');
   modal2.classList.add('open');
@@ -2004,10 +2045,11 @@ function savePerson() {
     if (idx >= 0) pArr[idx] = { ...pArr[idx], ...data };
     currentId = editingId;
   } else {
-    const np = { id: uid(), activities: [], sales: [], ...data };
+    const kamidoraId = (currentMode === 'salon') ? genKamidoraId() : undefined;
+    const np = { id: uid(), activities: [], sales: [], ...(kamidoraId ? { kamidoraId } : {}), ...data };
     pArr.push(np);
     currentId = np.id;
-    syncToSheet(currentMode, data); // 新規追加時のみ同期
+    syncToSheet(currentMode, { ...data, kamidoraId }); // 新規追加時のみ同期
   }
 
   save(); closePersonModal(); renderSidebar(); renderMobileList(); renderMain();
@@ -2145,6 +2187,45 @@ function openActModal() {
 
 function closeActModal() { document.getElementById('actModal').classList.remove('open'); }
 
+// ── 活動ログ GAS同期ヘルパー ────────────────────────────────────────
+function syncActivityToSheet(p, activity) {
+  const record = {
+    id:         activity.id,
+    date:       activity.date,
+    personType: currentMode,           // 'salon' | 'agent'
+    company:    p.company || '',
+    kamidoraId: p.kamidoraId || '',
+    repName:    activity.repName   || '',
+    type:       activity.type      || '',
+    content:    activity.content   || '',
+    next:       activity.next      || '',
+    fuDate:     activity.fuDate    || '',
+    fuStatus:   activity.fuStatus  || '',
+  };
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'activity', record }),
+  }).catch(err => console.warn('活動ログ同期失敗:', err));
+}
+
+function deleteActivityFromSheet(activityId) {
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'deleteActivity', id: activityId }),
+  }).catch(err => console.warn('活動ログ削除同期失敗:', err));
+}
+
+function updateActivityStatusOnSheet(activityId, fuStatus) {
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'updateActivityStatus', id: activityId, fuStatus }),
+  }).catch(err => console.warn('活動ログ状態更新失敗:', err));
+}
+// ────────────────────────────────────────────────────────────────────
+
 function saveAct() {
   const date = document.getElementById('aDate').value;
   const content = document.getElementById('aContent').value.trim();
@@ -2155,7 +2236,7 @@ function saveAct() {
   p.activities = p.activities || [];
   const repName = document.getElementById('aRepName').value.trim();
   if (repName) localStorage.setItem('karte_last_rep', repName);
-  p.activities.push({
+  const activity = {
     id: uid(), date,
     type: document.getElementById('aType').value,
     content,
@@ -2165,7 +2246,9 @@ function saveAct() {
     repName,
     lecturer: document.getElementById('aLecturer').value.trim(),
     minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
-  });
+  };
+  p.activities.push(activity);
+  syncActivityToSheet(p, activity);
 
   save(); closeActModal(); renderMain(); renderSidebar(); renderMobileList();
   // On mobile: refresh detail content and keep act tab active
@@ -2181,7 +2264,9 @@ function markDone(actId) {
   if (!p) return;
   const a = (p.activities || []).find(a => a.id === actId);
   if (a) {
-    a.fuStatus = 'done'; save(); renderMain(); renderSidebar(); renderMobileList();
+    a.fuStatus = 'done';
+    updateActivityStatusOnSheet(actId, 'done');
+    save(); renderMain(); renderSidebar(); renderMobileList();
     if (isMobile() && currentId) selectPerson(currentId);
   }
 }
@@ -2191,6 +2276,7 @@ function deleteAct(actId) {
   const p = getPerson(currentId);
   if (!p) return;
   p.activities = (p.activities || []).filter(a => a.id !== actId);
+  deleteActivityFromSheet(actId);
   save(); renderMain(); renderSidebar(); renderMobileList();
   if (isMobile() && currentId) selectPerson(currentId);
 }
