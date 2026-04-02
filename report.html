@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>担当サロン レポート | 髪にドラマを。</title>
+<style>
+:root {
+  --primary: #1565C0;
+  --primary-light: #E3F0FF;
+  --success: #2E7D32;
+  --success-light: #E8F5E9;
+  --warning: #E65100;
+  --warning-light: #FFF3E0;
+  --danger: #C62828;
+  --danger-light: #FFEBEE;
+  --bg: #F0F2F5;
+  --card: #fff;
+  --border: #E0E4E8;
+  --text: #1A2332;
+  --muted: #6B7280;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ── Header ── */
+.hdr { background: var(--primary); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.hdr-left { display: flex; align-items: center; gap: 12px; }
+.hdr-logo { font-size: 13px; opacity: .7; letter-spacing: .5px; }
+.hdr-title { font-size: 20px; font-weight: 800; }
+.hdr-rep { font-size: 14px; opacity: .85; }
+.hdr-actions { display: flex; gap: 8px; }
+.btn { padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-white { background: #fff; color: var(--primary); }
+.btn-outline-w { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.5); }
+.btn-outline-w:hover { background: rgba(255,255,255,.1); }
+
+/* ── Layout ── */
+.container { max-width: 960px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* ── Meta bar ── */
+.meta-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.meta-bar-left { font-size: 13px; color: var(--muted); }
+.meta-badge { display: inline-block; background: var(--primary-light); color: var(--primary); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+
+/* ── Summary stats ── */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
+.sbox { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+.sbox-num { font-size: 26px; font-weight: 800; color: var(--primary); line-height: 1.1; }
+.sbox-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.sbox.warn .sbox-num { color: var(--warning); }
+.sbox.danger .sbox-num { color: var(--danger); }
+.sbox.good .sbox-num { color: var(--success); }
+
+/* ── Period selector ── */
+.period-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.period-bar label { font-size: 12px; font-weight: 700; color: var(--muted); }
+.period-sel { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: #fff; }
+
+/* ── Salon card ── */
+.salon-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 14px; overflow: hidden; transition: box-shadow .15s;
+}
+.salon-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+.sc-head {
+  padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; gap: 10px; flex-wrap: wrap;
+}
+.sc-head-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.sc-kdr { font-family: monospace; font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+.sc-name { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.sc-badges { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.badge-overdue { background: var(--danger-light); color: var(--danger); }
+.badge-pending { background: var(--warning-light); color: var(--warning); }
+.badge-ok { background: var(--success-light); color: var(--success); }
+.badge-none { background: #F3F4F6; color: var(--muted); }
+.sc-toggle { color: var(--muted); font-size: 18px; transition: transform .2s; }
+.sc-toggle.open { transform: rotate(180deg); }
+
+.sc-body { border-top: 1px solid var(--border); display: none; }
+.sc-body.open { display: block; }
+.sc-body-inner { padding: 12px 16px; }
+
+/* ── Sections inside card ── */
+.sc-section { margin-bottom: 14px; }
+.sc-section:last-child { margin-bottom: 0; }
+.sc-sec-title { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 8px; }
+
+/* ── Info grid ── */
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.info-item { background: var(--bg); border-radius: 6px; padding: 8px 10px; }
+.info-item .lbl { font-size: 10px; color: var(--muted); font-weight: 700; }
+.info-item .val { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+/* ── Activity log ── */
+.act-list { display: flex; flex-direction: column; gap: 6px; }
+.act-item { background: var(--bg); border-radius: 7px; padding: 8px 12px; display: flex; gap: 10px; align-items: flex-start; }
+.act-date { font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap; padding-top: 1px; }
+.act-badge { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; background: var(--primary-light); color: var(--primary); white-space: nowrap; }
+.act-content { font-size: 13px; line-height: 1.5; flex: 1; }
+.act-fu { margin-top: 4px; font-size: 11px; color: var(--warning); background: var(--warning-light); padding: 2px 7px; border-radius: 6px; display: inline-block; }
+.act-fu.done { color: var(--success); background: var(--success-light); }
+.act-empty { text-align: center; padding: 16px; color: var(--muted); font-size: 13px; }
+
+/* ── Sales table ── */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: var(--primary); color: #fff; padding: 6px 10px; text-align: left; white-space: nowrap; }
+td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── Loading / error ── */
+.loading { text-align: center; padding: 60px 20px; }
+.loading-ico { font-size: 40px; margin-bottom: 12px; }
+.error-box { background: var(--danger-light); border: 1px solid #FFCDD2; border-radius: 8px; padding: 16px; margin: 20px 0; color: var(--danger); }
+
+/* ── Footer ── */
+.footer { text-align: center; padding: 24px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 32px; }
+
+/* ── Print ── */
+@media print {
+  body { background: #fff; }
+  .hdr-actions, .period-bar { display: none !important; }
+  .sc-body { display: block !important; }
+  .sc-toggle { display: none; }
+  .salon-card { break-inside: avoid; margin-bottom: 20px; box-shadow: none; border: 1px solid #ccc; }
+  .hdr { background: #1565C0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  th { background: #1565C0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+@media (max-width: 600px) {
+  .summary { grid-template-columns: repeat(2, 1fr); }
+  .sc-head { gap: 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div>
+      <div class="hdr-logo">髪にドラマを。| 担当サロン レポート</div>
+      <div class="hdr-title" id="hdrTitle">読み込み中…</div>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <button class="btn btn-outline-w" onclick="window.print()">🖨 印刷 / PDF保存</button>
+  </div>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">
+    <div class="loading-ico">⏳</div>
+    <div>データを読み込んでいます…</div>
+  </div>
+</div>
+
+<script>
+// ─── 設定 ──────────────────────────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
+
+const esc = s => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toDay = () => new Date().toISOString().slice(0,10);
+const toMonth = () => new Date().toISOString().slice(0,7);
+
+// ─── URLパラメータ解析 ──────────────────────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const REP_NAME = decodeURIComponent(params.get('rep') || '');
+const PERIOD   = params.get('period') || toMonth();
+
+if (!REP_NAME) {
+  document.getElementById('app').innerHTML = `
+    <div class="error-box">
+      <b>担当者名が指定されていません。</b><br>
+      URLに <code>?rep=担当者名</code> を付けてアクセスしてください。<br>
+      例: <code>...report.html?rep=山田太郎</code>
+    </div>`;
+  document.getElementById('hdrTitle').textContent = '担当者未指定';
+}
+
+// ─── メインロード ──────────────────────────────────────────────────────────
+let salons = [], activityAll = [], salesAll = [], selectedPeriod = PERIOD;
+
+async function loadAll() {
+  try {
+    const [sRes, aRes, slRes] = await Promise.all([
+      fetch(GAS_URL + '?action=getAll&type=salon'),
+      fetch(GAS_URL + '?action=getAll&type=activity'),
+      fetch(GAS_URL + '?action=getAll&type=sales'),
+    ]);
+    const [sJson, aJson, slJson] = await Promise.all([sRes.json(), aRes.json(), slRes.json()]);
+    salons      = sJson.ok  ? sJson.data  : [];
+    activityAll = aJson.ok  ? aJson.data  : [];
+    salesAll    = slJson.ok ? slJson.data : [];
+    renderApp();
+  } catch(e) {
+    document.getElementById('app').innerHTML = `<div class="error-box">データの取得に失敗しました。<br><small>${e.message}</small></div>`;
+  }
+}
+
+function renderApp() {
+  if (!REP_NAME) return;
+
+  // 担当者でフィルタ
+  const mySalons = salons.filter(s => (String(s['担当営業']||'') + String(s['代理店担当者']||'')).includes(REP_NAME) ||
+    String(s['担当営業']||'').trim() === REP_NAME);
+
+  document.getElementById('hdrTitle').textContent = `${REP_NAME} 様 担当サロン`;
+
+  // 活動・売上を髪ドラIDでマップ化
+  const actByKdr = {};
+  activityAll.forEach(a => {
+    const kid = String(a['髪ドラID']||'').trim();
+    if (!actByKdr[kid]) actByKdr[kid] = [];
+    actByKdr[kid].push(a);
+  });
+  const salesByKdr = {};
+  salesAll.forEach(r => {
+    const kid = String(r['髪ドラID']||'').trim();
+    if (!salesByKdr[kid]) salesByKdr[kid] = [];
+    salesByKdr[kid].push(r);
+  });
+
+  // サマリー集計
+  let cntOverdue = 0, cntPending = 0, cntNoAct = 0, totalSalesAmt = 0;
+  mySalons.forEach(s => {
+    const kid = String(s['髪ドラID']||'').trim();
+    const acts = actByKdr[kid] || [];
+    const today = toDay();
+    const overdue = acts.some(a => a['フォロー状態'] === 'pending' && a['フォロー予定日'] && String(a['フォロー予定日']).slice(0,10) < today);
+    const pending = acts.some(a => a['フォロー状態'] === 'pending');
+    const noAct = !acts.length;
+    if (overdue) cntOverdue++;
+    else if (pending) cntPending++;
+    if (noAct) cntNoAct++;
+    const sl = salesByKdr[kid] || [];
+    totalSalesAmt += sl.reduce((sum, r) => sum + (Number(r['売上金額'])||0), 0);
+  });
+
+  // 対象月の売上
+  const salesThisPeriod = salesAll.filter(r => {
+    const kid = String(r['髪ドラID']||'').trim();
+    const period = String(r['期間']||'').trim();
+    return period === selectedPeriod && mySalons.some(s => String(s['髪ドラID']||'').trim() === kid);
+  });
+  const periodAmt = salesThisPeriod.reduce((s, r) => s + (Number(r['売上金額'])||0), 0);
+  const periodQty = salesThisPeriod.reduce((s, r) => s + (Number(r['売上数量'])||0), 0);
+
+  // 対象月オプション
+  const periods = [...new Set(salesAll.map(r => String(r['期間']||'').trim()).filter(Boolean))].sort().reverse();
+  const periodOptions = [selectedPeriod, ...periods.filter(p => p !== selectedPeriod)]
+    .slice(0, 24).map(p => `<option value="${esc(p)}" ${p===selectedPeriod?'selected':''}>${p}</option>`).join('');
+
+  const genDate = new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  document.getElementById('app').innerHTML = `
+    <div class="meta-bar">
+      <div class="meta-bar-left">生成日時: ${genDate}</div>
+      <span class="meta-badge">担当サロン ${mySalons.length}件</span>
+    </div>
+
+    <div class="summary">
+      <div class="sbox"><div class="sbox-num">${mySalons.length}</div><div class="sbox-lbl">担当サロン総数</div></div>
+      <div class="sbox ${cntOverdue>0?'danger':''}"><div class="sbox-num">${cntOverdue}</div><div class="sbox-lbl">フォロー期限超過</div></div>
+      <div class="sbox ${cntPending>0?'warn':''}"><div class="sbox-num">${cntPending}</div><div class="sbox-lbl">フォロー待ち</div></div>
+      <div class="sbox ${cntNoAct>0?'warn':''}"><div class="sbox-num">${cntNoAct}</div><div class="sbox-lbl">活動記録なし</div></div>
+      <div class="sbox good"><div class="sbox-num">¥${totalSalesAmt.toLocaleString()}</div><div class="sbox-lbl">累計売上金額</div></div>
+    </div>
+
+    <div class="period-bar">
+      <label>表示月</label>
+      <select class="period-sel" id="periodSel" onchange="changePeriod(this.value)">
+        ${periodOptions}
+      </select>
+      <span style="font-size:13px;color:var(--muted)">→
+        <b style="color:var(--primary)">¥${periodAmt.toLocaleString()}</b>
+        / ${periodQty.toLocaleString()}個
+      </span>
+    </div>
+
+    <div id="salonList">${renderSalonList(mySalons, actByKdr, salesByKdr)}</div>
+  `;
+}
+
+function renderSalonList(mySalons, actByKdr, salesByKdr) {
+  if (!mySalons.length) {
+    return `<div class="error-box">「${esc(REP_NAME)}」が担当するサロンが見つかりませんでした。<br>カルテの「担当営業」欄に正確な名前が登録されているか確認してください。</div>`;
+  }
+
+  const today = toDay();
+
+  return mySalons.sort((a,b) => {
+    // フォロー超過 > フォロー待ち > 活動なし > 通常
+    const score = s => {
+      const kid = String(s['髪ドラID']||'').trim();
+      const acts = actByKdr[kid] || [];
+      if (acts.some(a => a['フォロー状態']==='pending' && a['フォロー予定日'] && String(a['フォロー予定日']).slice(0,10)<today)) return 0;
+      if (acts.some(a => a['フォロー状態']==='pending')) return 1;
+      if (!acts.length) return 2;
+      return 3;
+    };
+    return score(a) - score(b);
+  }).map((s, idx) => {
+    const kid = String(s['髪ドラID']||'').trim();
+    const acts = actByKdr[kid] || [];
+    const sl   = salesByKdr[kid] || [];
+    const salonName   = String(s['サロン名']||'');
+    const agentName   = String(s['担当代理店']||'');
+    const agentBranch = String(s['代理店支店']||'');
+    const memo        = String(s['メモ']||'');
+    const salonType   = String(s['サロンタイプ']||'');
+    const staffCount  = s['スタッフ数'] || '';
+
+    const actsDesc = [...acts].sort((a,b) => String(b['日付']).localeCompare(String(a['日付']))).slice(0, 5);
+
+    // フォロー状態
+    const overdue = acts.some(a => a['フォロー状態']==='pending' && a['フォロー予定日'] && String(a['フォロー予定日']).slice(0,10)<today);
+    const pending = acts.some(a => a['フォロー状態']==='pending');
+    let badgeHtml = '';
+    if (overdue)      badgeHtml = `<span class="badge badge-overdue">⚠ フォロー期限超過</span>`;
+    else if (pending) badgeHtml = `<span class="badge badge-pending">📌 フォロー待ち</span>`;
+    else if (!acts.length) badgeHtml = `<span class="badge badge-none">活動記録なし</span>`;
+    else              badgeHtml = `<span class="badge badge-ok">✓ 対応済</span>`;
+
+    // 最終活動日
+    const lastAct = actsDesc[0] ? String(actsDesc[0]['日付']).slice(0,10) : null;
+
+    // 当月売上
+    const periodSl = sl.filter(r => String(r['期間']||'').trim() === selectedPeriod);
+    const periodAmt = periodSl.reduce((s, r) => s + (Number(r['売上金額'])||0), 0);
+    const periodQty = periodSl.reduce((s, r) => s + (Number(r['売上数量'])||0), 0);
+
+    // 売上テーブル（直近3ヶ月）
+    const byPeriod = {};
+    sl.forEach(r => {
+      const p = String(r['期間']||'').trim();
+      if (!byPeriod[p]) byPeriod[p] = { qty: 0, amt: 0, products: [] };
+      byPeriod[p].qty += Number(r['売上数量'])||0;
+      byPeriod[p].amt += Number(r['売上金額'])||0;
+      const pn = String(r['商品名']||'');
+      if (pn && !byPeriod[p].products.includes(pn)) byPeriod[p].products.push(pn);
+    });
+    const recentPeriods = Object.keys(byPeriod).sort().reverse().slice(0,6);
+    const salesRows = recentPeriods.length ? recentPeriods.map(m => {
+      const d = byPeriod[m];
+      return `<tr${m===selectedPeriod?' style="background:var(--primary-light)"':''}>
+        <td>${m}</td>
+        <td class="num">${d.qty.toLocaleString()}</td>
+        <td class="num">¥${d.amt.toLocaleString()}</td>
+        <td style="color:var(--muted);font-size:11px">${d.products.slice(0,3).join(' / ')}</td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:14px">売上データなし</td></tr>`;
+
+    // 活動ログリスト
+    const actRows = actsDesc.length ? actsDesc.map(a => {
+      const fuDate = String(a['フォロー予定日']||'').slice(0,10);
+      const fuStat = a['フォロー状態'];
+      const overdueFu = fuStat==='pending' && fuDate && fuDate < today;
+      let fuHtml = '';
+      if (fuDate && fuStat==='pending') fuHtml = `<div class="act-fu${overdueFu?' ':''}${overdueFu?'':' '}">📌 フォロー: ${fuDate}${overdueFu?' ⚠期限超過':''}</div>`;
+      else if (fuStat==='done') fuHtml = `<div class="act-fu done">✓ フォロー完了</div>`;
+      return `<div class="act-item">
+        <div>
+          <div class="act-date">${String(a['日付']||'').slice(0,10)}</div>
+          <div class="act-badge">${esc(String(a['活動種別']||'訪問'))}</div>
+        </div>
+        <div class="act-content">
+          ${esc(String(a['内容']||''))}
+          ${fuHtml}
+          ${a['次のアクション'] ? `<div style="font-size:12px;color:var(--muted);margin-top:3px">▶ ${esc(String(a['次のアクション']))}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('') : `<div class="act-empty">活動ログなし</div>`;
+
+    return `<div class="salon-card" id="sc-${idx}">
+      <div class="sc-head" onclick="toggleCard(${idx})">
+        <div class="sc-head-left">
+          ${kid ? `<span class="sc-kdr">${esc(kid)}</span>` : ''}
+          <div>
+            <div class="sc-name">${esc(salonName)}</div>
+            <div class="sc-sub">
+              ${agentName ? `${esc(agentName)}${agentBranch?' / '+esc(agentBranch):''} &nbsp;` : ''}
+              ${lastAct ? `最終活動: <b>${lastAct}</b>` : '活動なし'}
+              ${periodAmt > 0 ? ` &nbsp;|&nbsp; ${selectedPeriod} ¥<b>${periodAmt.toLocaleString()}</b>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="sc-badges">
+          ${badgeHtml}
+          <span class="sc-toggle" id="toggle-${idx}">▾</span>
+        </div>
+      </div>
+      <div class="sc-body" id="body-${idx}">
+        <div class="sc-body-inner">
+
+          <!-- 基本情報 -->
+          <div class="sc-section">
+            <div class="sc-sec-title">基本情報</div>
+            <div class="info-grid">
+              ${salonType ? `<div class="info-item"><div class="lbl">サロンタイプ</div><div class="val">${esc(salonType)}</div></div>` : ''}
+              ${staffCount ? `<div class="info-item"><div class="lbl">スタッフ数</div><div class="val">${staffCount}名</div></div>` : ''}
+              ${agentName ? `<div class="info-item"><div class="lbl">担当代理店</div><div class="val">${esc(agentName)}${agentBranch?' ('+esc(agentBranch)+')':''}</div></div>` : ''}
+              <div class="info-item"><div class="lbl">活動件数（累計）</div><div class="val">${acts.length}件</div></div>
+            </div>
+            ${memo ? `<div style="margin-top:8px;background:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--muted)">📝 ${esc(memo)}</div>` : ''}
+          </div>
+
+          <!-- 売上 -->
+          <div class="sc-section">
+            <div class="sc-sec-title">売上実績（直近6ヶ月）</div>
+            ${recentPeriods.length ? `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div class="info-item"><div class="lbl">${selectedPeriod} 数量</div><div class="val" style="color:var(--primary)">${periodQty.toLocaleString()} 個</div></div>
+              <div class="info-item"><div class="lbl">${selectedPeriod} 売上</div><div class="val" style="color:var(--success)">¥${periodAmt.toLocaleString()}</div></div>
+            </div>` : ''}
+            <div class="tbl-wrap">
+              <table><thead><tr><th>期間</th><th class="num">数量</th><th class="num">売上金額</th><th>商品</th></tr></thead>
+              <tbody>${salesRows}</tbody></table>
+            </div>
+          </div>
+
+          <!-- 活動ログ -->
+          <div class="sc-section">
+            <div class="sc-sec-title">活動ログ（直近5件）</div>
+            <div class="act-list">${actRows}</div>
+          </div>
+
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(idx) {
+  const body   = document.getElementById('body-'  +idx);
+  const toggle = document.getElementById('toggle-'+idx);
+  const open = body.classList.toggle('open');
+  toggle.classList.toggle('open', open);
+}
+
+function changePeriod(val) {
+  selectedPeriod = val;
+  // 再描画
+  const actByKdr = {};
+  activityAll.forEach(a => {
+    const kid = String(a['髪ドラID']||'').trim();
+    if (!actByKdr[kid]) actByKdr[kid] = [];
+    actByKdr[kid].push(a);
+  });
+  const salesByKdr = {};
+  salesAll.forEach(r => {
+    const kid = String(r['髪ドラID']||'').trim();
+    if (!salesByKdr[kid]) salesByKdr[kid] = [];
+    salesByKdr[kid].push(r);
+  });
+  const mySalons = salons.filter(s =>
+    String(s['担当営業']||'').trim() === REP_NAME ||
+    (String(s['担当営業']||'') + String(s['代理店担当者']||'')).includes(REP_NAME)
+  );
+  document.getElementById('salonList').innerHTML = renderSalonList(mySalons, actByKdr, salesByKdr);
+
+  // サマリーの当月売上を更新
+  const periodSl = salesAll.filter(r => {
+    const kid = String(r['髪ドラID']||'').trim();
+    const period = String(r['期間']||'').trim();
+    return period === selectedPeriod && mySalons.some(s => String(s['髪ドラID']||'').trim() === kid);
+  });
+  const periodAmt = periodSl.reduce((s, r) => s + (Number(r['売上金額'])||0), 0);
+  const periodQty = periodSl.reduce((s, r) => s + (Number(r['売上数量'])||0), 0);
+  const span = document.querySelector('.period-bar span');
+  if (span) span.innerHTML = `→ <b style="color:var(--primary)">¥${periodAmt.toLocaleString()}</b> / ${periodQty.toLocaleString()}個`;
+}
+
+// ─── 初期ロード ────────────────────────────────────────────────────────────
+if (REP_NAME) loadAll();
+</script>
+
+<div class="footer">
+  <div>髪にドラマを。| 担当サロン レポート</div>
+  <div style="margin-top:4px">このページは担当者専用の共有レポートです。URLを外部に公開しないようご注意ください。</div>
+</div>
+
+</body>
+</html>

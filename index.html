@@ -871,6 +871,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
       <option value="">担当営業: すべて</option>
     </select>
+    <button class="btn btn-outline btn-sm" id="shareRepBtn" onclick="copyRepReportUrl()" style="display:none;white-space:nowrap;color:var(--primary);border-color:var(--primary)">🔗 担当者レポートURL</button>
     <span class="sv-count" id="svCount"></span>
     <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
     <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
@@ -1302,6 +1303,41 @@ async function loadFromSheet() {
   }
 }
 
+// ── 担当営業レポートURL 共有 ──────────────────────────────────────────────
+function _buildRepUrl(repName) {
+  const base = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
+  return `${base}?rep=${encodeURIComponent(repName)}`;
+}
+
+function copyRepReportUrl() {
+  const repName = document.getElementById('svSalesRep').value;
+  if (!repName) { alert('担当営業を選択してください'); return; }
+  const url = _buildRepUrl(repName);
+  const btn = document.getElementById('shareRepBtn');
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ コピー完了';
+    btn.style.cssText += ';background:#E8F5E9;border-color:#4CAF50;color:#2E7D32';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = ''; btn.style.borderColor = 'var(--primary)'; btn.style.color = 'var(--primary)';
+    }, 2500);
+  }).catch(() => { prompt('このURLをコピーして担当者に共有してください:', url); });
+}
+
+function copyRepUrlFromDetail(repName) {
+  const url = _buildRepUrl(repName);
+  navigator.clipboard.writeText(url).then(() => {
+    const btns = [...document.querySelectorAll('[onclick*="copyRepUrlFromDetail"]')];
+    const btn = btns.find(b => b.getAttribute('onclick').includes(repName));
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✅';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }
+  }).catch(() => { prompt(`${repName} 担当者レポートURL:`, url); });
+}
+
 function syncToSheet(type, data) {
   const record = type === 'salon' ? {
     createdAt:    new Date().toISOString().slice(0, 10),
@@ -1684,7 +1720,12 @@ function renderBasic(p) {
           <div class="info-item"><label>担当代理店</label><span>${esc(p.agentName) || '—'}</span></div>
           <div class="info-item"><label>代理店支店</label><span>${esc(p.agentBranch) || '—'}</span></div>
           <div class="info-item"><label>代理店担当者</label><span>${esc(p.agentContact) || '—'}</span></div>
-          <div class="info-item"><label>担当営業</label><span>${esc(p.salesRep) || '—'}</span></div>
+          <div class="info-item"><label>担当営業</label>
+            <span style="display:flex;align-items:center;gap:6px">
+              ${esc(p.salesRep) || '—'}
+              ${p.salesRep ? `<button type="button" onclick="copyRepUrlFromDetail('${esc(p.salesRep)}')" style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--primary);background:var(--primary-light,#E3F0FF);color:var(--primary);cursor:pointer;font-weight:700" title="担当者レポートURLをコピー">🔗 共有</button>` : ''}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -2420,6 +2461,10 @@ function renderSearchView() {
   const reps = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort();
   repSel.innerHTML = '<option value="">担当営業: すべて</option>' +
     reps.map(r => `<option value="${esc(r)}" ${r === currentRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
+
+  // 担当営業が選択されているときだけ共有ボタンを表示
+  const shareBtn = document.getElementById('shareRepBtn');
+  if (shareBtn) shareBtn.style.display = filterRep ? 'inline-flex' : 'none';
 
   const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
   const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
