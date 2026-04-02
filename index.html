@@ -872,10 +872,31 @@ body:not(.mode-report) .report-view { display: none !important; }
       <option value="">担当営業: すべて</option>
     </select>
     <button class="btn btn-outline btn-sm" id="shareRepBtn" onclick="copyRepReportUrl()" style="display:none;white-space:nowrap;color:var(--primary);border-color:var(--primary)">🔗 担当者レポートURL</button>
+    <button class="btn btn-sm" id="selectModeBtn" onclick="toggleSelectMode()" style="white-space:nowrap;background:var(--primary);color:#fff;margin-left:auto">🗂 レポート作成</button>
     <span class="sv-count" id="svCount"></span>
     <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
     <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
   </div>
+
+  <!-- ── 選択モード フローティングバー ── -->
+  <div id="selectBar" style="display:none;position:sticky;bottom:12px;left:0;right:0;z-index:200;margin:0 0 8px;pointer-events:none">
+    <div style="max-width:840px;margin:0 auto;background:#1565C0;color:#fff;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 4px 20px rgba(0,0,0,.3);pointer-events:all">
+      <div style="font-weight:700;font-size:14px;flex-shrink:0">
+        ✅ <span id="selectedCount">0</span> 件選択中
+      </div>
+      <div style="flex:1;min-width:160px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:12px;opacity:.8;white-space:nowrap">宛先（代理店担当者名）:</span>
+        <input id="reportToName" type="text" placeholder="例: 田中部長" style="flex:1;min-width:100px;padding:5px 9px;border-radius:6px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#fff'" onblur="this.style.borderColor='rgba(255,255,255,.4)'">
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button onclick="generateReportUrl()" style="padding:7px 16px;background:#fff;color:var(--primary);border:none;border-radius:6px;font-weight:800;font-size:13px;cursor:pointer">🔗 URLを生成・コピー</button>
+        <button onclick="selectAll()" style="padding:7px 12px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">全選択</button>
+        <button onclick="clearSelection()" style="padding:7px 12px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">クリア</button>
+        <button onclick="toggleSelectMode()" style="padding:7px 12px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;cursor:pointer">✕ 終了</button>
+      </div>
+    </div>
+  </div>
+
   <div class="sv-grid" id="svGrid">
     <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
       <div style="font-size:36px;margin-bottom:10px">🔍</div>
@@ -1301,6 +1322,80 @@ async function loadFromSheet() {
     btn.textContent = '📥';
     btn.disabled = false;
   }
+}
+
+// ── サロン選択共有モード ─────────────────────────────────────────────────
+let _selectMode = false;
+let _selectedKids = new Set(); // 選択中の髪ドラIDセット
+
+function toggleSelectMode() {
+  _selectMode = !_selectMode;
+  _selectedKids.clear();
+  const bar = document.getElementById('selectBar');
+  const btn = document.getElementById('selectModeBtn');
+  if (_selectMode) {
+    bar.style.display = 'block';
+    btn.style.background = '#E3F0FF';
+    btn.style.color = 'var(--primary)';
+    btn.style.border = '1.5px solid var(--primary)';
+    btn.textContent = '✕ 選択終了';
+  } else {
+    bar.style.display = 'none';
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.textContent = '🗂 レポート作成';
+  }
+  renderSearchView();
+}
+
+function toggleSalonSelect(kid, el) {
+  if (!kid) return;
+  if (_selectedKids.has(kid)) {
+    _selectedKids.delete(kid);
+  } else {
+    _selectedKids.add(kid);
+  }
+  document.getElementById('selectedCount').textContent = _selectedKids.size;
+  renderSearchView();
+}
+
+function selectAll() {
+  // 現在表示中のカードにある髪ドラIDをすべて選択
+  salonPeople.forEach(p => { if (p.kamidoraId) _selectedKids.add(p.kamidoraId); });
+  document.getElementById('selectedCount').textContent = _selectedKids.size;
+  renderSearchView();
+}
+
+function clearSelection() {
+  _selectedKids.clear();
+  document.getElementById('selectedCount').textContent = 0;
+  renderSearchView();
+}
+
+function generateReportUrl() {
+  if (!_selectedKids.size) { alert('サロンを1件以上選択してください'); return; }
+  const toName = (document.getElementById('reportToName').value || '').trim();
+  const kids = [..._selectedKids].join(',');
+  const base = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
+  let url = `${base}?salons=${encodeURIComponent(kids)}`;
+  if (toName) url += `&to=${encodeURIComponent(toName)}`;
+  navigator.clipboard.writeText(url).then(() => {
+    // 成功トースト
+    const bar = document.querySelector('#selectBar > div');
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#2E7D32;color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)';
+    toast.textContent = `✅ URLをコピーしました（${_selectedKids.size}件）`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }).catch(() => {
+    const kids2 = [..._selectedKids].join(',');
+    const base2 = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
+    let url2 = `${base2}?salons=${encodeURIComponent(kids2)}`;
+    const toName2 = (document.getElementById('reportToName').value || '').trim();
+    if (toName2) url2 += `&to=${encodeURIComponent(toName2)}`;
+    prompt('このURLをコピーして代理店担当者に共有してください:', url2);
+  });
 }
 
 // ── 担当営業レポートURL 共有 ──────────────────────────────────────────────
@@ -2497,10 +2592,17 @@ function renderSearchView() {
     const hasPending = acts.some(a => a.fuStatus === 'pending');
     const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
     const sc = p.status || 'active';
+    const kid = p.kamidoraId || '';
+    const isSelected = _selectedKids.has(kid) && kid;
+    const inSelectMode = _selectMode;
 
-    return `<div class="sv-card" onclick="openSalonFromSearch('${p.id}')">
+    return `<div class="sv-card${isSelected ? ' sv-card-selected' : ''}"
+        onclick="${inSelectMode ? (kid ? `toggleSalonSelect('${kid}',this)` : '') : `openSalonFromSearch('${p.id}')`}"
+        style="position:relative;${inSelectMode ? 'cursor:pointer;' : ''}${isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)33;' : ''}">
+      ${inSelectMode ? `<div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${isSelected?'var(--primary)':'#ccc'};background:${isSelected?'var(--primary)':'#fff'};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .15s;flex-shrink:0">${isSelected?'✓':''}</div>` : ''}
       <div class="sv-card-name">${esc(p.company)}</div>
       <div class="sv-card-badges">
+        ${kid ? `<span style="font-family:monospace;font-size:10px;font-weight:700;color:var(--primary);background:var(--primary-light,#E3F0FF);padding:1px 6px;border-radius:4px">${esc(kid)}</span>` : ''}
         ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
         <span class="badge" style="background:${statusColor[sc]}22;color:${statusColor[sc]}">${statusLabel[sc] || sc}</span>
         ${overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : ''}
@@ -2513,11 +2615,11 @@ function renderSearchView() {
         ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
       </div>
       ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0, 40))}${lastAct.content.length > 40 ? '…' : ''}</div>` : ''}
-      <div class="sv-card-actions">
+      ${!inSelectMode ? `<div class="sv-card-actions">
         ${p.phone ? `<a href="tel:${esc(p.phone)}" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📞 電話</a>` : ''}
         ${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">HPB</a>` : ''}
         <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openSalonFromSearch('${p.id}')">カルテを開く →</button>
-      </div>
+      </div>` : `<div style="padding:4px 0 0;font-size:12px;color:${isSelected?'var(--primary)':'var(--muted)'};font-weight:${isSelected?'700':'400'}">${isSelected?'✓ レポートに含める':'タップで選択'}</div>`}
     </div>`;
   }).join('');
 }

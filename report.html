@@ -144,6 +144,7 @@ tr:last-child td { border-bottom: none; }
     <div>
       <div class="hdr-logo">髪にドラマを。| 担当サロン レポート</div>
       <div class="hdr-title" id="hdrTitle">読み込み中…</div>
+      <div class="hdr-rep" id="hdrRep"></div>
     </div>
   </div>
   <div class="hdr-actions">
@@ -168,18 +169,30 @@ const toMonth = () => new Date().toISOString().slice(0,7);
 
 // ─── URLパラメータ解析 ──────────────────────────────────────────────────────
 const params = new URLSearchParams(location.search);
-const REP_NAME = decodeURIComponent(params.get('rep') || '');
-const PERIOD   = params.get('period') || toMonth();
+// モード① ?rep=名前 （担当営業名でフィルタ）
+// モード② ?salons=KDR-0001,KDR-0002&to=宛先名 （手動選択IDリスト）
+const REP_NAME    = decodeURIComponent(params.get('rep')    || '');
+const SALONS_PARAM = decodeURIComponent(params.get('salons') || '');
+const TO_NAME     = decodeURIComponent(params.get('to')     || '');
+const PERIOD      = params.get('period') || toMonth();
 
-if (!REP_NAME) {
+// どちらのパラメータも無ければエラー表示
+if (!REP_NAME && !SALONS_PARAM) {
   document.getElementById('app').innerHTML = `
     <div class="error-box">
-      <b>担当者名が指定されていません。</b><br>
-      URLに <code>?rep=担当者名</code> を付けてアクセスしてください。<br>
-      例: <code>...report.html?rep=山田太郎</code>
+      <b>URLパラメータが不足しています。</b><br>
+      カルテの「🗂 レポート作成」から共有URLを生成してください。
     </div>`;
-  document.getElementById('hdrTitle').textContent = '担当者未指定';
+  document.getElementById('hdrTitle').textContent = 'パラメータ不足';
 }
+
+// 手動選択モードの場合、IDリストをSetで保持
+const SALON_ID_SET = SALONS_PARAM
+  ? new Set(SALONS_PARAM.split(',').map(s => s.trim()).filter(Boolean))
+  : null;
+
+// 表示名
+const DISPLAY_NAME = TO_NAME || REP_NAME || '担当サロン';
 
 // ─── メインロード ──────────────────────────────────────────────────────────
 let salons = [], activityAll = [], salesAll = [], selectedPeriod = PERIOD;
@@ -202,13 +215,21 @@ async function loadAll() {
 }
 
 function renderApp() {
-  if (!REP_NAME) return;
+  if (!REP_NAME && !SALONS_PARAM) return;
 
-  // 担当者でフィルタ
-  const mySalons = salons.filter(s => (String(s['担当営業']||'') + String(s['代理店担当者']||'')).includes(REP_NAME) ||
-    String(s['担当営業']||'').trim() === REP_NAME);
+  // サロンフィルタ：モード②（手動選択）優先、なければモード①（担当営業名）
+  const mySalons = SALON_ID_SET
+    ? salons.filter(s => SALON_ID_SET.has(String(s['髪ドラID']||'').trim()))
+    : salons.filter(s =>
+        String(s['担当営業']||'').trim() === REP_NAME ||
+        (String(s['担当営業']||'') + String(s['代理店担当者']||'')).includes(REP_NAME)
+      );
 
-  document.getElementById('hdrTitle').textContent = `${REP_NAME} 様 担当サロン`;
+  // ヘッダータイトル
+  document.getElementById('hdrTitle').textContent =
+    SALON_ID_SET ? `${DISPLAY_NAME ? DISPLAY_NAME + ' 様 | ' : ''}担当サロン一覧` : `${DISPLAY_NAME} 様 担当サロン`;
+  document.getElementById('hdrRep').textContent =
+    SALON_ID_SET && TO_NAME ? `宛先: ${TO_NAME}` : '';
 
   // 活動・売上を髪ドラIDでマップ化
   const actByKdr = {};
@@ -287,7 +308,9 @@ function renderApp() {
 
 function renderSalonList(mySalons, actByKdr, salesByKdr) {
   if (!mySalons.length) {
-    return `<div class="error-box">「${esc(REP_NAME)}」が担当するサロンが見つかりませんでした。<br>カルテの「担当営業」欄に正確な名前が登録されているか確認してください。</div>`;
+    return SALON_ID_SET
+      ? `<div class="error-box">指定されたサロンIDが見つかりませんでした。<br>URLが正しいか確認してください。</div>`
+      : `<div class="error-box">「${esc(REP_NAME)}」が担当するサロンが見つかりませんでした。<br>カルテの「担当営業」欄に正確な名前が登録されているか確認してください。</div>`;
   }
 
   const today = toDay();
@@ -475,7 +498,7 @@ function changePeriod(val) {
 }
 
 // ─── 初期ロード ────────────────────────────────────────────────────────────
-if (REP_NAME) loadAll();
+if (REP_NAME || SALONS_PARAM) loadAll();
 </script>
 
 <div class="footer">
