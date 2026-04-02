@@ -306,32 +306,59 @@ body.mode-search .layout { display: none; }
 body:not(.mode-search) .search-view { display: none; }
 
 .sv-toolbar {
-  padding: 12px 18px; background: var(--card);
+  padding: 10px 16px 8px; background: var(--card);
   border-bottom: 1px solid var(--border);
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  display: flex; flex-direction: column; gap: 7px;
 }
-.sv-search { flex: 1; min-width: 200px; position: relative; }
+.sv-row1 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sv-row2 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sv-search { flex: 1; min-width: 220px; position: relative; }
 .sv-search input {
   width: 100%; padding: 8px 10px 8px 34px;
   border: 1px solid var(--border); border-radius: 8px;
-  font-size: 16px; outline: none; font-family: inherit;
-  min-height: 48px;
+  font-size: 15px; outline: none; font-family: inherit;
+  min-height: 44px;
 }
 .sv-search input:focus { border-color: var(--primary); }
 .sv-search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
-.sv-filter {
-  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
-  font-size: 14px; background: white; cursor: pointer; outline: none;
-  font-family: inherit; color: var(--text); min-height: 44px;
+.sv-filter, .sv-sort {
+  padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: white; cursor: pointer; outline: none;
+  font-family: inherit; color: var(--text); min-height: 38px;
 }
-.sv-filter:focus { border-color: var(--primary); }
-.sv-count { font-size: 12px; color: var(--muted); white-space: nowrap; margin-left: 4px; }
+.sv-filter:focus, .sv-sort:focus { border-color: var(--primary); }
+.sv-filter.sv-active { border-color: var(--primary); background: #ebf3ff; color: var(--primary); font-weight: 700; }
+.sv-sort { font-size: 13px; min-width: 110px; }
+.sv-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* Active filter tags */
+.sv-tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 2px; }
+.sv-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #ebf3ff; color: var(--primary); border: 1px solid #bdd4f0;
+  border-radius: 20px; padding: 2px 7px 2px 9px; font-size: 11px; font-weight: 600;
+  white-space: nowrap;
+}
+.sv-tag-rm { cursor: pointer; color: var(--primary); opacity: .55; font-size: 15px; line-height: 1; margin-left: 1px; }
+.sv-tag-rm:hover { opacity: 1; }
+.sv-clear-all { font-size: 11px; color: var(--danger); cursor: pointer; padding: 2px 6px; white-space: nowrap; background: none; border: none; font-family: inherit; }
+.sv-clear-all:hover { text-decoration: underline; }
+
+/* Keyword highlight in cards */
+mark.sv-hl { background: #fff3cd; color: #7a5900; border-radius: 2px; padding: 0 1px; font-style: normal; }
 
 .sv-grid {
   flex: 1; overflow-y: auto; padding: 16px 18px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 14px; align-content: start; -webkit-overflow-scrolling: touch;
 }
+.sv-more-wrap { grid-column: 1 / -1; display: flex; justify-content: center; padding: 4px 0 16px; }
+.sv-more-btn {
+  padding: 10px 36px; border: 2px solid var(--primary); border-radius: 24px;
+  background: white; color: var(--primary); font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.sv-more-btn:hover { background: var(--primary); color: white; }
 .sv-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s;
@@ -849,33 +876,61 @@ body:not(.mode-report) .report-view { display: none !important; }
 <!-- ── Search View ── -->
 <div class="search-view">
   <div class="sv-toolbar">
-    <div class="sv-search">
-      <span class="sv-search-ico">🔍</span>
-      <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所で検索..." oninput="renderSearchView()">
+    <!-- Row 1: テキスト検索 + ソート + アクションボタン -->
+    <div class="sv-row1">
+      <div class="sv-search">
+        <span class="sv-search-ico">🔍</span>
+        <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所・都道府県で検索..."
+               oninput="debouncedSearch()" onkeydown="if(event.key==='Enter'){clearTimeout(_svTimer);renderSearchView();}">
+      </div>
+      <select class="sv-sort" id="svSort" onchange="renderSearchView()" title="並び順">
+        <option value="name">↕ 名前順</option>
+        <option value="lastact">📝 最終活動</option>
+        <option value="followup">⚠ フォロー優先</option>
+        <option value="regdate">🆕 登録順</option>
+      </select>
+      <span class="sv-count" id="svCount"></span>
+      <button class="btn btn-outline btn-sm" id="shareRepBtn" onclick="copyRepReportUrl()" style="display:none;white-space:nowrap;color:var(--primary);border-color:var(--primary)">🔗 担当者レポートURL</button>
+      <button class="btn btn-sm" id="selectModeBtn" onclick="toggleSelectMode()" style="white-space:nowrap;background:var(--primary);color:#fff">🗂 レポート作成</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
     </div>
-    <select class="sv-filter" id="svType" onchange="renderSearchView()">
-      <option value="">タイプ: すべて</option>
-      <option value="ヘアサロン">ヘアサロン</option>
-      <option value="ネイルサロン">ネイルサロン</option>
-      <option value="エステサロン">エステサロン</option>
-      <option value="アイラッシュ">アイラッシュ</option>
-      <option value="トータルビューティー">トータルビューティー</option>
-      <option value="その他">その他</option>
-    </select>
-    <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
-      <option value="">ステータス: すべて</option>
-      <option value="active">アクティブ</option>
-      <option value="watch">要観察</option>
-      <option value="inactive">休眠</option>
-    </select>
-    <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
-      <option value="">担当営業: すべて</option>
-    </select>
-    <button class="btn btn-outline btn-sm" id="shareRepBtn" onclick="copyRepReportUrl()" style="display:none;white-space:nowrap;color:var(--primary);border-color:var(--primary)">🔗 担当者レポートURL</button>
-    <button class="btn btn-sm" id="selectModeBtn" onclick="toggleSelectMode()" style="white-space:nowrap;background:var(--primary);color:#fff;margin-left:auto">🗂 レポート作成</button>
-    <span class="sv-count" id="svCount"></span>
-    <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
-    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
+    <!-- Row 2: フィルター群 -->
+    <div class="sv-row2">
+      <select class="sv-filter" id="svType" onchange="renderSearchView()">
+        <option value="">タイプ: すべて</option>
+        <option value="ヘアサロン">ヘアサロン</option>
+        <option value="ネイルサロン">ネイルサロン</option>
+        <option value="エステサロン">エステサロン</option>
+        <option value="アイラッシュ">アイラッシュ</option>
+        <option value="トータルビューティー">トータルビューティー</option>
+        <option value="その他">その他</option>
+      </select>
+      <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
+        <option value="">ステータス: すべて</option>
+        <option value="active">アクティブ</option>
+        <option value="watch">要観察</option>
+        <option value="inactive">休眠</option>
+      </select>
+      <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
+        <option value="">担当営業: すべて</option>
+      </select>
+      <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
+        <option value="">代理店: すべて</option>
+      </select>
+      <select class="sv-filter" id="svPref" onchange="renderSearchView()">
+        <option value="">都道府県: すべて</option>
+      </select>
+      <select class="sv-filter" id="svFollow" onchange="renderSearchView()">
+        <option value="">フォロー: すべて</option>
+        <option value="overdue">⚠ 期限超過</option>
+        <option value="pending">要フォロー</option>
+        <option value="noact">活動ログなし</option>
+      </select>
+      <button class="sv-clear-all" id="svClearAll" onclick="clearAllFilters()" style="display:none">✕ すべて解除</button>
+    </div>
+    <!-- Row 3: アクティブフィルタータグ -->
+    <div class="sv-tags" id="svTags" style="display:none"></div>
   </div>
 
   <!-- ── 選択モード フローティングバー ── -->
@@ -1270,6 +1325,7 @@ async function autoLoadFromSheet() {
       const { merged } = mergeByCompanyName(existing, loaded);
       localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
       salonPeople = merged;
+      salonPeople.forEach(p => { delete p._searchIdx; }); // invalidate search cache
     }
     if (aJson.ok && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
@@ -1305,6 +1361,7 @@ async function loadFromSheet() {
       sAdded = added;
       localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
       salonPeople = merged;
+      salonPeople.forEach(p => { delete p._searchIdx; }); // invalidate search cache
     }
     if (aJson.ok && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
@@ -1361,8 +1418,9 @@ function toggleSalonSelect(kid, el) {
 }
 
 function selectAll() {
-  // 現在表示中のカードにある髪ドラIDをすべて選択
-  salonPeople.forEach(p => { if (p.kamidoraId) _selectedKids.add(p.kamidoraId); });
+  // フィルタ済みの結果（_svFilteredResults）から選択 – 絞り込み結果のみ対象
+  const src = _svFilteredResults.length ? _svFilteredResults : salonPeople;
+  src.forEach(p => { if (p.kamidoraId) _selectedKids.add(p.kamidoraId); });
   document.getElementById('selectedCount').textContent = _selectedKids.size;
   renderSearchView();
 }
@@ -1492,6 +1550,8 @@ const save = () => {
   localStorage.setItem('karte_agent_v1', JSON.stringify(agentPeople));
   localStorage.setItem('karte_salon_v1', JSON.stringify(salonPeople));
   localStorage.setItem('karte_mode', currentMode);
+  // Invalidate search index cache (rebuilt lazily on next renderSearchView)
+  salonPeople.forEach(p => { delete p._searchIdx; });
 };
 const getPerson = id => getPeople().find(p => p.id === id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -2545,83 +2605,246 @@ function deleteSales(ym) {
 }
 
 // ── Search View ───────────────────────────────────
-function renderSearchView() {
-  const q = (document.getElementById('svSearch').value || '').toLowerCase();
-  const filterType = document.getElementById('svType').value;
-  const filterStatus = document.getElementById('svStatus').value;
-  const filterRep = document.getElementById('svSalesRep').value;
+// Debounce timer & pagination state
+let _svTimer = null;
+let _svPage = 1;
+let _svFilteredResults = [];
+const SV_PAGE_SIZE = 50;
 
-  const repSel = document.getElementById('svSalesRep');
-  const currentRep = repSel.value;
-  const reps = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort();
+function debouncedSearch() {
+  clearTimeout(_svTimer);
+  _svTimer = setTimeout(() => renderSearchView(), 300);
+}
+
+// Build a pre-computed search index string for a salon
+function _buildSearchIdx(p) {
+  return [
+    p.company, p.name, p.agentName, p.agentBranch,
+    p.salesRep, p.address, p.salonType, p.kamidoraId,
+    ...(p.tags || [])
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+// Extract prefecture from address
+function _extractPref(address) {
+  if (!address) return '';
+  const m = address.match(/^(.{2,3}(?:都|道|府|県))/);
+  return m ? m[1] : '';
+}
+
+// Follow-up priority: 0=overdue, 1=pending, 2=no-act, 3=normal
+function _followPriority(p) {
+  const acts = p.activities || [];
+  if (!acts.length) return 2;
+  const today = toDay();
+  if (acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today)) return 0;
+  if (acts.some(a => a.fuStatus === 'pending')) return 1;
+  return 3;
+}
+
+// Highlight keyword in already-escaped HTML text
+function svHL(text, q) {
+  if (!q || !text) return esc(text || '');
+  const escaped = esc(text);
+  try {
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return escaped.replace(re, m => `<mark class="sv-hl">${m}</mark>`);
+  } catch { return escaped; }
+}
+
+function clearAllFilters() {
+  document.getElementById('svSearch').value = '';
+  ['svType','svStatus','svSalesRep','svAgent','svPref','svFollow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderSearchView();
+}
+
+function renderSearchView(resetPage) {
+  // If called from filter change, always reset to page 1
+  if (resetPage !== false) _svPage = 1;
+
+  const q = (document.getElementById('svSearch').value || '').trim().toLowerCase();
+  const filterType   = document.getElementById('svType').value;
+  const filterStatus = document.getElementById('svStatus').value;
+  const filterRep    = document.getElementById('svSalesRep').value;
+  const filterAgent  = document.getElementById('svAgent') ? document.getElementById('svAgent').value : '';
+  const filterPref   = document.getElementById('svPref')  ? document.getElementById('svPref').value  : '';
+  const filterFollow = document.getElementById('svFollow')? document.getElementById('svFollow').value: '';
+  const sortKey      = document.getElementById('svSort')  ? document.getElementById('svSort').value  : 'name';
+
+  // ── Dynamically populate drop-downs (preserving current selection) ──
+  const repSel   = document.getElementById('svSalesRep');
+  const agentSel = document.getElementById('svAgent');
+  const prefSel  = document.getElementById('svPref');
+
+  const allReps   = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
+  const allAgents = [...new Set(salonPeople.map(p => p.agentName).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
+  const allPrefs  = [...new Set(salonPeople.map(p => _extractPref(p.address)).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
+
   repSel.innerHTML = '<option value="">担当営業: すべて</option>' +
-    reps.map(r => `<option value="${esc(r)}" ${r === currentRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
+    allReps.map(r => `<option value="${esc(r)}"${r===filterRep?' selected':''}>${esc(r)}</option>`).join('');
+  if (agentSel) agentSel.innerHTML = '<option value="">代理店: すべて</option>' +
+    allAgents.map(a => `<option value="${esc(a)}"${a===filterAgent?' selected':''}>${esc(a)}</option>`).join('');
+  if (prefSel) prefSel.innerHTML = '<option value="">都道府県: すべて</option>' +
+    allPrefs.map(a => `<option value="${esc(a)}"${a===filterPref?' selected':''}>${esc(a)}</option>`).join('');
 
   // 担当営業が選択されているときだけ共有ボタンを表示
   const shareBtn = document.getElementById('shareRepBtn');
   if (shareBtn) shareBtn.style.display = filterRep ? 'inline-flex' : 'none';
 
-  const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
-  const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
+  // ── Highlight active filters in selects ──
+  ['svType','svStatus','svSalesRep','svAgent','svPref','svFollow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('sv-active', !!el.value);
+  });
 
+  // ── Active filter tags ──
+  const activeFilters = [];
+  if (q)           activeFilters.push({ key:'q',      label:`🔍 "${q}"`,                     clear:()=>{document.getElementById('svSearch').value='';renderSearchView();} });
+  if (filterType)  activeFilters.push({ key:'type',   label:`タイプ: ${filterType}`,          clear:()=>{document.getElementById('svType').value='';renderSearchView();} });
+  if (filterStatus)activeFilters.push({ key:'status', label:`ステータス: ${{'active':'アクティブ','watch':'要観察','inactive':'休眠'}[filterStatus]||filterStatus}`, clear:()=>{document.getElementById('svStatus').value='';renderSearchView();} });
+  if (filterRep)   activeFilters.push({ key:'rep',    label:`担当: ${filterRep}`,             clear:()=>{document.getElementById('svSalesRep').value='';renderSearchView();} });
+  if (filterAgent) activeFilters.push({ key:'agent',  label:`代理店: ${filterAgent}`,         clear:()=>{document.getElementById('svAgent').value='';renderSearchView();} });
+  if (filterPref)  activeFilters.push({ key:'pref',   label:`${filterPref}`,                  clear:()=>{document.getElementById('svPref').value='';renderSearchView();} });
+  if (filterFollow)activeFilters.push({ key:'follow', label:`${{overdue:'⚠ 期限超過',pending:'要フォロー',noact:'活動なし'}[filterFollow]||filterFollow}`, clear:()=>{document.getElementById('svFollow').value='';renderSearchView();} });
+
+  const tagsEl = document.getElementById('svTags');
+  const clearAllBtn = document.getElementById('svClearAll');
+  if (activeFilters.length) {
+    tagsEl.style.display = 'flex';
+    tagsEl.innerHTML = activeFilters.map((f,i) =>
+      `<span class="sv-tag">${esc(f.label)}<span class="sv-tag-rm" onclick="(${f.clear.toString()})()" title="解除">×</span></span>`
+    ).join('');
+    if (clearAllBtn) clearAllBtn.style.display = (activeFilters.length > 1) ? '' : 'none';
+  } else {
+    tagsEl.style.display = 'none';
+    if (clearAllBtn) clearAllBtn.style.display = 'none';
+  }
+
+  const today = toDay();
+
+  // ── Filter ──
   let results = salonPeople.filter(p => {
-    const matchQ = !q ||
-      (p.company || '').toLowerCase().includes(q) ||
-      (p.name || '').toLowerCase().includes(q) ||
-      (p.agentName || '').toLowerCase().includes(q) ||
-      (p.agentBranch || '').toLowerCase().includes(q) ||
-      (p.salesRep || '').toLowerCase().includes(q) ||
-      (p.address || '').toLowerCase().includes(q) ||
-      (p.salonType || '').toLowerCase().includes(q);
-    const matchType = !filterType || p.salonType === filterType;
-    const matchStatus = !filterStatus || (p.status || 'active') === filterStatus;
-    const matchRep = !filterRep || p.salesRep === filterRep;
-    return matchQ && matchType && matchStatus && matchRep;
-  }).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+    // Text search using pre-built index
+    if (q) {
+      if (!p._searchIdx) p._searchIdx = _buildSearchIdx(p);
+      if (!p._searchIdx.includes(q)) return false;
+    }
+    if (filterType   && p.salonType !== filterType) return false;
+    if (filterStatus && (p.status || 'active') !== filterStatus) return false;
+    if (filterRep    && p.salesRep !== filterRep) return false;
+    if (filterAgent  && p.agentName !== filterAgent) return false;
+    if (filterPref   && _extractPref(p.address) !== filterPref) return false;
+    if (filterFollow) {
+      const acts = p.activities || [];
+      if (filterFollow === 'overdue') {
+        if (!acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today)) return false;
+      } else if (filterFollow === 'pending') {
+        if (!acts.some(a => a.fuStatus === 'pending')) return false;
+      } else if (filterFollow === 'noact') {
+        if (acts.length > 0) return false;
+      }
+    }
+    return true;
+  });
 
+  // ── Sort ──
+  results = results.slice(); // don't mutate original
+  if (sortKey === 'name') {
+    results.sort((a, b) => (a.company||'').localeCompare(b.company||'', 'ja'));
+  } else if (sortKey === 'lastact') {
+    results.sort((a, b) => {
+      const da = (a.activities||[]).map(x=>x.date).sort().reverse()[0] || '';
+      const db = (b.activities||[]).map(x=>x.date).sort().reverse()[0] || '';
+      return db.localeCompare(da) || (a.company||'').localeCompare(b.company||'','ja');
+    });
+  } else if (sortKey === 'followup') {
+    results.sort((a, b) => {
+      const diff = _followPriority(a) - _followPriority(b);
+      return diff || (a.company||'').localeCompare(b.company||'','ja');
+    });
+  } else if (sortKey === 'regdate') {
+    // id is timestamp-based string, sort newest first
+    results.sort((a, b) => (b.id||'').localeCompare(a.id||''));
+  }
+
+  _svFilteredResults = results;
   document.getElementById('svCount').textContent = `${results.length} 件`;
 
+  const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
+  const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
+  const inSelectMode = _selectMode;
+
+  // ── Paginate ──
+  const totalShown = Math.min(_svPage * SV_PAGE_SIZE, results.length);
+  const page = results.slice(0, totalShown);
+  const hasMore = results.length > totalShown;
+
   if (!results.length) {
-    document.getElementById('svGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><div style="font-size:36px;margin-bottom:10px">🔍</div><div>該当するサロンが見つかりません</div></div>`;
+    document.getElementById('svGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
+      <div style="font-size:36px;margin-bottom:10px">🔍</div>
+      <div style="font-size:15px">該当するサロンが見つかりません</div>
+      ${activeFilters.length ? `<button class="btn btn-outline btn-sm" onclick="clearAllFilters()" style="margin-top:14px">フィルタを解除する</button>` : ''}
+    </div>`;
     return;
   }
 
-  document.getElementById('svGrid').innerHTML = results.map(p => {
+  const cards = page.map(p => {
     const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
     const lastAct = acts[0];
     const hasPending = acts.some(a => a.fuStatus === 'pending');
-    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
+    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
     const sc = p.status || 'active';
     const kid = p.kamidoraId || '';
     const isSelected = _selectedKids.has(kid) && kid;
-    const inSelectMode = _selectMode;
 
     return `<div class="sv-card${isSelected ? ' sv-card-selected' : ''}"
         onclick="${inSelectMode ? (kid ? `toggleSalonSelect('${kid}',this)` : '') : `openSalonFromSearch('${p.id}')`}"
-        style="position:relative;${inSelectMode ? 'cursor:pointer;' : ''}${isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)33;' : ''}">
-      ${inSelectMode ? `<div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${isSelected?'var(--primary)':'#ccc'};background:${isSelected?'var(--primary)':'#fff'};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .15s;flex-shrink:0">${isSelected?'✓':''}</div>` : ''}
-      <div class="sv-card-name">${esc(p.company)}</div>
+        style="position:relative;${isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)33;' : ''}">
+      ${inSelectMode ? `<div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${isSelected?'var(--primary)':'#ccc'};background:${isSelected?'var(--primary)':'#fff'};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .15s">${isSelected?'✓':''}</div>` : ''}
+      <div class="sv-card-name">${svHL(p.company, q)}</div>
       <div class="sv-card-badges">
-        ${kid ? `<span style="font-family:monospace;font-size:10px;font-weight:700;color:var(--primary);background:var(--primary-light,#E3F0FF);padding:1px 6px;border-radius:4px">${esc(kid)}</span>` : ''}
+        ${kid ? `<span style="font-family:monospace;font-size:10px;font-weight:700;color:var(--primary);background:#E3F0FF;padding:1px 6px;border-radius:4px">${esc(kid)}</span>` : ''}
         ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
         <span class="badge" style="background:${statusColor[sc]}22;color:${statusColor[sc]}">${statusLabel[sc] || sc}</span>
         ${overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : ''}
       </div>
       <div class="sv-card-rows">
-        ${p.agentName ? `<div class="sv-card-row"><span class="sv-card-label">代理店</span><span class="sv-card-val">${esc(p.agentName)}${p.agentBranch ? '　' + esc(p.agentBranch) : ''}</span></div>` : ''}
-        ${p.salesRep ? `<div class="sv-card-row"><span class="sv-card-label">担当営業</span><span class="sv-card-val">${esc(p.salesRep)}</span></div>` : ''}
-        ${p.name ? `<div class="sv-card-row"><span class="sv-card-label">オーナー</span><span class="sv-card-val">${esc(p.name)}</span></div>` : ''}
-        ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${esc(p.address)}</span></div>` : ''}
+        ${p.agentName ? `<div class="sv-card-row"><span class="sv-card-label">代理店</span><span class="sv-card-val">${svHL(p.agentName, q)}${p.agentBranch ? '　' + svHL(p.agentBranch, q) : ''}</span></div>` : ''}
+        ${p.salesRep ? `<div class="sv-card-row"><span class="sv-card-label">担当営業</span><span class="sv-card-val">${svHL(p.salesRep, q)}</span></div>` : ''}
+        ${p.name ? `<div class="sv-card-row"><span class="sv-card-label">オーナー</span><span class="sv-card-val">${svHL(p.name, q)}</span></div>` : ''}
+        ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${svHL(p.address, q)}</span></div>` : ''}
         ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
       </div>
-      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0, 40))}${lastAct.content.length > 40 ? '…' : ''}</div>` : ''}
+      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0,44))}${lastAct.content.length>44?'…':''}</div>` : ''}
       ${!inSelectMode ? `<div class="sv-card-actions">
         ${p.phone ? `<a href="tel:${esc(p.phone)}" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📞 電話</a>` : ''}
         ${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">HPB</a>` : ''}
         <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openSalonFromSearch('${p.id}')">カルテを開く →</button>
       </div>` : `<div style="padding:4px 0 0;font-size:12px;color:${isSelected?'var(--primary)':'var(--muted)'};font-weight:${isSelected?'700':'400'}">${isSelected?'✓ レポートに含める':'タップで選択'}</div>`}
     </div>`;
-  }).join('');
+  });
+
+  // Append "load more" button
+  if (hasMore) {
+    cards.push(`<div class="sv-more-wrap">
+      <button class="sv-more-btn" onclick="svShowMore()">
+        さらに表示 (残り ${results.length - totalShown} 件)
+      </button>
+    </div>`);
+  }
+
+  document.getElementById('svGrid').innerHTML = cards.join('');
+}
+
+function svShowMore() {
+  _svPage++;
+  const grid = document.getElementById('svGrid');
+  const scrollTop = grid.scrollTop;
+  renderSearchView(false); // don't reset page
+  grid.scrollTop = scrollTop; // preserve scroll position
 }
 
 function openSalonFromSearch(id) {
