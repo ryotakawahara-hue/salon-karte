@@ -78,7 +78,6 @@ body.mode-salon .agent-only { display: none !important; }
   min-height: 44px; display: flex; align-items: center;
 }
 .hdr-btn:hover { background: #eee; }
-.load-btn-label { display: none; } /* モバイルでは非表示、PCで上書き */
 .hdr-btn-icon {
   background: rgba(255,255,255,.18); color: white; border: none;
   width: 44px; height: 44px; border-radius: 50%;
@@ -307,59 +306,32 @@ body.mode-search .layout { display: none; }
 body:not(.mode-search) .search-view { display: none; }
 
 .sv-toolbar {
-  padding: 10px 16px 8px; background: var(--card);
+  padding: 12px 18px; background: var(--card);
   border-bottom: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: 7px;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
 }
-.sv-row1 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.sv-row2 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.sv-search { flex: 1; min-width: 220px; position: relative; }
+.sv-search { flex: 1; min-width: 200px; position: relative; }
 .sv-search input {
   width: 100%; padding: 8px 10px 8px 34px;
   border: 1px solid var(--border); border-radius: 8px;
-  font-size: 15px; outline: none; font-family: inherit;
-  min-height: 44px;
+  font-size: 16px; outline: none; font-family: inherit;
+  min-height: 48px;
 }
 .sv-search input:focus { border-color: var(--primary); }
 .sv-search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
-.sv-filter, .sv-sort {
-  padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px;
-  font-size: 13px; background: white; cursor: pointer; outline: none;
-  font-family: inherit; color: var(--text); min-height: 38px;
+.sv-filter {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 14px; background: white; cursor: pointer; outline: none;
+  font-family: inherit; color: var(--text); min-height: 44px;
 }
-.sv-filter:focus, .sv-sort:focus { border-color: var(--primary); }
-.sv-filter.sv-active { border-color: var(--primary); background: #ebf3ff; color: var(--primary); font-weight: 700; }
-.sv-sort { font-size: 13px; min-width: 110px; }
-.sv-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
-
-/* Active filter tags */
-.sv-tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 2px; }
-.sv-tag {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: #ebf3ff; color: var(--primary); border: 1px solid #bdd4f0;
-  border-radius: 20px; padding: 2px 7px 2px 9px; font-size: 11px; font-weight: 600;
-  white-space: nowrap;
-}
-.sv-tag-rm { cursor: pointer; color: var(--primary); opacity: .55; font-size: 15px; line-height: 1; margin-left: 1px; }
-.sv-tag-rm:hover { opacity: 1; }
-.sv-clear-all { font-size: 11px; color: var(--danger); cursor: pointer; padding: 2px 6px; white-space: nowrap; background: none; border: none; font-family: inherit; }
-.sv-clear-all:hover { text-decoration: underline; }
-
-/* Keyword highlight in cards */
-mark.sv-hl { background: #fff3cd; color: #7a5900; border-radius: 2px; padding: 0 1px; font-style: normal; }
+.sv-filter:focus { border-color: var(--primary); }
+.sv-count { font-size: 12px; color: var(--muted); white-space: nowrap; margin-left: 4px; }
 
 .sv-grid {
   flex: 1; overflow-y: auto; padding: 16px 18px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 14px; align-content: start; -webkit-overflow-scrolling: touch;
 }
-.sv-more-wrap { grid-column: 1 / -1; display: flex; justify-content: center; padding: 4px 0 16px; }
-.sv-more-btn {
-  padding: 10px 36px; border: 2px solid var(--primary); border-radius: 24px;
-  background: white; color: var(--primary); font-size: 14px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all .15s;
-}
-.sv-more-btn:hover { background: var(--primary); color: white; }
 .sv-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s;
@@ -493,11 +465,6 @@ body:not(.mode-report) .report-view { display: none !important; }
   display: flex; gap: 8px; padding: 10px 14px 20px;
   background: white; border-top: 1px solid var(--border);
   flex-shrink: 0;
-  /* モバイル: ボトムナビ分の余白を確保 */
-  padding-bottom: calc(20px + var(--bottom-nav-h, 56px));
-}
-@media (min-width: 768px) {
-  .rp-action-bar { padding-bottom: 20px; }
 }
 
 /* Desktop: report view also usable */
@@ -809,77 +776,6 @@ body:not(.mode-report) .report-view { display: none !important; }
   .hdr-search { display: block; }
   .hdr-add-btn { display: flex; }
   .hdr-btn-icon { display: none; }
-  /* 読込ボタンはPCでも表示（hdr-btnスタイルで） */
-  #loadBtn {
-    display: flex !important;
-    background: white; color: var(--primary); border: none;
-    padding: 6px 14px; border-radius: 18px;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    min-height: 44px; align-items: center; gap: 5px;
-    white-space: nowrap;
-  }
-  #loadBtn:hover { background: #eee; }
-  /* PC では「読込」テキストラベルを表示 */
-  .load-btn-label { display: inline; }
-}
-
-/* ─────────────── PC RESPONSIVE POLISH (≥900px) ─────────────── */
-@media (min-width: 900px) {
-  /* 検索ボックス：全幅に伸びすぎないよう幅を制限 */
-  .sv-search { flex: 0 1 500px; max-width: 500px; }
-
-  /* Row1：折り返さない */
-  .sv-row1 { flex-wrap: nowrap; gap: 10px; }
-
-  /* Row2：フィルターが折り返さず横スクロール */
-  .sv-row2 {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-  }
-  .sv-row2::-webkit-scrollbar { display: none; }
-  .sv-filter { flex-shrink: 0; }
-
-  /* ツールバー・グリッド余白 */
-  .sv-toolbar { padding: 12px 24px 10px; }
-  .sv-grid    { padding: 20px 24px; }
-}
-
-/* ─────────────── PC WIDE (≥1200px) ─────────────── */
-@media (min-width: 1200px) {
-  /* サイドバーを少し広く */
-  :root { --sidebar: 300px; }
-
-  /* 検索ボックス少し広く */
-  .sv-search { max-width: 560px; }
-
-  /* メインコンテンツの余白 */
-  .main { padding: 22px 28px; }
-
-  /* グリッド：カードを少し大きく */
-  .sv-grid {
-    padding: 20px 28px;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  }
-}
-
-/* ─────────────── PC ULTRA WIDE (≥1600px) ─────────────── */
-@media (min-width: 1600px) {
-  :root { --sidebar: 340px; }
-
-  .sv-search { max-width: 640px; }
-
-  .sv-grid {
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    padding: 24px 36px;
-  }
-
-  .main { padding: 28px 36px; }
-
-  /* ヘッダー検索ボックスも広めに */
-  .hdr-search { max-width: 520px; }
 }
 </style>
 </head>
@@ -894,7 +790,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     <span class="hdr-search-ico">🔍</span>
     <input type="text" id="searchInput" placeholder="担当者名・会社名で検索..." oninput="renderSidebar(); renderMobileList()">
   </div>
-  <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="シートから読込">📥 <span class="load-btn-label">読込</span></button>
+  <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="読込">📥</button>
   <button class="hdr-btn hdr-add-btn" onclick="openAddModal()">＋ 新規登録</button>
 </div>
 
@@ -953,82 +849,32 @@ body:not(.mode-report) .report-view { display: none !important; }
 <!-- ── Search View ── -->
 <div class="search-view">
   <div class="sv-toolbar">
-    <!-- Row 1: テキスト検索 + ソート + アクションボタン -->
-    <div class="sv-row1">
-      <div class="sv-search">
-        <span class="sv-search-ico">🔍</span>
-        <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所・都道府県で検索..."
-               oninput="debouncedSearch()" onkeydown="if(event.key==='Enter'){clearTimeout(_svTimer);renderSearchView();}">
-      </div>
-      <select class="sv-sort" id="svSort" onchange="renderSearchView()" title="並び順">
-        <option value="name">↕ 名前順</option>
-        <option value="lastact">📝 最終活動</option>
-        <option value="followup">⚠ フォロー優先</option>
-        <option value="regdate">🆕 登録順</option>
-      </select>
-      <span class="sv-count" id="svCount"></span>
-      <button class="btn btn-outline btn-sm" id="shareRepBtn" onclick="copyRepReportUrl()" style="display:none;white-space:nowrap;color:var(--primary);border-color:var(--primary)">🔗 担当者レポートURL</button>
-      <button class="btn btn-sm" id="selectModeBtn" onclick="toggleSelectMode()" style="white-space:nowrap;background:var(--primary);color:#fff">🗂 レポート作成</button>
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
-      <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
+    <div class="sv-search">
+      <span class="sv-search-ico">🔍</span>
+      <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所で検索..." oninput="renderSearchView()">
     </div>
-    <!-- Row 2: フィルター群 -->
-    <div class="sv-row2">
-      <select class="sv-filter" id="svType" onchange="renderSearchView()">
-        <option value="">タイプ: すべて</option>
-        <option value="ヘアサロン">ヘアサロン</option>
-        <option value="ネイルサロン">ネイルサロン</option>
-        <option value="エステサロン">エステサロン</option>
-        <option value="アイラッシュ">アイラッシュ</option>
-        <option value="トータルビューティー">トータルビューティー</option>
-        <option value="その他">その他</option>
-      </select>
-      <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
-        <option value="">ステータス: すべて</option>
-        <option value="active">アクティブ</option>
-        <option value="watch">要観察</option>
-        <option value="inactive">休眠</option>
-      </select>
-      <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
-        <option value="">担当営業: すべて</option>
-      </select>
-      <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
-        <option value="">代理店: すべて</option>
-      </select>
-      <select class="sv-filter" id="svPref" onchange="renderSearchView()">
-        <option value="">都道府県: すべて</option>
-      </select>
-      <select class="sv-filter" id="svFollow" onchange="renderSearchView()">
-        <option value="">フォロー: すべて</option>
-        <option value="overdue">⚠ 期限超過</option>
-        <option value="pending">要フォロー</option>
-        <option value="noact">活動ログなし</option>
-      </select>
-      <button class="sv-clear-all" id="svClearAll" onclick="clearAllFilters()" style="display:none">✕ すべて解除</button>
-    </div>
-    <!-- Row 3: アクティブフィルタータグ -->
-    <div class="sv-tags" id="svTags" style="display:none"></div>
+    <select class="sv-filter" id="svType" onchange="renderSearchView()">
+      <option value="">タイプ: すべて</option>
+      <option value="ヘアサロン">ヘアサロン</option>
+      <option value="ネイルサロン">ネイルサロン</option>
+      <option value="エステサロン">エステサロン</option>
+      <option value="アイラッシュ">アイラッシュ</option>
+      <option value="トータルビューティー">トータルビューティー</option>
+      <option value="その他">その他</option>
+    </select>
+    <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
+      <option value="">ステータス: すべて</option>
+      <option value="active">アクティブ</option>
+      <option value="watch">要観察</option>
+      <option value="inactive">休眠</option>
+    </select>
+    <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
+      <option value="">担当営業: すべて</option>
+    </select>
+    <span class="sv-count" id="svCount"></span>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
   </div>
-
-  <!-- ── 選択モード フローティングバー ── -->
-  <div id="selectBar" style="display:none;position:sticky;bottom:12px;left:0;right:0;z-index:200;margin:0 0 8px;pointer-events:none">
-    <div style="max-width:840px;margin:0 auto;background:#1565C0;color:#fff;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 4px 20px rgba(0,0,0,.3);pointer-events:all">
-      <div style="font-weight:700;font-size:14px;flex-shrink:0">
-        ✅ <span id="selectedCount">0</span> 件選択中
-      </div>
-      <div style="flex:1;min-width:160px;display:flex;align-items:center;gap:6px">
-        <span style="font-size:12px;opacity:.8;white-space:nowrap">宛先（代理店担当者名）:</span>
-        <input id="reportToName" type="text" placeholder="例: 田中部長" style="flex:1;min-width:100px;padding:5px 9px;border-radius:6px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#fff'" onblur="this.style.borderColor='rgba(255,255,255,.4)'">
-      </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
-        <button onclick="generateReportUrl()" style="padding:7px 16px;background:#fff;color:var(--primary);border:none;border-radius:6px;font-weight:800;font-size:13px;cursor:pointer">🔗 URLを生成・コピー</button>
-        <button onclick="selectAll()" style="padding:7px 12px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">全選択</button>
-        <button onclick="clearSelection()" style="padding:7px 12px;background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">クリア</button>
-        <button onclick="toggleSelectMode()" style="padding:7px 12px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.25);border-radius:6px;font-size:12px;cursor:pointer">✕ 終了</button>
-      </div>
-    </div>
-  </div>
-
   <div class="sv-grid" id="svGrid">
     <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
       <div style="font-size:36px;margin-bottom:10px">🔍</div>
@@ -1101,13 +947,6 @@ body:not(.mode-report) .report-view { display: none !important; }
     </div>
     <div class="modal-body">
       <div class="fsec">基本情報</div>
-      <div id="kamidoraIdDisplay" class="salon-only" style="display:none;margin-bottom:10px">
-        <label class="flbl">髪ドラID</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="kamidoraIdValue" style="font-size:16px;font-weight:700;color:var(--primary);letter-spacing:1px;font-family:monospace"></span>
-          <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('kamidoraIdValue').textContent)" style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:#f5f5f5;cursor:pointer">コピー</button>
-        </div>
-      </div>
       <div class="frow">
         <div class="fg">
           <label class="flbl"><span class="agent-only">担当者名</span><span class="salon-only">オーナー名</span> *</label>
@@ -1240,10 +1079,9 @@ body:not(.mode-report) .report-view { display: none !important; }
 <div class="overlay" id="actModal">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title" id="actModalTitle">活動ログを追加</div>
+      <div class="modal-title">活動ログを追加</div>
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
-    <input type="hidden" id="aEditId" value="">
     <div class="modal-body">
       <div class="frow">
         <div class="fg">
@@ -1293,7 +1131,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     </div>
     <div class="modal-footer" style="gap:10px">
       <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
-      <button class="btn btn-primary" id="actSaveBtn" onclick="saveAct()" style="flex:2;font-size:15px;min-height:52px">✓ 保存する</button>
+      <button class="btn btn-primary" onclick="saveAct()" style="flex:2;font-size:15px;min-height:52px">✓ 保存する</button>
     </div>
   </div>
 </div>
@@ -1322,29 +1160,29 @@ body:not(.mode-report) .report-view { display: none !important; }
 
 <script>
 // ── Google Sheets 同期設定 ──────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
 
 // サロン行 → オブジェクト変換
 function parseSalonRow(row) {
   return {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-    kamidoraId:   String(row['髪ドラID']        || ''),
-    company:      String(row['サロン名']        || ''),
-    legalName:    String(row['法人名']          || ''),
-    name:         String(row['代表者/担当者']   || ''),
-    phone:        String(row['電話番号']         || ''),
-    address:      String(row['所在地']           || ''),
-    hpbUrl:       String(row['HPBリンク']        || ''),
-    agentName:    String(row['担当代理店']       || ''),
-    agentBranch:  String(row['代理店支店']       || ''),
-    agentContact: String(row['代理店担当者']     || ''),
-    salesRep:     String(row['担当営業']         || ''),
-    salonType:    String(row['サロンタイプ']     || ''),
-    target:       String(row['ターゲット層']     || ''),
-    staffCount:   parseInt(row['スタッフ数'])   || 0,
+    id:           Date.now().toString(36) + Math.random().toString(36).slice(2),
+    salonId:      String(row['サロンID']         || ''),
+    company:      String(row['サロン名']          || ''),
+    legalName:    String(row['法人名']            || ''),
+    name:         String(row['代表者/担当者']     || ''),
+    phone:        String(row['電話番号']           || ''),
+    address:      String(row['所在地']             || ''),
+    hpbUrl:       String(row['HPBリンク']          || ''),
+    agentName:    String(row['担当代理店']         || ''),
+    agentBranch:  String(row['代理店支店']         || ''),
+    agentContact: String(row['代理店担当者']       || ''),
+    salesRep:     String(row['担当営業']           || ''),
+    salonType:    String(row['サロンタイプ']       || ''),
+    target:       String(row['ターゲット層']       || ''),
+    staffCount:   parseInt(row['スタッフ数'])     || 0,
     groupStores:  parseInt(row['グループ店舗数']) || 0,
-    annualTarget: String(row['年間取引額目安']  || ''),
-    memo:         String(row['メモ']             || ''),
+    annualTarget: String(row['年間取引額目安']    || ''),
+    memo:         String(row['メモ']               || ''),
     activities: [], sales: [], tags: [],
     status: 'active', title: '', email: '', area: '',
     targetSistri: 0, targetSales: 0,
@@ -1370,20 +1208,11 @@ function parseAgentRow(row) {
 
 // マージ共通処理（key=company で重複排除）
 function mergeByCompanyName(existing, loaded) {
-  const nameMap = new Map(existing.map(p => [p.company, p]));
+  const names = new Set(existing.map(p => p.company));
   const merged = [...existing];
   let added = 0;
   for (const p of loaded) {
-    if (!p.company) continue;
-    if (!nameMap.has(p.company)) {
-      merged.push(p);
-      nameMap.set(p.company, p);
-      added++;
-    } else {
-      // シートに髪ドラIDがあれば既存に補完（ローカルにあれば優先）
-      const ex = nameMap.get(p.company);
-      if (p.kamidoraId && !ex.kamidoraId) ex.kamidoraId = p.kamidoraId;
-    }
+    if (p.company && !names.has(p.company)) { merged.push(p); names.add(p.company); added++; }
   }
   return { merged, added };
 }
@@ -1403,7 +1232,6 @@ async function autoLoadFromSheet() {
       const { merged } = mergeByCompanyName(existing, loaded);
       localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
       salonPeople = merged;
-      salonPeople.forEach(p => { delete p._searchIdx; }); // invalidate search cache
     }
     if (aJson.ok && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
@@ -1439,7 +1267,6 @@ async function loadFromSheet() {
       sAdded = added;
       localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
       salonPeople = merged;
-      salonPeople.forEach(p => { delete p._searchIdx; }); // invalidate search cache
     }
     if (aJson.ok && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
@@ -1459,120 +1286,10 @@ async function loadFromSheet() {
   }
 }
 
-// ── サロン選択共有モード ─────────────────────────────────────────────────
-let _selectMode = false;
-let _selectedKids = new Set(); // 選択中の髪ドラIDセット
-
-function toggleSelectMode() {
-  _selectMode = !_selectMode;
-  _selectedKids.clear();
-  const bar = document.getElementById('selectBar');
-  const btn = document.getElementById('selectModeBtn');
-  if (_selectMode) {
-    bar.style.display = 'block';
-    btn.style.background = '#E3F0FF';
-    btn.style.color = 'var(--primary)';
-    btn.style.border = '1.5px solid var(--primary)';
-    btn.textContent = '✕ 選択終了';
-  } else {
-    bar.style.display = 'none';
-    btn.style.background = 'var(--primary)';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-    btn.textContent = '🗂 レポート作成';
-  }
-  renderSearchView();
-}
-
-function toggleSalonSelect(kid, el) {
-  if (!kid) return;
-  if (_selectedKids.has(kid)) {
-    _selectedKids.delete(kid);
-  } else {
-    _selectedKids.add(kid);
-  }
-  document.getElementById('selectedCount').textContent = _selectedKids.size;
-  renderSearchView();
-}
-
-function selectAll() {
-  // フィルタ済みの結果（_svFilteredResults）から選択 – 絞り込み結果のみ対象
-  const src = _svFilteredResults.length ? _svFilteredResults : salonPeople;
-  src.forEach(p => { if (p.kamidoraId) _selectedKids.add(p.kamidoraId); });
-  document.getElementById('selectedCount').textContent = _selectedKids.size;
-  renderSearchView();
-}
-
-function clearSelection() {
-  _selectedKids.clear();
-  document.getElementById('selectedCount').textContent = 0;
-  renderSearchView();
-}
-
-function generateReportUrl() {
-  if (!_selectedKids.size) { alert('サロンを1件以上選択してください'); return; }
-  const toName = (document.getElementById('reportToName').value || '').trim();
-  const kids = [..._selectedKids].join(',');
-  const base = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
-  let url = `${base}?salons=${encodeURIComponent(kids)}`;
-  if (toName) url += `&to=${encodeURIComponent(toName)}`;
-  navigator.clipboard.writeText(url).then(() => {
-    // 成功トースト
-    const bar = document.querySelector('#selectBar > div');
-    const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#2E7D32;color:#fff;padding:10px 20px;border-radius:8px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.25)';
-    toast.textContent = `✅ URLをコピーしました（${_selectedKids.size}件）`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }).catch(() => {
-    const kids2 = [..._selectedKids].join(',');
-    const base2 = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
-    let url2 = `${base2}?salons=${encodeURIComponent(kids2)}`;
-    const toName2 = (document.getElementById('reportToName').value || '').trim();
-    if (toName2) url2 += `&to=${encodeURIComponent(toName2)}`;
-    prompt('このURLをコピーして代理店担当者に共有してください:', url2);
-  });
-}
-
-// ── 担当営業レポートURL 共有 ──────────────────────────────────────────────
-function _buildRepUrl(repName) {
-  const base = location.href.replace(/\/[^/]*(\?.*)?$/, '/report.html');
-  return `${base}?rep=${encodeURIComponent(repName)}`;
-}
-
-function copyRepReportUrl() {
-  const repName = document.getElementById('svSalesRep').value;
-  if (!repName) { alert('担当営業を選択してください'); return; }
-  const url = _buildRepUrl(repName);
-  const btn = document.getElementById('shareRepBtn');
-  navigator.clipboard.writeText(url).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '✅ コピー完了';
-    btn.style.cssText += ';background:#E8F5E9;border-color:#4CAF50;color:#2E7D32';
-    setTimeout(() => {
-      btn.textContent = orig;
-      btn.style.background = ''; btn.style.borderColor = 'var(--primary)'; btn.style.color = 'var(--primary)';
-    }, 2500);
-  }).catch(() => { prompt('このURLをコピーして担当者に共有してください:', url); });
-}
-
-function copyRepUrlFromDetail(repName) {
-  const url = _buildRepUrl(repName);
-  navigator.clipboard.writeText(url).then(() => {
-    const btns = [...document.querySelectorAll('[onclick*="copyRepUrlFromDetail"]')];
-    const btn = btns.find(b => b.getAttribute('onclick').includes(repName));
-    if (btn) {
-      const orig = btn.textContent;
-      btn.textContent = '✅';
-      setTimeout(() => { btn.textContent = orig; }, 2000);
-    }
-  }).catch(() => { prompt(`${repName} 担当者レポートURL:`, url); });
-}
-
 function syncToSheet(type, data) {
   const record = type === 'salon' ? {
+    サロンID:      data.salonId      || '',
     createdAt:    new Date().toISOString().slice(0, 10),
-    kamidoraId:   data.kamidoraId   || '',
     name:         data.company,
     legalName:    data.legalName    || '',
     owner:        data.name         || '',
@@ -1609,6 +1326,28 @@ function syncToSheet(type, data) {
   }).catch(err => console.warn('スプレッドシート同期失敗:', err));
 }
 
+// 活動ログを Spreadsheet A に同期（no-cors: レスポンス不要）
+function syncActivityToSheet(person, activity) {
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      type: 'activity',
+      record: {
+        salonId:      person.salonId    || '',
+        hairDraId:    person.hairDraId  || '',
+        date:         activity.date     || '',
+        personType:   activity.type === 'lecture' ? '講師' : '営業',
+        personName:   activity.repName  || activity.lecturer || '',
+        activityType: activity.type     || '',
+        content:      activity.content  || '',
+        nextDate:     activity.fuDate   || '',
+      },
+    }),
+  }).catch(err => console.warn('活動ログ同期失敗:', err));
+}
+
 // ── Data ──────────────────────────────────────────
 // ── 固定代理店リスト ───────────────────────────────
 const AGENT_NAMES = ['ミツイ','フジシン','キクヤ','カトレア','アイビックス','かすが','ピュア商会','菊地','GOROI','リリー','FIT','ガモウ広島'];
@@ -1628,23 +1367,101 @@ const save = () => {
   localStorage.setItem('karte_agent_v1', JSON.stringify(agentPeople));
   localStorage.setItem('karte_salon_v1', JSON.stringify(salonPeople));
   localStorage.setItem('karte_mode', currentMode);
-  // Invalidate search index cache (rebuilt lazily on next renderSearchView)
-  salonPeople.forEach(p => { delete p._searchIdx; });
 };
 const getPerson = id => getPeople().find(p => p.id === id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const toDay = () => new Date().toISOString().slice(0, 10);
 
-function genKamidoraId() {
-  const salons = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-  let maxNum = 0;
-  salons.forEach(s => {
-    if (s.kamidoraId && s.kamidoraId.startsWith('KDR-')) {
-      const n = parseInt(s.kamidoraId.slice(4));
-      if (!isNaN(n) && n > maxNum) maxNum = n;
+// サロンID 自動採番（SAL-XXXXX形式、既存最大値+1）
+function generateSalonId() {
+  const nums = salonPeople.map(p => parseInt((p.salonId || '').replace('SAL-', '')) || 0);
+  return 'SAL-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0');
+}
+
+// 髪ドラ売上タブ: 売上マスターシート（Spreadsheet A）からサロンIDで購買履歴を取得して表示
+async function loadHDRASales(personId) {
+  const wrap = document.getElementById('hdra-sales-wrap');
+  if (!wrap) return;
+  const p = getPerson(personId);
+  if (!p) return;
+
+  if (!p.salonId) {
+    wrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+      サロンIDが未設定です<br><small>サロン登録時に自動付与されます</small></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted)">⏳ 読み込み中...</div>`;
+  try {
+    const resp = await fetch(`${GAS_URL}?action=getSalonSales&salonId=${encodeURIComponent(p.salonId)}`);
+    const result = await resp.json();
+    if (!result.ok) throw new Error(result.error || '取得失敗');
+
+    const rows = result.data || [];
+    if (rows.length === 0) {
+      wrap.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">
+        売上データがありません<br><small>サロンID: ${esc(p.salonId)}</small></div>`;
+      return;
     }
-  });
-  return 'KDR-' + String(maxNum + 1).padStart(4, '0');
+
+    // 月別集計（売上マスターの列名に合わせる）
+    const byYm = {};
+    rows.forEach(r => {
+      const ym = String(r['年月'] || '');
+      if (!byYm[ym]) byYm[ym] = { amt: 0, qty: 0, prods: {} };
+      byYm[ym].amt += Number(r['売上金額_税抜']) || 0;
+      byYm[ym].qty += Number(r['売上数量'])      || 0;
+      const prod = r['商品名'] || 'その他';
+      byYm[ym].prods[prod] = (byYm[ym].prods[prod] || 0) + (Number(r['売上金額_税抜']) || 0);
+    });
+    const totalAmt = rows.reduce((s, r) => s + (Number(r['売上金額_税抜']) || 0), 0);
+    const totalQty = rows.reduce((s, r) => s + (Number(r['売上数量'])      || 0), 0);
+    const ymList = Object.keys(byYm).sort().reverse();
+
+    let html = `
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">💰 髪ドラ購買履歴</div>
+          <span style="font-size:11px;color:var(--muted)">サロンID: ${esc(p.salonId)}</span>
+        </div>
+        <div class="card-body" style="display:flex;gap:24px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--primary)">¥${Math.round(totalAmt).toLocaleString()}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">累計購買金額（税抜）</div>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--primary)">${totalQty}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">累計数量 / ${rows.length}明細</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-title">月別推移</div></div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:#f8f9fa;border-bottom:2px solid #e9ecef">
+              <th style="text-align:left;padding:8px 12px;font-weight:600">年月</th>
+              <th style="text-align:right;padding:8px 12px;font-weight:600">金額（税抜）</th>
+              <th style="text-align:right;padding:8px 12px;font-weight:600">数量</th>
+              <th style="text-align:left;padding:8px 12px;font-weight:600">主な商品</th>
+            </tr></thead>
+            <tbody>`;
+    ymList.forEach(ym => {
+      const d = byYm[ym];
+      const prodHtml = Object.entries(d.prods).sort((a,b)=>b[1]-a[1]).slice(0, 3)
+        .map(([name])=>`<span style="display:inline-block;padding:1px 7px;margin:1px;border-radius:10px;background:#e8f0fe;color:#1a73e8;font-size:11px">${esc(name)}</span>`).join('');
+      html += `<tr style="border-bottom:1px solid #f1f3f4">
+        <td style="padding:8px 12px;font-weight:600">${esc(ym)}</td>
+        <td style="padding:8px 12px;text-align:right">¥${Math.round(d.amt).toLocaleString()}</td>
+        <td style="padding:8px 12px;text-align:right">${d.qty}</td>
+        <td style="padding:8px 12px">${prodHtml}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+    wrap.innerHTML = html;
+  } catch(e) {
+    wrap.innerHTML = `<div style="padding:24px;text-align:center;color:#dc3545;font-size:13px">取得エラー: ${esc(e.message)}</div>`;
+  }
 }
 const toMonth = () => new Date().toISOString().slice(0, 7);
 const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
@@ -1756,7 +1573,7 @@ function renderMobileList() {
       <div class="mb-card-avatar" style="${overdue?'background:#DC3545':hasPending?'background:#e65c00':''}">${avatarTxt}</div>
       <div class="mb-card-body">
         <div class="mb-card-name">${esc(mainLabel)}</div>
-        <div class="mb-card-sub">${esc(subLabel)}${(!isAgent && p.kamidoraId) ? ` <span style="color:var(--primary);font-family:monospace;font-size:11px;font-weight:700">${esc(p.kamidoraId)}</span>` : ''}</div>
+        <div class="mb-card-sub">${esc(subLabel)}</div>
         ${badges ? `<div class="mb-card-badges">${badges}</div>` : ''}
         ${lastActHtml}
       </div>
@@ -1853,12 +1670,8 @@ function selectPerson(id) {
         contents.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         contents[i].classList.add('active');
+        // Show/hide sticky add bar based on active tab
         updateMobileAddActBar();
-        // 販売実績タブ選択時に売上マスターをロード
-        if (tab.textContent.includes('販売実績')) {
-          const cur = getPerson(currentId);
-          if (cur && cur.kamidoraId) loadMasterSalesForSalon(cur.kamidoraId, 'ms-' + cur.kamidoraId, false);
-        }
       };
     });
 
@@ -1903,7 +1716,6 @@ function renderMain() {
         <div class="profile-company">${esc(profileSub)}</div>
         <div class="profile-badges">
           <span class="badge" style="background:${statusColor}22;color:${statusColor}">${statusLabel}</span>
-          ${(!isAgent && p.kamidoraId) ? `<span class="badge" style="background:#E3F0FF;color:var(--primary);font-family:monospace;font-weight:700;letter-spacing:0.5px">${esc(p.kamidoraId)}</span>` : ''}
           ${(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
         </div>
         ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
@@ -1918,11 +1730,13 @@ function renderMain() {
       <div class="tab" onclick="switchTab(this,'tb-basic')">基本情報</div>
       <div class="tab active" onclick="switchTab(this,'tb-act')">活動ログ（${(p.activities||[]).length}）</div>
       <div class="tab" onclick="switchTab(this,'tb-sales')">販売実績</div>
+      ${!isAgent ? `<div class="tab" onclick="switchTab(this,'tb-hdra');loadHDRASales('${p.id}')">髪ドラ売上</div>` : ''}
     </div>
 
     <div class="tab-content" id="tb-basic">${renderBasic(p)}</div>
     <div class="tab-content active" id="tb-act">${renderAct(p)}</div>
     <div class="tab-content" id="tb-sales">${renderSales(p)}</div>
+    ${!isAgent ? `<div class="tab-content" id="tb-hdra"><div id="hdra-sales-wrap" style="padding:8px 0"><div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">「髪ドラ売上」タブをクリックして読み込む</div></div></div>` : ''}
   `;
 }
 
@@ -1936,7 +1750,6 @@ function renderBasic(p) {
       <div class="card-hdr"><div class="card-title">基本情報</div></div>
       <div class="card-body">
         <div class="info-grid">
-          ${p.kamidoraId ? `<div class="info-item" style="grid-column:span 2"><label>髪ドラID</label><span style="font-size:15px;font-weight:700;color:var(--primary);font-family:monospace;letter-spacing:1px">${esc(p.kamidoraId)} <button onclick="navigator.clipboard.writeText('${esc(p.kamidoraId)}')" style="font-size:11px;padding:1px 7px;border:1px solid var(--border);border-radius:5px;background:#f5f5f5;cursor:pointer;font-family:sans-serif;font-weight:normal">コピー</button></span></div>` : ''}
           <div class="info-item"><label>サロン名</label><span>${esc(p.company) || '—'}</span></div>
           <div class="info-item"><label>サロン法人名</label><span>${esc(p.legalName) || '—'}</span></div>
           <div class="info-item"><label>代表者/キー担当者</label><span>${esc(p.name) || '—'}</span></div>
@@ -1953,12 +1766,7 @@ function renderBasic(p) {
           <div class="info-item"><label>担当代理店</label><span>${esc(p.agentName) || '—'}</span></div>
           <div class="info-item"><label>代理店支店</label><span>${esc(p.agentBranch) || '—'}</span></div>
           <div class="info-item"><label>代理店担当者</label><span>${esc(p.agentContact) || '—'}</span></div>
-          <div class="info-item"><label>担当営業</label>
-            <span style="display:flex;align-items:center;gap:6px">
-              ${esc(p.salesRep) || '—'}
-              ${p.salesRep ? `<button type="button" onclick="copyRepUrlFromDetail('${esc(p.salesRep)}')" style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--primary);background:var(--primary-light,#E3F0FF);color:var(--primary);cursor:pointer;font-weight:700" title="担当者レポートURLをコピー">🔗 共有</button>` : ''}
-            </span>
-          </div>
+          <div class="info-item"><label>担当営業</label><span>${esc(p.salesRep) || '—'}</span></div>
         </div>
       </div>
     </div>
@@ -2021,7 +1829,6 @@ function renderAct(p) {
         <div class="act-actions">
           ${a.fuStatus === 'pending' ? `<span class="badge badge-fu">要フォロー${a.fuDate ? ' ('+a.fuDate+')' : ''}</span><button class="btn btn-success btn-sm" onclick="markDone('${a.id}')">完了</button>` : ''}
           ${a.fuStatus === 'done' ? `<span class="badge" style="background:#d4edda;color:#155724">✓ 完了</span>` : ''}
-          <button class="btn btn-outline btn-sm" onclick="editAct('${a.id}')">✏️ 編集</button>
           <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">削除</button>
         </div>
       </div>
@@ -2064,7 +1871,6 @@ function renderSales(p) {
     </tr>`;
   }).join('');
 
-  const msId = 'ms-' + (p.kamidoraId || 'none');
   return `<div class="card">
     <div class="card-hdr"><div class="card-title">今月の実績</div><button class="btn btn-primary btn-sm" onclick="openSalesModal()">＋ 実績入力</button></div>
     <div class="card-body">
@@ -2077,83 +1883,12 @@ function renderSales(p) {
     </div>
   </div>
   <div class="card">
-    <div class="card-hdr"><div class="card-title">月別実績（手動入力）</div></div>
+    <div class="card-hdr"><div class="card-title">月別実績</div></div>
     <div class="card-body" style="padding:0">
       ${!sales.length ? `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📊</div><div>実績データがありません</div></div>` :
         `<table class="tbl"><thead><tr><th>対象月</th><th>シストリ（本）</th><th>達成率</th><th>売上（万円）</th><th>メモ</th><th></th></tr></thead><tbody>${rows}</tbody></table>`}
     </div>
-  </div>
-  ${p.kamidoraId ? `<div class="card">
-    <div class="card-hdr">
-      <div class="card-title">📦 代理店経由売上（売上マスター）</div>
-      <button class="btn btn-outline btn-sm" onclick="loadMasterSalesForSalon('${esc(p.kamidoraId)}','${msId}',true)" style="font-size:12px">🔄 更新</button>
-    </div>
-    <div class="card-body" style="padding:0" id="${msId}">
-      <div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">⏳ 読み込み中…</div>
-    </div>
-  </div>` : `<div class="card"><div class="card-body" style="color:var(--muted);font-size:13px;text-align:center;padding:20px">髪ドラIDが未設定のため売上マスターを参照できません</div></div>`}`;
-}
-
-// ── 売上マスター 読み込み & 表示 ─────────────────────────────────────
-let _masterSalesCache = null;
-let _masterSalesTs = 0;
-
-async function loadMasterSalesForSalon(kamidoraId, containerId, forceRefresh) {
-  const el = document.getElementById(containerId);
-  if (!el || !kamidoraId) return;
-  const now = Date.now();
-  // キャッシュ（5分）
-  if (forceRefresh || !_masterSalesCache || now - _masterSalesTs > 300000) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">⏳ 売上マスターを読み込み中…</div>';
-    try {
-      const res = await fetch(GAS_URL + '?action=getAll&type=sales');
-      const json = await res.json();
-      _masterSalesCache = json.ok ? json.data : [];
-      _masterSalesTs = now;
-    } catch(e) {
-      el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--danger);font-size:13px">⚠️ 読込失敗。ネットワークを確認してください。</div>';
-      return;
-    }
-  }
-  const filtered = (_masterSalesCache || []).filter(r => String(r['髪ドラID'] || '').trim() === kamidoraId);
-  if (!filtered.length) {
-    el.innerHTML = '<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:28px;margin-bottom:6px">📦</div><div>売上マスターにデータがありません</div><div style="font-size:12px;margin-top:4px">売上管理ツールからアップロードしてください</div></div>';
-    return;
-  }
-  // 期間でグループ化
-  const byPeriod = {};
-  filtered.forEach(r => {
-    const period = String(r['期間'] || '').trim();
-    if (!byPeriod[period]) byPeriod[period] = [];
-    byPeriod[period].push(r);
-  });
-  const periods = Object.keys(byPeriod).sort().reverse();
-  const totalQty = filtered.reduce((s, r) => s + (Number(r['売上数量']) || 0), 0);
-  const totalAmt = filtered.reduce((s, r) => s + (Number(r['売上金額']) || 0), 0);
-
-  const rows = periods.flatMap(m => {
-    return byPeriod[m].map((r, i) => {
-      const qty = Number(r['売上数量']) || 0;
-      const amt = Number(r['売上金額']) || 0;
-      return `<tr>
-        <td style="white-space:nowrap">${i === 0 ? m : ''}</td>
-        <td>${esc(String(r['商品名'] || ''))}</td>
-        <td style="text-align:right">${qty.toLocaleString()}</td>
-        <td style="text-align:right">¥${amt.toLocaleString()}</td>
-        <td style="color:var(--muted);font-size:12px">${esc(String(r['代理店名'] || ''))}</td>
-      </tr>`;
-    });
-  }).join('');
-
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
-      <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--primary)">${totalQty.toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">累計数量</div></div>
-      <div style="text-align:center"><div style="font-size:20px;font-weight:800;color:var(--success)">¥${totalAmt.toLocaleString()}</div><div style="font-size:11px;color:var(--muted)">累計売上金額</div></div>
-    </div>
-    <div style="overflow-x:auto"><table class="tbl">
-      <thead><tr><th>期間</th><th>商品名</th><th style="text-align:right">数量</th><th style="text-align:right">売上金額</th><th>代理店</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+  </div>`;
 }
 
 // ── Tab ───────────────────────────────────────────
@@ -2166,11 +1901,6 @@ function switchTab(el, id) {
   const target = container.querySelector('#' + id) || document.getElementById(id);
   if (target) target.classList.add('active');
   if (isMobile()) updateMobileAddActBar();
-  // 販売実績タブ選択時に売上マスターを自動ロード
-  if (id === 'tb-sales' && currentId) {
-    const p = getPerson(currentId);
-    if (p && p.kamidoraId) loadMasterSalesForSalon(p.kamidoraId, 'ms-' + p.kamidoraId, false);
-  }
 }
 
 // ── Agent Datalist & Company Select ───────────────
@@ -2291,7 +2021,6 @@ function openAddModal() {
   resetCheckGroup('pActiveMenus');
   setBoolOpt('pBihatuOkite', false);
   setBoolOpt('pHandlingList', false);
-  document.getElementById('kamidoraIdDisplay').style.display = 'none';
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
@@ -2337,14 +2066,6 @@ function openEditModal(id) {
   setCheckGroup('pActiveMenus', p.activeMenus || []);
   setBoolOpt('pBihatuOkite', p.bihatuOkite || false);
   setBoolOpt('pHandlingList', p.inHandlingList || false);
-  // 髪ドラID表示（サロンのみ）
-  const kidDisp = document.getElementById('kamidoraIdDisplay');
-  if (currentMode === 'salon') {
-    document.getElementById('kamidoraIdValue').textContent = p.kamidoraId || '（未割当）';
-    kidDisp.style.display = 'block';
-  } else {
-    kidDisp.style.display = 'none';
-  }
   renderTags();
   const modal2 = document.getElementById('personModal');
   modal2.classList.add('open');
@@ -2401,11 +2122,14 @@ function savePerson() {
     if (idx >= 0) pArr[idx] = { ...pArr[idx], ...data };
     currentId = editingId;
   } else {
-    const kamidoraId = (currentMode === 'salon') ? genKamidoraId() : undefined;
-    const np = { id: uid(), activities: [], sales: [], ...(kamidoraId ? { kamidoraId } : {}), ...data };
+    // サロン新規登録時: サロンIDを自動付与
+    if (currentMode === 'salon') {
+      data.salonId = generateSalonId();
+    }
+    const np = { id: uid(), activities: [], sales: [], ...data };
     pArr.push(np);
     currentId = np.id;
-    syncToSheet(currentMode, { ...data, kamidoraId }); // 新規追加時のみ同期
+    syncToSheet(currentMode, data); // 新規追加時のみ同期
   }
 
   save(); closePersonModal(); renderSidebar(); renderMobileList(); renderMain();
@@ -2516,10 +2240,7 @@ function refreshRepNameList() {
   if (dl) dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
 }
 
-function _resetActModal() {
-  document.getElementById('aEditId').value = '';
-  document.getElementById('actModalTitle').textContent = '活動ログを追加';
-  document.getElementById('actSaveBtn').textContent = '✓ 保存する';
+function openActModal() {
   document.getElementById('aDate').value = toDay();
   // Reset type chips
   document.getElementById('aType').value = '訪問';
@@ -2541,90 +2262,10 @@ function _resetActModal() {
   document.getElementById('aLecturer').value = '';
   document.getElementById('aLecturerWrap').style.display = 'none';
   refreshRepNameList();
-}
-
-function openActModal() {
-  _resetActModal();
-  document.getElementById('actModal').classList.add('open');
-}
-
-function editAct(actId) {
-  const p = getPerson(currentId);
-  if (!p) return;
-  const a = (p.activities || []).find(a => a.id === actId);
-  if (!a) return;
-
-  _resetActModal();
-
-  // 編集モードのタイトル・ボタン
-  document.getElementById('aEditId').value = actId;
-  document.getElementById('actModalTitle').textContent = '活動ログを編集';
-  document.getElementById('actSaveBtn').textContent = '✓ 更新する';
-
-  // 既存データをセット
-  document.getElementById('aDate').value = a.date || '';
-  document.getElementById('aRepName').value = a.repName || '';
-  document.getElementById('aType').value = a.type || '訪問';
-  document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.val === (a.type || '訪問'));
-  });
-  document.getElementById('aContent').value = a.content || '';
-  document.getElementById('aNext').value = a.next || '';
-  document.getElementById('aFuStatus').value = a.fuStatus || 'none';
-  document.querySelectorAll('#aFuChips .fu-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.val === (a.fuStatus || 'none'));
-  });
-  if (a.fuStatus === 'pending') {
-    document.getElementById('aFuDateWrap').style.display = '';
-    document.getElementById('aFuDate').value = a.fuDate || '';
-  }
-  document.getElementById('aLecturer').value = a.lecturer || '';
-  if (a.lecturer) document.getElementById('aLecturerWrap').style.display = '';
-  document.getElementById('aMinutesUrl').value = a.minutesUrl || '';
-
   document.getElementById('actModal').classList.add('open');
 }
 
 function closeActModal() { document.getElementById('actModal').classList.remove('open'); }
-
-// ── 活動ログ GAS同期ヘルパー ────────────────────────────────────────
-function syncActivityToSheet(p, activity) {
-  const record = {
-    id:         activity.id,
-    date:       activity.date,
-    personType: currentMode,           // 'salon' | 'agent'
-    company:    p.company || '',
-    kamidoraId: p.kamidoraId || '',
-    repName:    activity.repName   || '',
-    type:       activity.type      || '',
-    content:    activity.content   || '',
-    next:       activity.next      || '',
-    fuDate:     activity.fuDate    || '',
-    fuStatus:   activity.fuStatus  || '',
-  };
-  fetch(GAS_URL, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ type: 'activity', record }),
-  }).catch(err => console.warn('活動ログ同期失敗:', err));
-}
-
-function deleteActivityFromSheet(activityId) {
-  fetch(GAS_URL, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ type: 'deleteActivity', id: activityId }),
-  }).catch(err => console.warn('活動ログ削除同期失敗:', err));
-}
-
-function updateActivityStatusOnSheet(activityId, fuStatus) {
-  fetch(GAS_URL, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ type: 'updateActivityStatus', id: activityId, fuStatus }),
-  }).catch(err => console.warn('活動ログ状態更新失敗:', err));
-}
-// ────────────────────────────────────────────────────────────────────
 
 function saveAct() {
   const date = document.getElementById('aDate').value;
@@ -2636,11 +2277,8 @@ function saveAct() {
   p.activities = p.activities || [];
   const repName = document.getElementById('aRepName').value.trim();
   if (repName) localStorage.setItem('karte_last_rep', repName);
-
-  const editId = document.getElementById('aEditId').value;
-
-  const actData = {
-    date,
+  const newAct = {
+    id: uid(), date,
     type: document.getElementById('aType').value,
     content,
     next: document.getElementById('aNext').value.trim(),
@@ -2650,24 +2288,13 @@ function saveAct() {
     lecturer: document.getElementById('aLecturer').value.trim(),
     minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
   };
+  p.activities.push(newAct);
 
-  if (editId) {
-    // ── 編集モード: 既存レコードを更新 ──
-    const idx = p.activities.findIndex(a => a.id === editId);
-    if (idx !== -1) {
-      p.activities[idx] = { ...p.activities[idx], ...actData };
-      // GAS同期: 削除→再追加（updateは未実装のため）
-      deleteActivityFromSheet(editId);
-      syncActivityToSheet(p, p.activities[idx]);
-    }
-  } else {
-    // ── 新規追加モード ──
-    const activity = { id: uid(), ...actData };
-    p.activities.push(activity);
-    syncActivityToSheet(p, activity);
-  }
+  // サロンモードのみ活動ログを Spreadsheet A に同期
+  if (currentMode === 'salon') syncActivityToSheet(p, newAct);
 
   save(); closeActModal(); renderMain(); renderSidebar(); renderMobileList();
+  // On mobile: refresh detail content and keep act tab active
   if (isMobile() && currentId) {
     selectPerson(currentId);
   } else {
@@ -2680,9 +2307,7 @@ function markDone(actId) {
   if (!p) return;
   const a = (p.activities || []).find(a => a.id === actId);
   if (a) {
-    a.fuStatus = 'done';
-    updateActivityStatusOnSheet(actId, 'done');
-    save(); renderMain(); renderSidebar(); renderMobileList();
+    a.fuStatus = 'done'; save(); renderMain(); renderSidebar(); renderMobileList();
     if (isMobile() && currentId) selectPerson(currentId);
   }
 }
@@ -2692,7 +2317,6 @@ function deleteAct(actId) {
   const p = getPerson(currentId);
   if (!p) return;
   p.activities = (p.activities || []).filter(a => a.id !== actId);
-  deleteActivityFromSheet(actId);
   save(); renderMain(); renderSidebar(); renderMobileList();
   if (isMobile() && currentId) selectPerson(currentId);
 }
@@ -2744,255 +2368,72 @@ function deleteSales(ym) {
 }
 
 // ── Search View ───────────────────────────────────
-// Debounce timer & pagination state
-let _svTimer = null;
-let _svPage = 1;
-let _svFilteredResults = [];
-const SV_PAGE_SIZE = 50;
-
-function debouncedSearch() {
-  clearTimeout(_svTimer);
-  _svTimer = setTimeout(() => renderSearchView(), 300);
-}
-
-// Build a pre-computed search index string for a salon
-function _buildSearchIdx(p) {
-  return [
-    p.company, p.name, p.agentName, p.agentBranch,
-    p.salesRep, p.address, p.salonType, p.kamidoraId,
-    ...(p.tags || [])
-  ].filter(Boolean).join(' ').toLowerCase();
-}
-
-// Extract prefecture from address
-function _extractPref(address) {
-  if (!address) return '';
-  const m = address.match(/^(.{2,3}(?:都|道|府|県))/);
-  return m ? m[1] : '';
-}
-
-// Follow-up priority: 0=overdue, 1=pending, 2=no-act, 3=normal
-function _followPriority(p) {
-  const acts = p.activities || [];
-  if (!acts.length) return 2;
-  const today = toDay();
-  if (acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today)) return 0;
-  if (acts.some(a => a.fuStatus === 'pending')) return 1;
-  return 3;
-}
-
-// Highlight keyword in already-escaped HTML text
-function svHL(text, q) {
-  if (!q || !text) return esc(text || '');
-  const escaped = esc(text);
-  try {
-    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    return escaped.replace(re, m => `<mark class="sv-hl">${m}</mark>`);
-  } catch { return escaped; }
-}
-
-function clearAllFilters() {
-  document.getElementById('svSearch').value = '';
-  ['svType','svStatus','svSalesRep','svAgent','svPref','svFollow'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  renderSearchView();
-}
-
-function renderSearchView(resetPage) {
-  // If called from filter change, always reset to page 1
-  if (resetPage !== false) _svPage = 1;
-
-  const q = (document.getElementById('svSearch').value || '').trim().toLowerCase();
-  const filterType   = document.getElementById('svType').value;
+function renderSearchView() {
+  const q = (document.getElementById('svSearch').value || '').toLowerCase();
+  const filterType = document.getElementById('svType').value;
   const filterStatus = document.getElementById('svStatus').value;
-  const filterRep    = document.getElementById('svSalesRep').value;
-  const filterAgent  = document.getElementById('svAgent') ? document.getElementById('svAgent').value : '';
-  const filterPref   = document.getElementById('svPref')  ? document.getElementById('svPref').value  : '';
-  const filterFollow = document.getElementById('svFollow')? document.getElementById('svFollow').value: '';
-  const sortKey      = document.getElementById('svSort')  ? document.getElementById('svSort').value  : 'name';
+  const filterRep = document.getElementById('svSalesRep').value;
 
-  // ── Dynamically populate drop-downs (preserving current selection) ──
-  const repSel   = document.getElementById('svSalesRep');
-  const agentSel = document.getElementById('svAgent');
-  const prefSel  = document.getElementById('svPref');
-
-  const allReps   = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
-  const allAgents = [...new Set(salonPeople.map(p => p.agentName).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
-  const allPrefs  = [...new Set(salonPeople.map(p => _extractPref(p.address)).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
-
+  const repSel = document.getElementById('svSalesRep');
+  const currentRep = repSel.value;
+  const reps = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort();
   repSel.innerHTML = '<option value="">担当営業: すべて</option>' +
-    allReps.map(r => `<option value="${esc(r)}"${r===filterRep?' selected':''}>${esc(r)}</option>`).join('');
-  if (agentSel) agentSel.innerHTML = '<option value="">代理店: すべて</option>' +
-    allAgents.map(a => `<option value="${esc(a)}"${a===filterAgent?' selected':''}>${esc(a)}</option>`).join('');
-  if (prefSel) prefSel.innerHTML = '<option value="">都道府県: すべて</option>' +
-    allPrefs.map(a => `<option value="${esc(a)}"${a===filterPref?' selected':''}>${esc(a)}</option>`).join('');
-
-  // 担当営業が選択されているときだけ共有ボタンを表示
-  const shareBtn = document.getElementById('shareRepBtn');
-  if (shareBtn) shareBtn.style.display = filterRep ? 'inline-flex' : 'none';
-
-  // ── Highlight active filters in selects ──
-  ['svType','svStatus','svSalesRep','svAgent','svPref','svFollow'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('sv-active', !!el.value);
-  });
-
-  // ── Active filter tags ──
-  const activeFilters = [];
-  if (q)           activeFilters.push({ key:'q',      label:`🔍 "${q}"`,                     clear:()=>{document.getElementById('svSearch').value='';renderSearchView();} });
-  if (filterType)  activeFilters.push({ key:'type',   label:`タイプ: ${filterType}`,          clear:()=>{document.getElementById('svType').value='';renderSearchView();} });
-  if (filterStatus)activeFilters.push({ key:'status', label:`ステータス: ${{'active':'アクティブ','watch':'要観察','inactive':'休眠'}[filterStatus]||filterStatus}`, clear:()=>{document.getElementById('svStatus').value='';renderSearchView();} });
-  if (filterRep)   activeFilters.push({ key:'rep',    label:`担当: ${filterRep}`,             clear:()=>{document.getElementById('svSalesRep').value='';renderSearchView();} });
-  if (filterAgent) activeFilters.push({ key:'agent',  label:`代理店: ${filterAgent}`,         clear:()=>{document.getElementById('svAgent').value='';renderSearchView();} });
-  if (filterPref)  activeFilters.push({ key:'pref',   label:`${filterPref}`,                  clear:()=>{document.getElementById('svPref').value='';renderSearchView();} });
-  if (filterFollow)activeFilters.push({ key:'follow', label:`${{overdue:'⚠ 期限超過',pending:'要フォロー',noact:'活動なし'}[filterFollow]||filterFollow}`, clear:()=>{document.getElementById('svFollow').value='';renderSearchView();} });
-
-  const tagsEl = document.getElementById('svTags');
-  const clearAllBtn = document.getElementById('svClearAll');
-  if (activeFilters.length) {
-    tagsEl.style.display = 'flex';
-    tagsEl.innerHTML = activeFilters.map((f,i) =>
-      `<span class="sv-tag">${esc(f.label)}<span class="sv-tag-rm" onclick="(${f.clear.toString()})()" title="解除">×</span></span>`
-    ).join('');
-    if (clearAllBtn) clearAllBtn.style.display = (activeFilters.length > 1) ? '' : 'none';
-  } else {
-    tagsEl.style.display = 'none';
-    if (clearAllBtn) clearAllBtn.style.display = 'none';
-  }
-
-  const today = toDay();
-
-  // ── Filter ──
-  let results = salonPeople.filter(p => {
-    // Text search using pre-built index
-    if (q) {
-      if (!p._searchIdx) p._searchIdx = _buildSearchIdx(p);
-      if (!p._searchIdx.includes(q)) return false;
-    }
-    if (filterType   && p.salonType !== filterType) return false;
-    if (filterStatus && (p.status || 'active') !== filterStatus) return false;
-    if (filterRep    && p.salesRep !== filterRep) return false;
-    if (filterAgent  && p.agentName !== filterAgent) return false;
-    if (filterPref   && _extractPref(p.address) !== filterPref) return false;
-    if (filterFollow) {
-      const acts = p.activities || [];
-      if (filterFollow === 'overdue') {
-        if (!acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today)) return false;
-      } else if (filterFollow === 'pending') {
-        if (!acts.some(a => a.fuStatus === 'pending')) return false;
-      } else if (filterFollow === 'noact') {
-        if (acts.length > 0) return false;
-      }
-    }
-    return true;
-  });
-
-  // ── Sort ──
-  results = results.slice(); // don't mutate original
-  if (sortKey === 'name') {
-    results.sort((a, b) => (a.company||'').localeCompare(b.company||'', 'ja'));
-  } else if (sortKey === 'lastact') {
-    results.sort((a, b) => {
-      const da = (a.activities||[]).map(x=>x.date).sort().reverse()[0] || '';
-      const db = (b.activities||[]).map(x=>x.date).sort().reverse()[0] || '';
-      return db.localeCompare(da) || (a.company||'').localeCompare(b.company||'','ja');
-    });
-  } else if (sortKey === 'followup') {
-    results.sort((a, b) => {
-      const diff = _followPriority(a) - _followPriority(b);
-      return diff || (a.company||'').localeCompare(b.company||'','ja');
-    });
-  } else if (sortKey === 'regdate') {
-    // id is timestamp-based string, sort newest first
-    results.sort((a, b) => (b.id||'').localeCompare(a.id||''));
-  }
-
-  _svFilteredResults = results;
-  document.getElementById('svCount').textContent = `${results.length} 件`;
+    reps.map(r => `<option value="${esc(r)}" ${r === currentRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
 
   const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
   const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
-  const inSelectMode = _selectMode;
 
-  // ── Paginate ──
-  const totalShown = Math.min(_svPage * SV_PAGE_SIZE, results.length);
-  const page = results.slice(0, totalShown);
-  const hasMore = results.length > totalShown;
+  let results = salonPeople.filter(p => {
+    const matchQ = !q ||
+      (p.company || '').toLowerCase().includes(q) ||
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.agentName || '').toLowerCase().includes(q) ||
+      (p.agentBranch || '').toLowerCase().includes(q) ||
+      (p.salesRep || '').toLowerCase().includes(q) ||
+      (p.address || '').toLowerCase().includes(q) ||
+      (p.salonType || '').toLowerCase().includes(q);
+    const matchType = !filterType || p.salonType === filterType;
+    const matchStatus = !filterStatus || (p.status || 'active') === filterStatus;
+    const matchRep = !filterRep || p.salesRep === filterRep;
+    return matchQ && matchType && matchStatus && matchRep;
+  }).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+
+  document.getElementById('svCount').textContent = `${results.length} 件`;
 
   if (!results.length) {
-    const noSalons = salonPeople.length === 0;
-    document.getElementById('svGrid').innerHTML = noSalons
-      ? `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)">
-          <div style="font-size:52px;margin-bottom:14px">🏪</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">まだサロンが登録されていません</div>
-          <div style="font-size:13px;margin-bottom:20px">「＋ 新規登録」ボタンか CSVインポートからサロンカルテを作成してください</div>
-          <button class="btn btn-primary" onclick="openAddModal()" style="font-size:14px;padding:10px 24px">＋ 新規登録</button>
-        </div>`
-      : `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)">
-          <div style="font-size:36px;margin-bottom:10px">🔍</div>
-          <div style="font-size:15px;margin-bottom:6px">該当するサロンが見つかりません</div>
-          <div style="font-size:12px;margin-bottom:16px">検索条件を変更するか、フィルタを解除してください</div>
-          ${activeFilters.length ? `<button class="btn btn-outline btn-sm" onclick="clearAllFilters()">✕ フィルタをすべて解除</button>` : ''}
-        </div>`;
+    document.getElementById('svGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><div style="font-size:36px;margin-bottom:10px">🔍</div><div>該当するサロンが見つかりません</div></div>`;
     return;
   }
 
-  const cards = page.map(p => {
+  document.getElementById('svGrid').innerHTML = results.map(p => {
     const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
     const lastAct = acts[0];
     const hasPending = acts.some(a => a.fuStatus === 'pending');
-    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
+    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
     const sc = p.status || 'active';
-    const kid = p.kamidoraId || '';
-    const isSelected = _selectedKids.has(kid) && kid;
 
-    return `<div class="sv-card${isSelected ? ' sv-card-selected' : ''}"
-        onclick="${inSelectMode ? (kid ? `toggleSalonSelect('${kid}',this)` : '') : `openSalonFromSearch('${p.id}')`}"
-        style="position:relative;${isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary)33;' : ''}">
-      ${inSelectMode ? `<div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${isSelected?'var(--primary)':'#ccc'};background:${isSelected?'var(--primary)':'#fff'};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .15s">${isSelected?'✓':''}</div>` : ''}
-      <div class="sv-card-name">${svHL(p.company, q)}</div>
+    return `<div class="sv-card" onclick="openSalonFromSearch('${p.id}')">
+      <div class="sv-card-name">${esc(p.company)}</div>
       <div class="sv-card-badges">
-        ${kid ? `<span style="font-family:monospace;font-size:10px;font-weight:700;color:var(--primary);background:#E3F0FF;padding:1px 6px;border-radius:4px">${esc(kid)}</span>` : ''}
         ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
         <span class="badge" style="background:${statusColor[sc]}22;color:${statusColor[sc]}">${statusLabel[sc] || sc}</span>
         ${overdue ? '<span class="badge badge-fu">⚠ 期限超過</span>' : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : ''}
       </div>
       <div class="sv-card-rows">
-        ${p.agentName ? `<div class="sv-card-row"><span class="sv-card-label">代理店</span><span class="sv-card-val">${svHL(p.agentName, q)}${p.agentBranch ? '　' + svHL(p.agentBranch, q) : ''}</span></div>` : ''}
-        ${p.salesRep ? `<div class="sv-card-row"><span class="sv-card-label">担当営業</span><span class="sv-card-val">${svHL(p.salesRep, q)}</span></div>` : ''}
-        ${p.name ? `<div class="sv-card-row"><span class="sv-card-label">オーナー</span><span class="sv-card-val">${svHL(p.name, q)}</span></div>` : ''}
-        ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${svHL(p.address, q)}</span></div>` : ''}
+        ${p.agentName ? `<div class="sv-card-row"><span class="sv-card-label">代理店</span><span class="sv-card-val">${esc(p.agentName)}${p.agentBranch ? '　' + esc(p.agentBranch) : ''}</span></div>` : ''}
+        ${p.salesRep ? `<div class="sv-card-row"><span class="sv-card-label">担当営業</span><span class="sv-card-val">${esc(p.salesRep)}</span></div>` : ''}
+        ${p.name ? `<div class="sv-card-row"><span class="sv-card-label">オーナー</span><span class="sv-card-val">${esc(p.name)}</span></div>` : ''}
+        ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${esc(p.address)}</span></div>` : ''}
         ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
       </div>
-      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0,44))}${lastAct.content.length>44?'…':''}</div>` : ''}
-      ${!inSelectMode ? `<div class="sv-card-actions">
+      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0, 40))}${lastAct.content.length > 40 ? '…' : ''}</div>` : ''}
+      <div class="sv-card-actions">
         ${p.phone ? `<a href="tel:${esc(p.phone)}" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📞 電話</a>` : ''}
         ${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">HPB</a>` : ''}
         <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openSalonFromSearch('${p.id}')">カルテを開く →</button>
-      </div>` : `<div style="padding:4px 0 0;font-size:12px;color:${isSelected?'var(--primary)':'var(--muted)'};font-weight:${isSelected?'700':'400'}">${isSelected?'✓ レポートに含める':'タップで選択'}</div>`}
+      </div>
     </div>`;
-  });
-
-  // Append "load more" button
-  if (hasMore) {
-    cards.push(`<div class="sv-more-wrap">
-      <button class="sv-more-btn" onclick="svShowMore()">
-        さらに表示 (残り ${results.length - totalShown} 件)
-      </button>
-    </div>`);
-  }
-
-  document.getElementById('svGrid').innerHTML = cards.join('');
-}
-
-function svShowMore() {
-  _svPage++;
-  const grid = document.getElementById('svGrid');
-  const scrollTop = grid.scrollTop;
-  renderSearchView(false); // don't reset page
-  grid.scrollTop = scrollTop; // preserve scroll position
+  }).join('');
 }
 
 function openSalonFromSearch(id) {
