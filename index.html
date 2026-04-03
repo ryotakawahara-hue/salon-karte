@@ -1162,27 +1162,31 @@ body:not(.mode-report) .report-view { display: none !important; }
 // ── Google Sheets 同期設定 ──────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
 
-// サロン行 → オブジェクト変換
+// サロンIDマッピング行 → オブジェクト変換
 function parseSalonRow(row) {
+  // サロンIDマッピングシートのカラム構造に対応
+  // ["代理店名","代理店サロンコード","代理店サロン名","サロンID（自社）","サロン名（自社）","確認ステータス","備考"]
+  const company = String(row['サロン名（自社）'] || row['サロン名'] || '');
+  const kamidoraId = String(row['サロンID（自社）'] || row['髪ドラID'] || '');
   return {
-    id:           Date.now().toString(36) + Math.random().toString(36).slice(2),
-    salonId:      String(row['サロンID']         || ''),
-    company:      String(row['サロン名']          || ''),
-    legalName:    String(row['法人名']            || ''),
-    name:         String(row['代表者/担当者']     || ''),
-    phone:        String(row['電話番号']           || ''),
-    address:      String(row['所在地']             || ''),
-    hpbUrl:       String(row['HPBリンク']          || ''),
-    agentName:    String(row['担当代理店']         || ''),
-    agentBranch:  String(row['代理店支店']         || ''),
-    agentContact: String(row['代理店担当者']       || ''),
-    salesRep:     String(row['担当営業']           || ''),
-    salonType:    String(row['サロンタイプ']       || ''),
-    target:       String(row['ターゲット層']       || ''),
-    staffCount:   parseInt(row['スタッフ数'])     || 0,
-    groupStores:  parseInt(row['グループ店舗数']) || 0,
-    annualTarget: String(row['年間取引額目安']    || ''),
-    memo:         String(row['メモ']               || ''),
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    kamidoraId,
+    company,
+    legalName:    String(row['法人名']             || ''),
+    name:         String(row['代表者/担当者']       || ''),
+    phone:        String(row['電話番号']             || ''),
+    address:      String(row['所在地']               || ''),
+    hpbUrl:       String(row['HPBリンク']            || ''),
+    agentName:    String(row['代理店名']             || row['担当代理店'] || ''),
+    agentBranch:  String(row['代理店支店']           || ''),
+    agentContact: String(row['代理店担当者']         || ''),
+    salesRep:     String(row['担当営業']             || ''),
+    salonType:    String(row['サロンタイプ']         || ''),
+    target:       String(row['ターゲット層']         || ''),
+    staffCount:   parseInt(row['スタッフ数'])       || 0,
+    groupStores:  parseInt(row['グループ店舗数'])   || 0,
+    annualTarget: String(row['年間取引額目安']       || ''),
+    memo:         String(row['備考'] || row['メモ'] || ''),
     activities: [], sales: [], tags: [],
     status: 'active', title: '', email: '', area: '',
     targetSistri: 0, targetSales: 0,
@@ -1221,7 +1225,7 @@ function mergeByCompanyName(existing, loaded) {
 async function autoLoadFromSheet() {
   try {
     const [sRes, aRes] = await Promise.all([
-      fetch(GAS_URL + '?action=getAll&type=salon'),
+      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
       fetch(GAS_URL + '?action=getAll&type=agent'),
     ]);
     const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
@@ -1253,7 +1257,7 @@ async function loadFromSheet() {
   btn.disabled = true;
   try {
     const [sRes, aRes] = await Promise.all([
-      fetch(GAS_URL + '?action=getAll&type=salon'),
+      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
       fetch(GAS_URL + '?action=getAll&type=agent'),
     ]);
     const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
