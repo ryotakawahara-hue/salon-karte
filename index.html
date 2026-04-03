@@ -306,10 +306,12 @@ body.mode-search .layout { display: none; }
 body:not(.mode-search) .search-view { display: none; }
 
 .sv-toolbar {
-  padding: 12px 18px; background: var(--card);
+  padding: 10px 18px; background: var(--card);
   border-bottom: 1px solid var(--border);
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  display: flex; flex-direction: column; gap: 8px;
 }
+.sv-row1 { display: flex; gap: 8px; align-items: center; }
+.sv-row2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sv-search { flex: 1; min-width: 200px; position: relative; }
 .sv-search input {
   width: 100%; padding: 8px 10px 8px 34px;
@@ -701,9 +703,12 @@ body:not(.mode-report) .report-view { display: none !important; }
   .mobile-detail { display: flex; }
 
   /* Search view mobile */
-  .sv-toolbar { flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 12px; }
+  .sv-toolbar { padding: 10px 12px; gap: 6px; }
+  .sv-row1 { flex-wrap: nowrap; }
+  .sv-row2 { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .sv-row2::-webkit-scrollbar { display: none; }
   .sv-search input { font-size: 16px; }
-  .sv-filter { width: 100%; font-size: 16px; }
+  .sv-filter { flex-shrink: 0; font-size: 14px; }
   .sv-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; padding-bottom: calc(var(--bottom-nav-h) + 12px); }
 
   /* Bottom nav */
@@ -849,31 +854,49 @@ body:not(.mode-report) .report-view { display: none !important; }
 <!-- ── Search View ── -->
 <div class="search-view">
   <div class="sv-toolbar">
-    <div class="sv-search">
-      <span class="sv-search-ico">🔍</span>
-      <input type="text" id="svSearch" placeholder="サロン名・代理店名・担当営業・住所で検索..." oninput="renderSearchView()">
+    <div class="sv-row1">
+      <div class="sv-search">
+        <span class="sv-search-ico">🔍</span>
+        <input type="text" id="svSearch" placeholder="サロン名・ID・代理店・住所で検索..." oninput="debouncedSearch()">
+      </div>
+      <span class="sv-count" id="svCount"></span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
     </div>
-    <select class="sv-filter" id="svType" onchange="renderSearchView()">
-      <option value="">タイプ: すべて</option>
-      <option value="ヘアサロン">ヘアサロン</option>
-      <option value="ネイルサロン">ネイルサロン</option>
-      <option value="エステサロン">エステサロン</option>
-      <option value="アイラッシュ">アイラッシュ</option>
-      <option value="トータルビューティー">トータルビューティー</option>
-      <option value="その他">その他</option>
-    </select>
-    <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
-      <option value="">ステータス: すべて</option>
-      <option value="active">アクティブ</option>
-      <option value="watch">要観察</option>
-      <option value="inactive">休眠</option>
-    </select>
-    <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
-      <option value="">担当営業: すべて</option>
-    </select>
-    <span class="sv-count" id="svCount"></span>
-    <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSVインポート</button>
-    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
+    <div class="sv-row2">
+      <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
+        <option value="">代理店: すべて</option>
+      </select>
+      <select class="sv-filter" id="svType" onchange="renderSearchView()">
+        <option value="">タイプ: すべて</option>
+        <option value="ヘアサロン">ヘアサロン</option>
+        <option value="ネイルサロン">ネイルサロン</option>
+        <option value="エステサロン">エステサロン</option>
+        <option value="アイラッシュ">アイラッシュ</option>
+        <option value="トータルビューティー">トータルビューティー</option>
+        <option value="その他">その他</option>
+      </select>
+      <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
+        <option value="">ステータス: すべて</option>
+        <option value="active">アクティブ</option>
+        <option value="watch">要観察</option>
+        <option value="inactive">休眠</option>
+      </select>
+      <select class="sv-filter" id="svFollow" onchange="renderSearchView()">
+        <option value="">フォロー: すべて</option>
+        <option value="overdue">⚠ 期限超過</option>
+        <option value="pending">要フォロー</option>
+        <option value="none">フォローなし</option>
+      </select>
+      <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
+        <option value="">担当営業: すべて</option>
+      </select>
+      <select class="sv-filter" id="svSort" onchange="renderSearchView()">
+        <option value="name">並び: 名前順</option>
+        <option value="follow">並び: フォロー優先</option>
+        <option value="activity">並び: 最終活動日</option>
+      </select>
+    </div>
   </div>
   <div class="sv-grid" id="svGrid">
     <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
@@ -2372,35 +2395,87 @@ function deleteSales(ym) {
 }
 
 // ── Search View ───────────────────────────────────
+let _svTimer = null;
+function debouncedSearch() {
+  clearTimeout(_svTimer);
+  _svTimer = setTimeout(() => renderSearchView(), 300);
+}
+
 function renderSearchView() {
   const q = (document.getElementById('svSearch').value || '').toLowerCase();
-  const filterType = document.getElementById('svType').value;
+  const filterAgent  = document.getElementById('svAgent').value;
+  const filterType   = document.getElementById('svType').value;
   const filterStatus = document.getElementById('svStatus').value;
-  const filterRep = document.getElementById('svSalesRep').value;
+  const filterFollow = document.getElementById('svFollow').value;
+  const filterRep    = document.getElementById('svSalesRep').value;
+  const sortBy       = document.getElementById('svSort').value;
 
+  // 代理店ドロップダウン更新
+  const agentSel = document.getElementById('svAgent');
+  const curAgent = agentSel.value;
+  const agents = [...new Set(salonPeople.map(p => p.agentName).filter(Boolean))].sort();
+  agentSel.innerHTML = '<option value="">代理店: すべて</option>' +
+    agents.map(a => `<option value="${esc(a)}" ${a === curAgent ? 'selected' : ''}>${esc(a)}</option>`).join('');
+
+  // 担当営業ドロップダウン更新
   const repSel = document.getElementById('svSalesRep');
-  const currentRep = repSel.value;
+  const curRep = repSel.value;
   const reps = [...new Set(salonPeople.map(p => p.salesRep).filter(Boolean))].sort();
   repSel.innerHTML = '<option value="">担当営業: すべて</option>' +
-    reps.map(r => `<option value="${esc(r)}" ${r === currentRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
+    reps.map(r => `<option value="${esc(r)}" ${r === curRep ? 'selected' : ''}>${esc(r)}</option>`).join('');
 
+  const today = toDay();
   const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
   const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
 
   let results = salonPeople.filter(p => {
     const matchQ = !q ||
-      (p.company || '').toLowerCase().includes(q) ||
-      (p.name || '').toLowerCase().includes(q) ||
-      (p.agentName || '').toLowerCase().includes(q) ||
-      (p.agentBranch || '').toLowerCase().includes(q) ||
-      (p.salesRep || '').toLowerCase().includes(q) ||
-      (p.address || '').toLowerCase().includes(q) ||
-      (p.salonType || '').toLowerCase().includes(q);
-    const matchType = !filterType || p.salonType === filterType;
+      (p.company    || '').toLowerCase().includes(q) ||
+      (p.kamidoraId || '').toLowerCase().includes(q) ||
+      (p.name       || '').toLowerCase().includes(q) ||
+      (p.agentName  || '').toLowerCase().includes(q) ||
+      (p.agentBranch|| '').toLowerCase().includes(q) ||
+      (p.salesRep   || '').toLowerCase().includes(q) ||
+      (p.address    || '').toLowerCase().includes(q) ||
+      (p.salonType  || '').toLowerCase().includes(q) ||
+      (p.memo       || '').toLowerCase().includes(q);
+
+    const matchAgent  = !filterAgent  || p.agentName === filterAgent;
+    const matchType   = !filterType   || p.salonType === filterType;
     const matchStatus = !filterStatus || (p.status || 'active') === filterStatus;
-    const matchRep = !filterRep || p.salesRep === filterRep;
-    return matchQ && matchType && matchStatus && matchRep;
-  }).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+    const matchRep    = !filterRep    || p.salesRep === filterRep;
+
+    const acts = p.activities || [];
+    const isOverdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
+    const isPending = acts.some(a => a.fuStatus === 'pending');
+    const matchFollow = !filterFollow ||
+      (filterFollow === 'overdue' && isOverdue) ||
+      (filterFollow === 'pending' && isPending && !isOverdue) ||
+      (filterFollow === 'none'    && !isPending);
+
+    return matchQ && matchAgent && matchType && matchStatus && matchRep && matchFollow;
+  });
+
+  // ソート
+  if (sortBy === 'follow') {
+    results.sort((a, b) => {
+      const score = p => {
+        const acts = p.activities || [];
+        if (acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today)) return 0;
+        if (acts.some(a => a.fuStatus === 'pending')) return 1;
+        if (acts.length === 0) return 2;
+        return 3;
+      };
+      return score(a) - score(b) || a.company.localeCompare(b.company, 'ja');
+    });
+  } else if (sortBy === 'activity') {
+    results.sort((a, b) => {
+      const lastDate = p => (p.activities || []).reduce((d, a) => a.date > d ? a.date : d, '');
+      return lastDate(b).localeCompare(lastDate(a)) || a.company.localeCompare(b.company, 'ja');
+    });
+  } else {
+    results.sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+  }
 
   document.getElementById('svCount').textContent = `${results.length} 件`;
 
@@ -2413,11 +2488,11 @@ function renderSearchView() {
     const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
     const lastAct = acts[0];
     const hasPending = acts.some(a => a.fuStatus === 'pending');
-    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
+    const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
     const sc = p.status || 'active';
 
     return `<div class="sv-card" onclick="openSalonFromSearch('${p.id}')">
-      <div class="sv-card-name">${esc(p.company)}</div>
+      <div class="sv-card-name">${esc(p.company)}${p.kamidoraId ? `<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">${esc(p.kamidoraId)}</span>` : ''}</div>
       <div class="sv-card-badges">
         ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
         <span class="badge" style="background:${statusColor[sc]}22;color:${statusColor[sc]}">${statusLabel[sc] || sc}</span>
