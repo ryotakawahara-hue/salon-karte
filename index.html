@@ -337,8 +337,13 @@ body:not(.mode-search) .search-view { display: none; }
 .sv-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s;
+  border-left: 4px solid var(--border); position: relative; overflow: hidden;
 }
-.sv-card:hover { border-color: var(--primary); box-shadow: 0 4px 14px rgba(45,90,142,.12); transform: translateY(-1px); }
+.sv-card:hover { border-color: var(--primary); border-left-color: var(--primary); box-shadow: 0 4px 14px rgba(45,90,142,.12); transform: translateY(-1px); }
+.sv-card.urgent { border-left-color: var(--danger); }
+.sv-card.pending { border-left-color: var(--warning); }
+.sv-card.urgent:hover { border-left-color: var(--danger); }
+.sv-card.pending:hover { border-left-color: var(--warning); }
 .sv-card-name { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
 .sv-card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
 .sv-card-rows { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
@@ -347,6 +352,12 @@ body:not(.mode-search) .search-view { display: none; }
 .sv-card-val { color: var(--text); line-height: 1.4; }
 .sv-card-last { font-size: 11px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 6px 8px; margin-bottom: 10px; }
 .sv-card-actions { display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.sv-pinned-hdr { grid-column: 1/-1; font-size: 12px; font-weight: 700; color: var(--danger); padding: 2px 0 4px; display: flex; align-items: center; gap: 6px; }
+.sv-pinned-hdr::after { content: ''; flex: 1; height: 1px; background: var(--danger); opacity: .25; }
+.sv-section-sep { grid-column: 1/-1; font-size: 12px; font-weight: 700; color: var(--muted); padding: 8px 0 4px; display: flex; align-items: center; gap: 6px; }
+.sv-section-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.sv-act-btn { background: #F0F7FF; color: var(--primary); border: 1px solid #C8DEFF; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.sv-act-btn:hover { background: #DDF0FF; }
 
 /* ── Report View ── */
 .report-view {
@@ -1102,7 +1113,7 @@ body:not(.mode-report) .report-view { display: none !important; }
 <div class="overlay" id="actModal">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title">活動ログを追加</div>
+      <div class="modal-title" id="actModalTitle">活動ログを追加</div>
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -2292,14 +2303,19 @@ function openActModal() {
   document.getElementById('actModal').classList.add('open');
 }
 
-function closeActModal() { document.getElementById('actModal').classList.remove('open'); }
+function closeActModal() {
+  document.getElementById('actModal').classList.remove('open');
+  _quickActPersonId = null;
+  document.getElementById('actModalTitle').textContent = '活動ログを追加';
+}
 
 function saveAct() {
   const date = document.getElementById('aDate').value;
   const content = document.getElementById('aContent').value.trim();
   if (!date || !content) { alert('日付と内容は必須です'); return; }
 
-  const p = getPerson(currentId);
+  const targetId = _quickActPersonId || currentId;
+  const p = getPerson(targetId);
   if (!p) return;
   p.activities = p.activities || [];
   const repName = document.getElementById('aRepName').value.trim();
@@ -2320,7 +2336,13 @@ function saveAct() {
   // サロンモードのみ活動ログを Spreadsheet A に同期
   if (currentMode === 'salon') syncActivityToSheet(p, newAct);
 
+  const fromSearch = !!_quickActPersonId;
   save(); closeActModal(); renderMain(); renderSidebar(); renderMobileList();
+  // If opened from search view, just refresh search
+  if (fromSearch) {
+    renderSearchView();
+    return;
+  }
   // On mobile: refresh detail content and keep act tab active
   if (isMobile() && currentId) {
     selectPerson(currentId);
@@ -2399,6 +2421,30 @@ let _svTimer = null;
 function debouncedSearch() {
   clearTimeout(_svTimer);
   _svTimer = setTimeout(() => renderSearchView(), 300);
+}
+
+function relativeDate(dateStr) {
+  if (!dateStr) return '';
+  const diff = Math.floor((new Date() - new Date(dateStr)) / 86400000);
+  if (diff < 0) {
+    const abs = Math.abs(diff);
+    if (abs === 1) return '明日';
+    if (abs < 7) return `${abs}日後`;
+    return `${Math.floor(abs/7)}週間後`;
+  }
+  if (diff === 0) return '今日';
+  if (diff === 1) return '昨日';
+  if (diff < 7) return `${diff}日前`;
+  if (diff < 30) return `${Math.floor(diff/7)}週間前`;
+  return `${Math.floor(diff/30)}ヶ月前`;
+}
+
+let _quickActPersonId = null;
+function openActModalForPerson(personId) {
+  _quickActPersonId = personId;
+  const p = getPerson(personId);
+  if (p) document.getElementById('actModalTitle').textContent = `活動ログを追加 — ${p.company}`;
+  openActModal();
 }
 
 function renderSearchView() {
@@ -2484,14 +2530,15 @@ function renderSearchView() {
     return;
   }
 
-  document.getElementById('svGrid').innerHTML = results.map(p => {
+  const makeCard = (p, pinned) => {
     const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
     const lastAct = acts[0];
     const hasPending = acts.some(a => a.fuStatus === 'pending');
     const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
     const sc = p.status || 'active';
-
-    return `<div class="sv-card" onclick="openSalonFromSearch('${p.id}')">
+    const urgentClass = overdue ? 'urgent' : hasPending ? 'pending' : '';
+    const nextFu = acts.filter(a => a.fuStatus === 'pending' && a.fuDate).sort((a, b) => a.fuDate.localeCompare(b.fuDate))[0];
+    return `<div class="sv-card ${urgentClass}" onclick="openSalonFromSearch('${p.id}')">
       <div class="sv-card-name">${esc(p.company)}${p.kamidoraId ? `<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">${esc(p.kamidoraId)}</span>` : ''}</div>
       <div class="sv-card-badges">
         ${p.salonType ? `<span class="badge" style="background:#eef2ff;color:#4A6FA5">${esc(p.salonType)}</span>` : ''}
@@ -2505,14 +2552,30 @@ function renderSearchView() {
         ${p.address ? `<div class="sv-card-row"><span class="sv-card-label">住所</span><span class="sv-card-val">${esc(p.address)}</span></div>` : ''}
         ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
       </div>
-      ${lastAct ? `<div class="sv-card-last">📝 ${lastAct.date}　${esc(lastAct.content.slice(0, 40))}${lastAct.content.length > 40 ? '…' : ''}</div>` : ''}
+      <div class="sv-card-last" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>${lastAct ? `📝 <span style="color:var(--muted)">${relativeDate(lastAct.date)}</span>　${esc(lastAct.content.slice(0, 30))}${lastAct.content.length > 30 ? '…' : ''}` : '<span style="color:var(--muted)">活動記録なし</span>'}</span>
+        ${nextFu ? `<span style="font-size:11px;color:${nextFu.fuDate < today ? 'var(--danger)' : '#e65c00'};font-weight:600;white-space:nowrap">📅 ${relativeDate(nextFu.fuDate)}</span>` : ''}
+      </div>
       <div class="sv-card-actions">
         ${p.phone ? `<a href="tel:${esc(p.phone)}" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📞 電話</a>` : ''}
         ${p.hpbUrl ? `<a href="${esc(p.hpbUrl)}" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">HPB</a>` : ''}
+        <button class="sv-act-btn" onclick="event.stopPropagation();openActModalForPerson('${p.id}')">📝 活動記録</button>
         <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="event.stopPropagation();openSalonFromSearch('${p.id}')">カルテを開く →</button>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  const overdueItems = results.filter(p => (p.activities || []).some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today));
+  const otherItems   = results.filter(p => !overdueItems.includes(p));
+
+  let html = '';
+  if (overdueItems.length) {
+    html += `<div class="sv-pinned-hdr">⚠ 期限超過 — 要対応 (${overdueItems.length}件)</div>`;
+    html += overdueItems.map(p => makeCard(p, true)).join('');
+    if (otherItems.length) html += `<div class="sv-section-sep">その他 (${otherItems.length}件)</div>`;
+  }
+  html += otherItems.map(p => makeCard(p, false)).join('');
+  document.getElementById('svGrid').innerHTML = html;
 }
 
 function openSalonFromSearch(id) {
