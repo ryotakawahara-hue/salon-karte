@@ -312,6 +312,12 @@ body:not(.mode-search) .search-view { display: none; }
 }
 .sv-row1 { display: flex; gap: 8px; align-items: center; }
 .sv-row2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sv-area-row { overflow-x: auto; white-space: nowrap; padding: 2px 0 2px; scrollbar-width: none; }
+.sv-area-row::-webkit-scrollbar { display: none; }
+.sv-area-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 12px; margin-right: 6px; background: #fff; color: var(--text); transition: all .15s; user-select: none; }
+.sv-area-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+.sv-area-chip:hover:not(.active) { background: #f0f4ff; border-color: var(--primary); }
+.sv-area-chip .chip-cnt { font-size: 10px; opacity: .65; background: rgba(0,0,0,.07); border-radius: 10px; padding: 1px 5px; }
 .sv-search { flex: 1; min-width: 200px; position: relative; }
 .sv-search input {
   width: 100%; padding: 8px 10px 8px 34px;
@@ -885,6 +891,7 @@ body:not(.mode-report) .report-view { display: none !important; }
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
       <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
     </div>
+    <div class="sv-area-row" id="svAreaRow"></div>
     <div class="sv-row2">
       <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
         <option value="">代理店: すべて</option>
@@ -2534,6 +2541,24 @@ function deleteSales(ym) {
 
 // ── Search View ───────────────────────────────────
 let _svTimer = null;
+let _svAreaFilter = '';
+
+function extractArea(address) {
+  if (!address || !address.trim()) return '';
+  const s = address.trim();
+  const m1 = s.match(/[都道府県](.+?[市区町村])/);
+  if (m1) return m1[1];
+  const m2 = s.match(/^(東京都|大阪府|京都府|北海道|.+?[都道府県])/);
+  if (m2) return m2[1];
+  const m3 = s.match(/^([^\d０-９ー\-\s　]{2,8})/);
+  return m3 ? m3[1] : '';
+}
+
+function setAreaFilter(area) {
+  _svAreaFilter = (_svAreaFilter === area) ? '' : area;
+  renderSearchView();
+}
+
 function debouncedSearch() {
   clearTimeout(_svTimer);
   _svTimer = setTimeout(() => renderSearchView(), 300);
@@ -2571,6 +2596,20 @@ function renderSearchView() {
   const filterFollow = document.getElementById('svFollow').value;
   const filterRep    = document.getElementById('svSalesRep').value;
   const sortBy       = document.getElementById('svSort').value;
+
+  // エリアチップ描画
+  const areaMap = {};
+  salonPeople.forEach(p => {
+    const a = extractArea(p.address);
+    if (a) areaMap[a] = (areaMap[a] || 0) + 1;
+  });
+  const areaRow = document.getElementById('svAreaRow');
+  if (areaRow) {
+    const sortedAreas = Object.entries(areaMap).sort((a, b) => b[1] - a[1]);
+    areaRow.innerHTML = sortedAreas.length ?
+      `<span class="sv-area-chip ${!_svAreaFilter ? 'active' : ''}" onclick="setAreaFilter('')">すべて</span>` +
+      sortedAreas.map(([a, cnt]) => `<span class="sv-area-chip ${_svAreaFilter === a ? 'active' : ''}" onclick="setAreaFilter('${esc(a)}')">${esc(a)}<span class="chip-cnt">${cnt}</span></span>`).join('') : '';
+  }
 
   // 代理店ドロップダウン更新
   const agentSel = document.getElementById('svAgent');
@@ -2615,7 +2654,8 @@ function renderSearchView() {
       (filterFollow === 'pending' && isPending && !isOverdue) ||
       (filterFollow === 'none'    && !isPending);
 
-    return matchQ && matchAgent && matchType && matchStatus && matchRep && matchFollow;
+    const matchArea = !_svAreaFilter || extractArea(p.address) === _svAreaFilter;
+    return matchQ && matchAgent && matchType && matchStatus && matchRep && matchFollow && matchArea;
   });
 
   // ソート
