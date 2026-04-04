@@ -816,6 +816,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     <span class="hdr-search-ico">🔍</span>
     <input type="text" id="searchInput" placeholder="担当者名・会社名で検索..." oninput="renderSidebar(); renderMobileList()">
   </div>
+  <button class="hdr-btn-icon salon-only" id="sellMasterBtn" onclick="loadSellMaster()" title="売上マスター取込">📊</button>
   <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="読込">📥</button>
   <button class="hdr-btn hdr-add-btn" onclick="openAddModal()">＋ 新規登録</button>
 </div>
@@ -1349,6 +1350,77 @@ async function loadFromSheet() {
     btn.textContent = '📥';
     btn.disabled = false;
   }
+}
+
+// ── 売上マスター取込 ──────────────────────────────
+async function loadSellMaster() {
+  const btn = document.getElementById('sellMasterBtn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const res = await fetch(GAS_URL + '?action=getAll&type=sellMaster');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || '読込失敗');
+
+    const { salonAdded, salesUpdated } = mergeSellMaster(json.salons, json.sales);
+    save();
+    renderSidebar(); renderMobileList(); renderMain();
+    alert(`売上マスター取込完了\nサロン新規追加: ${salonAdded}件\n販売実績を更新しました（${salesUpdated}件）`);
+  } catch(e) {
+    alert('売上マスター取込エラー: ' + e.message);
+  } finally {
+    btn.textContent = '📊';
+    btn.disabled = false;
+  }
+}
+
+function mergeSellMaster(salons, sales) {
+  let salonAdded = 0, salesUpdated = 0;
+
+  // ① サロン一覧をマージ（kamidoraId で照合）
+  salons.forEach(s => {
+    const exists = salonPeople.find(p => p.kamidoraId === s.salonId);
+    if (!exists) {
+      salonPeople.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        kamidoraId:   s.salonId,
+        company:      s.salonName,
+        agentName:    s.agentName,
+        legalName: '', name: '', phone: '', address: '', hpbUrl: '',
+        agentBranch: '', agentContact: '', salesRep: '', salonType: '',
+        target: '', staffCount: 0, groupStores: 0, annualTarget: '',
+        memo: '', activities: [], sales: [], tags: [],
+        status: 'active', title: '', email: '', area: '',
+        targetSistri: 0, targetSales: 0,
+      });
+      salonAdded++;
+    } else {
+      if (!exists.agentName && s.agentName) exists.agentName = s.agentName;
+      if (!exists.company && s.salonName)   exists.company   = s.salonName;
+    }
+  });
+
+  // ② 月別販売実績を上書き（スプシを正とする）
+  sales.forEach(s => {
+    const salon = salonPeople.find(p => p.kamidoraId === s.salonId);
+    if (!salon) return;
+    salon.sales = salon.sales || [];
+    const idx = salon.sales.findIndex(x => x.ym === s.ym);
+    const entry = {
+      ym:     s.ym,
+      sistri: s.qty,
+      sales:  Math.round(s.amount / 10000 * 10) / 10, // 円 → 万円
+      memo:   idx >= 0 ? (salon.sales[idx].memo || '') : '',
+    };
+    if (idx >= 0) salon.sales[idx] = entry;
+    else          salon.sales.push(entry);
+    salesUpdated++;
+  });
+
+  // localStorage に反映
+  localStorage.setItem('karte_salon_v1', JSON.stringify(salonPeople));
+  return { salonAdded, salesUpdated };
 }
 
 function syncToSheet(type, data) {
