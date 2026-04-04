@@ -2755,6 +2755,9 @@ function openSalonFromSearch(id) {
 
 // ── Mode switch ───────────────────────────────────
 function switchMode(mode) {
+  // サロンカルテはエリア検索ビューに統合
+  if (mode === 'salon') mode = 'search';
+
   // On mobile: close detail panel when switching modes
   if (isMobile()) {
     const detail = document.getElementById('mobileDetail');
