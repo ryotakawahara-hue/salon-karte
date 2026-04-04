@@ -830,8 +830,8 @@ body:not(.mode-report) .report-view { display: none !important; }
 <!-- ── Mode Bar (Desktop) ── -->
 <div class="mode-bar">
   <div class="mode-tab-top active" id="tabAgent" onclick="switchMode('agent')">代理店カルテ</div>
-  <div class="mode-tab-top" id="tabSalon" onclick="switchMode('salon')">サロンカルテ</div>
-  <div class="mode-tab-top" id="tabSearch" onclick="switchMode('search')">🔍 サロン検索</div>
+  <div class="mode-tab-top" id="tabSalon" onclick="switchMode('search')">サロンカルテ</div>
+  <div class="mode-tab-top" id="tabSearch" onclick="switchMode('search')" style="display:none"></div>
 </div>
 
 <!-- ── Desktop Layout ── -->
@@ -885,7 +885,7 @@ body:not(.mode-report) .report-view { display: none !important; }
     <div class="sv-row1">
       <div class="sv-search">
         <span class="sv-search-ico">🔍</span>
-        <input type="text" id="svSearch" placeholder="サロン名・ID・代理店・住所で検索..." oninput="debouncedSearch()">
+        <input type="text" id="svSearch" placeholder="サロン名・担当者名・住所で検索..." oninput="debouncedSearch()">
       </div>
       <span class="sv-count" id="svCount"></span>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
@@ -976,10 +976,10 @@ body:not(.mode-report) .report-view { display: none !important; }
   <button class="bn-tab active" id="bnAgent" onclick="switchMode('agent')">
     <span class="bn-tab-ico">👥</span>代理店
   </button>
-  <button class="bn-tab" id="bnSalon" onclick="switchMode('salon')">
+  <button class="bn-tab" id="bnSalon" onclick="switchMode('search')">
     <span class="bn-tab-ico">💇</span>サロン
   </button>
-  <button class="bn-tab" id="bnSearch" onclick="switchMode('search')">
+  <button class="bn-tab" id="bnSearch" style="display:none">
     <span class="bn-tab-ico">🔍</span>検索
   </button>
   <button class="bn-tab" id="bnReport" onclick="switchMode('report')">
@@ -2770,12 +2770,12 @@ function switchMode(mode) {
   if (mode === 'search') {
     document.body.className = 'mode-search';
     document.getElementById('tabAgent').classList.remove('active');
-    document.getElementById('tabSalon').classList.remove('active');
-    document.getElementById('tabSearch').classList.add('active');
-    document.getElementById('hdrTitle').textContent = '🔍 サロン検索';
-    document.getElementById('hdrTitleCenter').textContent = 'サロン検索';
+    document.getElementById('tabSalon').classList.add('active');
+    document.getElementById('tabSearch').classList.remove('active');
+    document.getElementById('hdrTitle').textContent = '📋 サロンカルテ';
+    document.getElementById('hdrTitleCenter').textContent = 'サロンカルテ';
     allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
-    document.getElementById('bnSearch').classList.add('active');
+    document.getElementById('bnSalon').classList.add('active');
     document.getElementById('mobileListView').style.display = 'none';
     renderSearchView();
     return;
