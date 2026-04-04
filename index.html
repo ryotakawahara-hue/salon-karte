@@ -1222,7 +1222,8 @@ body:not(.mode-report) .report-view { display: none !important; }
 
 <script>
 // ── Google Sheets 同期設定 ──────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
+const SELL_MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
 
 // サロンIDマッピング行 → オブジェクト変換
 function parseSalonRow(row) {
@@ -1358,7 +1359,7 @@ async function loadSellMaster() {
   btn.textContent = '⏳';
   btn.disabled = true;
   try {
-    const res = await fetch(GAS_URL + '?action=getAll&type=sellMaster');
+    const res = await fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=sellMaster');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '読込失敗');
