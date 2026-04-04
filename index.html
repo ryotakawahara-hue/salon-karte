@@ -891,7 +891,9 @@ body:not(.mode-report) .report-view { display: none !important; }
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('csvFileInput').click()" style="white-space:nowrap">📥 CSV</button>
       <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="importSalonCSV(event)">
     </div>
-    <div class="sv-area-row" id="svAreaRow"></div>
+    <div class="sv-area-row" id="svRegionRow"></div>
+    <div class="sv-area-row" id="svPrefRow" style="display:none"></div>
+    <div class="sv-area-row" id="svCityRow" style="display:none"></div>
     <div class="sv-row2">
       <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
         <option value="">代理店: すべて</option>
@@ -2541,21 +2543,49 @@ function deleteSales(ym) {
 
 // ── Search View ───────────────────────────────────
 let _svTimer = null;
-let _svAreaFilter = '';
+let _svRegion = '';
+let _svPref   = '';
+let _svCity   = '';
+
+// 地方→都道府県マップ
+const REGION_MAP = {
+  '北海道・東北': ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県'],
+  '関東':  ['東京都','神奈川県','埼玉県','千葉県','茨城県','栃木県','群馬県'],
+  '中部':  ['新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県'],
+  '関西':  ['大阪府','兵庫県','京都府','滋賀県','奈良県','和歌山県'],
+  '中国':  ['鳥取県','島根県','岡山県','広島県','山口県'],
+  '四国':  ['徳島県','香川県','愛媛県','高知県'],
+  '九州・沖縄': ['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'],
+};
+const PREF_TO_REGION = {};
+Object.entries(REGION_MAP).forEach(([r, prefs]) => prefs.forEach(p => PREF_TO_REGION[p] = r));
+
+function extractPref(address) {
+  if (!address) return '';
+  const m = address.match(/^(.+?[都道府県])/);
+  return m ? m[1] : '';
+}
 
 function extractArea(address) {
   if (!address || !address.trim()) return '';
   const s = address.trim();
   const m1 = s.match(/[都道府県](.+?[市区町村])/);
   if (m1) return m1[1];
-  const m2 = s.match(/^(東京都|大阪府|京都府|北海道|.+?[都道府県])/);
-  if (m2) return m2[1];
-  const m3 = s.match(/^([^\d０-９ー\-\s　]{2,8})/);
-  return m3 ? m3[1] : '';
+  return '';
 }
 
-function setAreaFilter(area) {
-  _svAreaFilter = (_svAreaFilter === area) ? '' : area;
+function setRegion(r) {
+  if (_svRegion === r) { _svRegion = ''; _svPref = ''; _svCity = ''; }
+  else { _svRegion = r; _svPref = ''; _svCity = ''; }
+  renderSearchView();
+}
+function setPref(p) {
+  if (_svPref === p) { _svPref = ''; _svCity = ''; }
+  else { _svPref = p; _svCity = ''; }
+  renderSearchView();
+}
+function setAreaFilter(c) {
+  _svCity = (_svCity === c) ? '' : c;
   renderSearchView();
 }
 
@@ -2597,18 +2627,60 @@ function renderSearchView() {
   const filterRep    = document.getElementById('svSalesRep').value;
   const sortBy       = document.getElementById('svSort').value;
 
-  // エリアチップ描画
-  const areaMap = {};
+  // ── 3段階エリアチップ描画 ──────────────────────────
+  // 各サロンの地方・都道府県・市区町村を集計
+  const regionCount = {}, prefCount = {}, cityCount = {};
   salonPeople.forEach(p => {
-    const a = extractArea(p.address);
-    if (a) areaMap[a] = (areaMap[a] || 0) + 1;
+    const pref = extractPref(p.address);
+    const city = extractArea(p.address);
+    const region = PREF_TO_REGION[pref] || '';
+    if (region) regionCount[region] = (regionCount[region] || 0) + 1;
+    if (pref)   prefCount[pref]   = (prefCount[pref]   || 0) + 1;
+    if (city)   cityCount[city]   = (cityCount[city]   || 0) + 1;
   });
-  const areaRow = document.getElementById('svAreaRow');
-  if (areaRow) {
-    const sortedAreas = Object.entries(areaMap).sort((a, b) => b[1] - a[1]);
-    areaRow.innerHTML = sortedAreas.length ?
-      `<span class="sv-area-chip ${!_svAreaFilter ? 'active' : ''}" onclick="setAreaFilter('')">すべて</span>` +
-      sortedAreas.map(([a, cnt]) => `<span class="sv-area-chip ${_svAreaFilter === a ? 'active' : ''}" onclick="setAreaFilter('${esc(a)}')">${esc(a)}<span class="chip-cnt">${cnt}</span></span>`).join('') : '';
+
+  // 地方行
+  const regionRow = document.getElementById('svRegionRow');
+  if (regionRow) {
+    const regions = Object.keys(REGION_MAP).filter(r => regionCount[r]);
+    regionRow.innerHTML = regions.length ?
+      `<span class="sv-area-chip ${!_svRegion ? 'active' : ''}" onclick="setRegion('')">すべて</span>` +
+      regions.map(r => `<span class="sv-area-chip ${_svRegion === r ? 'active' : ''}" onclick="setRegion('${esc(r)}')">${esc(r)}<span class="chip-cnt">${regionCount[r]}</span></span>`).join('') : '';
+  }
+
+  // 都道府県行（地方選択後のみ）
+  const prefRow = document.getElementById('svPrefRow');
+  if (prefRow) {
+    if (_svRegion) {
+      const prefs = (REGION_MAP[_svRegion] || []).filter(p => prefCount[p]);
+      prefRow.style.display = prefs.length ? '' : 'none';
+      prefRow.innerHTML = prefs.length ?
+        `<span class="sv-area-chip ${!_svPref ? 'active' : ''}" onclick="setPref('')">すべて</span>` +
+        prefs.map(p => `<span class="sv-area-chip ${_svPref === p ? 'active' : ''}" onclick="setPref('${esc(p)}')">${esc(p)}<span class="chip-cnt">${prefCount[p]}</span></span>`).join('') : '';
+    } else {
+      prefRow.style.display = 'none';
+      prefRow.innerHTML = '';
+    }
+  }
+
+  // 市区町村行（都道府県選択後のみ）
+  const cityRow = document.getElementById('svCityRow');
+  if (cityRow) {
+    if (_svPref) {
+      const cities = Object.entries(cityCount)
+        .filter(([c]) => {
+          // この市区町村が選択中の都道府県に属するか確認
+          return salonPeople.some(p => extractPref(p.address) === _svPref && extractArea(p.address) === c);
+        })
+        .sort((a, b) => b[1] - a[1]);
+      cityRow.style.display = cities.length ? '' : 'none';
+      cityRow.innerHTML = cities.length ?
+        `<span class="sv-area-chip ${!_svCity ? 'active' : ''}" onclick="setAreaFilter('')">すべて</span>` +
+        cities.map(([c, cnt]) => `<span class="sv-area-chip ${_svCity === c ? 'active' : ''}" onclick="setAreaFilter('${esc(c)}')">${esc(c)}<span class="chip-cnt">${cnt}</span></span>`).join('') : '';
+    } else {
+      cityRow.style.display = 'none';
+      cityRow.innerHTML = '';
+    }
   }
 
   // 代理店ドロップダウン更新
@@ -2654,7 +2726,12 @@ function renderSearchView() {
       (filterFollow === 'pending' && isPending && !isOverdue) ||
       (filterFollow === 'none'    && !isPending);
 
-    const matchArea = !_svAreaFilter || extractArea(p.address) === _svAreaFilter;
+    const pref   = extractPref(p.address);
+    const city   = extractArea(p.address);
+    const region = PREF_TO_REGION[pref] || '';
+    const matchArea = (!_svRegion || region === _svRegion) &&
+                      (!_svPref   || pref   === _svPref)   &&
+                      (!_svCity   || city   === _svCity);
     return matchQ && matchAgent && matchType && matchStatus && matchRep && matchFollow && matchArea;
   });
 
