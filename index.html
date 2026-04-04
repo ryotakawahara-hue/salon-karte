@@ -486,6 +486,16 @@ body:not(.mode-report) .report-view { display: none !important; }
   body.mode-report .layout { display: flex !important; }
 }
 
+/* ── Act detail toggle ── */
+.act-detail-toggle {
+  width: 100%; background: none; border: 1px dashed var(--border);
+  border-radius: 8px; padding: 9px; color: var(--muted);
+  font-size: 12px; cursor: pointer; text-align: center;
+  margin-top: 4px; transition: all .15s;
+}
+.act-detail-toggle:hover { border-color: var(--primary); color: var(--primary); background: #f0f7ff; }
+.act-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+
 /* ── Type Chips (horizontal scroll row) ── */
 .type-chips {
   display: flex; gap: 8px;
@@ -1118,18 +1128,8 @@ body:not(.mode-report) .report-view { display: none !important; }
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="frow">
-        <div class="fg">
-          <label class="flbl">日付 *</label>
-          <input class="finput" id="aDate" type="date">
-        </div>
-        <div class="fg">
-          <label class="flbl">担当営業 *</label>
-          <input class="finput" id="aRepName" list="repNameList" placeholder="担当者名" autocomplete="off">
-        </div>
-      </div>
+      <!-- ① 種別チップ（常時表示） -->
       <div class="fg">
-        <label class="flbl">種別</label>
         <div class="type-chips" id="aTypeChips">
           <button type="button" class="type-chip active" data-val="訪問"       onclick="selectActType(this)">🚶 訪問</button>
           <button type="button" class="type-chip"        data-val="電話"       onclick="selectActType(this)">📞 電話</button>
@@ -1142,27 +1142,53 @@ body:not(.mode-report) .report-view { display: none !important; }
         </div>
         <input type="hidden" id="aType" value="訪問">
       </div>
-      <!-- 講師選択時のみ表示 -->
-      <div class="fg" id="aLecturerWrap" style="display:none">
-        <label class="flbl">講師名</label>
-        <input class="finput" id="aLecturer" placeholder="例: 山田先生">
+      <!-- ② 内容（常時表示） -->
+      <div class="fg" style="margin-top:12px">
+        <textarea class="finput" id="aContent" placeholder="話した内容・次のアクションを一言でも…" style="min-height:100px"></textarea>
       </div>
-      <div class="fg"><label class="flbl">内容 *</label><textarea class="finput" id="aContent" placeholder="商談・会話の内容 / 受講した研修内容..." style="min-height:90px"></textarea></div>
-      <div class="fg"><label class="flbl">次のアクション</label><input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪"></div>
-      <div class="fg">
-        <label class="flbl">フォロー状況</label>
-        <div class="fu-chips" id="aFuChips">
-          <button type="button" class="fu-chip active" data-val="none"    onclick="selectFuStatus(this)">なし</button>
-          <button type="button" class="fu-chip"        data-val="pending" onclick="selectFuStatus(this)">⚠ フォロー必要</button>
-          <button type="button" class="fu-chip"        data-val="done"    onclick="selectFuStatus(this)">✓ 完了</button>
+      <!-- ③ 詳細トグル -->
+      <button class="act-detail-toggle" id="actDetailToggle" onclick="toggleActDetails()" type="button">
+        詳細を追加（日付・フォロー期限・議事録リンクなど） ▼
+      </button>
+      <!-- ④ 詳細セクション（折りたたみ） -->
+      <div class="act-details" id="actDetails" style="display:none">
+        <div class="frow">
+          <div class="fg">
+            <label class="flbl">日付</label>
+            <input class="finput" id="aDate" type="date">
+          </div>
+          <div class="fg">
+            <label class="flbl">担当営業</label>
+            <input class="finput" id="aRepName" list="repNameList" placeholder="担当者名" autocomplete="off">
+          </div>
         </div>
-        <input type="hidden" id="aFuStatus" value="none">
+        <!-- 講師選択時のみ表示 -->
+        <div class="fg" id="aLecturerWrap" style="display:none">
+          <label class="flbl">講師名</label>
+          <input class="finput" id="aLecturer" placeholder="例: 山田先生">
+        </div>
+        <div class="fg">
+          <label class="flbl">次のアクション</label>
+          <input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪">
+        </div>
+        <div class="fg">
+          <label class="flbl">フォロー状況</label>
+          <div class="fu-chips" id="aFuChips">
+            <button type="button" class="fu-chip active" data-val="none"    onclick="selectFuStatus(this)">なし</button>
+            <button type="button" class="fu-chip"        data-val="pending" onclick="selectFuStatus(this)">⚠ フォロー必要</button>
+            <button type="button" class="fu-chip"        data-val="done"    onclick="selectFuStatus(this)">✓ 完了</button>
+          </div>
+          <input type="hidden" id="aFuStatus" value="none">
+        </div>
+        <div class="fg" id="aFuDateWrap" style="display:none">
+          <label class="flbl">フォロー期限</label>
+          <input class="finput" id="aFuDate" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">議事録リンク</label>
+          <input class="finput" id="aMinutesUrl" type="url" placeholder="https://...">
+        </div>
       </div>
-      <div class="fg" id="aFuDateWrap" style="display:none">
-        <label class="flbl">フォロー期限</label>
-        <input class="finput" id="aFuDate" type="date">
-      </div>
-      <div class="fg"><label class="flbl">議事録リンク</label><input class="finput" id="aMinutesUrl" type="url" placeholder="https://..."></div>
     </div>
     <div class="modal-footer" style="gap:10px">
       <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
@@ -1760,6 +1786,7 @@ function renderMain() {
         ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
       </div>
       <div class="profile-actions">
+        <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:13px;padding:6px 14px">＋ 接点記録</button>
         <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">編集</button>
         <button class="btn btn-danger btn-sm" onclick="deletePerson('${p.id}')">削除</button>
       </div>
@@ -2281,28 +2308,42 @@ function refreshRepNameList() {
 }
 
 function openActModal() {
-  document.getElementById('aDate').value = toDay();
+  // 詳細セクションを閉じた状態でリセット
+  document.getElementById('actDetails').style.display = 'none';
+  document.getElementById('actDetailToggle').textContent = '詳細を追加（日付・フォロー期限・議事録リンクなど） ▼';
   // Reset type chips
   document.getElementById('aType').value = '訪問';
   document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.val === '訪問');
   });
   document.getElementById('aContent').value = '';
+  // 詳細フィールドもリセット
+  document.getElementById('aDate').value = toDay();
   document.getElementById('aNext').value = '';
   document.getElementById('aFuDate').value = '';
-  // Reset fu chips
   document.getElementById('aFuStatus').value = 'none';
   document.querySelectorAll('#aFuChips .fu-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.val === 'none');
   });
   document.getElementById('aFuDateWrap').style.display = 'none';
-  // 前回の担当営業名を自動セット
   document.getElementById('aRepName').value = localStorage.getItem('karte_last_rep') || '';
   document.getElementById('aMinutesUrl').value = '';
   document.getElementById('aLecturer').value = '';
   document.getElementById('aLecturerWrap').style.display = 'none';
   refreshRepNameList();
   document.getElementById('actModal').classList.add('open');
+  // 内容テキストエリアにフォーカス
+  setTimeout(() => document.getElementById('aContent').focus(), 100);
+}
+
+function toggleActDetails() {
+  const sec = document.getElementById('actDetails');
+  const btn = document.getElementById('actDetailToggle');
+  const open = sec.style.display !== 'none';
+  sec.style.display = open ? 'none' : 'flex';
+  btn.textContent = open
+    ? '詳細を追加（日付・フォロー期限・議事録リンクなど） ▼'
+    : '詳細を閉じる ▲';
 }
 
 function closeActModal() {
