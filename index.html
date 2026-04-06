@@ -653,7 +653,6 @@ body:not(.mode-report) .report-view { display: none !important; }
 .act-fu-date-hint.show { display: block; }
 /* Mobile Filter Strip ── */
 .mobile-filter-strip {
-.mobile-filter-strip {
   display: none; padding: 8px 14px 6px;
   background: var(--card); border-bottom: 1px solid var(--border);
   overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -832,8 +831,8 @@ body:not(.mode-report) .report-view { display: none !important; }
   .hdr-add-btn { display: none; }
 
   /* ─ Header ─ */
-  .hdr { padding: 0 6px 0 calc(6px + var(--safe-left)); gap: 4px; }
-  .hdr-back { display: flex; }
+  .hdr { padding: 0 6px 0 calc(6px + var(--safe-left)); gap: 2px; }
+  .hdr-back { display: flex; min-width: 44px; min-height: 44px; }
   .hdr-back.hidden { display: none; }
   .hdr-title { display: none; }
   .hdr-title-center {
@@ -842,6 +841,13 @@ body:not(.mode-report) .report-view { display: none !important; }
     text-align: center; color: white;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* ─ Header icon buttons: hide sell master on mobile (field users don't need it) ─ */
+  #sellMasterBtn { display: none; }
+  .hdr-btn-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .hdr-btn-icon:active { background: rgba(255,255,255,.35); transform: scale(.92); }
 
   /* ─ Layout: sidebar + main → mobile views ─ */
   .layout { overflow: hidden; position: relative; }
@@ -996,26 +1002,39 @@ body:not(.mode-report) .report-view { display: none !important; }
   .sv-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 }
 
-/* ─────────────── DESKTOP (≥768px) ─────────────── */
-@media (min-width: 768px) {
-  .bottom-nav { display: none; }
-  .fab { display: none; }
-  .mobile-list-search { display: none; }
-  .mb-list-wrap { display: none; }
-  .mobile-detail { display: none !important; }
-  .mobile-add-act-bar { display: none !important; }
-  .sidebar { display: flex; }
-  .main { display: block; }
-  .hdr-back { display: none !important; }
-  .hdr-title { display: block; }
-  .hdr-title-center { display: none !important; }
-  .hdr-search { display: block; }
-  .hdr-add-btn { display: flex; }
-  .hdr-btn-icon { display: none; }
+/* ─────────────── Toast Notification ─────────────── */
+#toastWrap {
+  position: fixed; top: calc(var(--header-h) + 8px + var(--safe-top));
+  left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; flex-direction: column; gap: 6px;
+  pointer-events: none; width: calc(100% - 32px); max-width: 420px;
 }
+.toast {
+  padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  color: white; box-shadow: 0 4px 16px rgba(0,0,0,.22);
+  display: flex; align-items: center; gap: 10px;
+  animation: toastIn .22s ease; pointer-events: auto;
+  transition: opacity .3s;
+}
+.toast.info    { background: var(--primary); }
+.toast.success { background: var(--success); }
+.toast.error   { background: var(--danger); }
+.toast.warn    { background: var(--warning); color: #333; }
+.toast-msg     { flex: 1; }
+.toast-btn {
+  background: rgba(255,255,255,.25); border: none; border-radius: 8px;
+  padding: 5px 10px; font-size: 12px; font-weight: 700; color: inherit;
+  cursor: pointer; white-space: nowrap;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 </style>
 </head>
 <body class="mode-agent">
+<div id="toastWrap"></div>
 
 <!-- ── Header ── -->
 <div class="hdr">
@@ -1508,6 +1527,38 @@ body:not(.mode-report) .report-view { display: none !important; }
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
 const SELL_MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
 
+// ── Toast 通知 ──────────────────────────────────────
+function showToast(msg, type = 'info', action = null, duration = 4000) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-msg">${msg}</span>`;
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-btn';
+    btn.textContent = action.label;
+    btn.onclick = () => { action.fn(); el.remove(); };
+    el.appendChild(btn);
+  }
+  wrap.appendChild(el);
+  if (duration > 0) setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(), 300); }, duration);
+  return el;
+}
+
+// ── Fetch with timeout ──────────────────────────────
+async function fetchWithTimeout(url, timeout = 20000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(tid);
+    return res;
+  } catch(e) {
+    clearTimeout(tid);
+    throw e;
+  }
+}
+
 // サロンIDマッピング行 → オブジェクト変換
 function parseSalonRow(row) {
   // サロンIDマッピングシートのカラム構造に対応
@@ -1605,13 +1656,13 @@ function mergeSalons(existing, loaded) {
   return { merged, added };
 }
 
-// 起動時サイレント自動ロード（alert なし）
-async function autoLoadFromSheet() {
+// 起動時サイレント自動ロード（alert なし・リトライあり）
+async function autoLoadFromSheet(isRetry = false) {
   try {
     const [smRes, sRes, aRes] = await Promise.all([
-      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
-      fetch(GAS_URL + '?action=getAll&type=agent'),
+      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
     ]);
     const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
 
@@ -1642,6 +1693,19 @@ async function autoLoadFromSheet() {
     refreshAgentList();
   } catch(e) {
     console.warn('自動読込スキップ:', e.message);
+    if (!isRetry) {
+      // 5秒後に1回リトライ
+      setTimeout(() => autoLoadFromSheet(true), 5000);
+    } else {
+      // リトライも失敗 → トースト通知
+      showToast('データの読込に失敗しました', 'error', {
+        label: '再読込',
+        fn: () => {
+          const btn = document.getElementById('reloadBtn');
+          if (btn) btn.click();
+        }
+      }, 0); // 0 = 消えない
+    }
   }
 }
 
@@ -1652,9 +1716,9 @@ async function loadFromSheet() {
   btn.disabled = true;
   try {
     const [smRes, sRes, aRes] = await Promise.all([
-      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
-      fetch(GAS_URL + '?action=getAll&type=agent'),
+      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
     ]);
     const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
 
@@ -1710,9 +1774,9 @@ async function reloadFromSheet() {
     });
 
     const [smRes, sRes, aRes] = await Promise.all([
-      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
-      fetch(GAS_URL + '?action=getAll&type=agent'),
+      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
+      fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
     ]);
     const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
 
