@@ -1144,7 +1144,19 @@ body:not(.mode-report) .report-view { display: none !important; }
         </div>
         <input type="hidden" id="aType" value="訪問">
       </div>
-      <!-- ② 内容（常時表示） -->
+      <!-- ② 行動種類 -->
+      <div class="fg" style="margin-top:12px">
+        <label class="flbl" style="margin-bottom:6px">行動種類</label>
+        <div class="type-chips" id="aKindChips">
+          <button type="button" class="type-chip active" data-val="未導入訪問"   onclick="selectActKind(this)">🔵 未導入訪問</button>
+          <button type="button" class="type-chip"        data-val="商談"         onclick="selectActKind(this)">💼 商談</button>
+          <button type="button" class="type-chip"        data-val="導入店フォロー" onclick="selectActKind(this)">🟢 導入店フォロー</button>
+          <button type="button" class="type-chip"        data-val="臨店講習"     onclick="selectActKind(this)">📚 臨店講習</button>
+          <button type="button" class="type-chip"        data-val="その他"       onclick="selectActKind(this)">📌 その他</button>
+        </div>
+        <input type="hidden" id="aKind" value="未導入訪問">
+      </div>
+      <!-- ③ 内容（常時表示） -->
       <div class="fg" style="margin-top:12px">
         <textarea class="finput" id="aContent" placeholder="話した内容・次のアクションを一言でも…" style="min-height:100px"></textarea>
       </div>
@@ -1964,6 +1976,7 @@ function renderAct(p) {
       <div class="act-hdr">
         <div style="display:flex;align-items:center;gap:7px">
           <span class="act-type">${esc(a.type)}</span>
+          ${a.kind ? `<span class="act-type" style="background:#e8f4ff;color:#2563eb">${esc(a.kind)}</span>` : ''}
           <span class="act-date">${a.date}</span>
         </div>
         <div class="act-actions">
@@ -2361,6 +2374,12 @@ function selectActType(el) {
   if (val !== '講師') document.getElementById('aLecturer').value = '';
 }
 
+function selectActKind(el) {
+  document.querySelectorAll('#aKindChips .type-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('aKind').value = el.dataset.val;
+}
+
 function selectFuStatus(el) {
   document.querySelectorAll('#aFuChips .fu-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
@@ -2389,6 +2408,11 @@ function openActModal() {
   document.getElementById('aType').value = '訪問';
   document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.val === '訪問');
+  });
+  // Reset kind chips
+  document.getElementById('aKind').value = '未導入訪問';
+  document.querySelectorAll('#aKindChips .type-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === '未導入訪問');
   });
   document.getElementById('aContent').value = '';
   // 詳細フィールドもリセット
@@ -2440,6 +2464,7 @@ function saveAct() {
   const newAct = {
     id: uid(), date,
     type: document.getElementById('aType').value,
+    kind: document.getElementById('aKind').value,
     content,
     next: document.getElementById('aNext').value.trim(),
     fuDate: document.getElementById('aFuDate').value,
