@@ -1364,6 +1364,7 @@ async function autoLoadFromSheet() {
       agentPeople = merged;
     }
     renderSidebar(); renderMobileList(); renderMain();
+    refreshAgentList();
   } catch(e) {
     console.warn('自動読込スキップ:', e.message);
   }
@@ -1409,6 +1410,7 @@ async function loadFromSheet() {
       agentPeople = merged;
     }
     renderSidebar(); renderMobileList(); renderMain();
+    refreshAgentList();
     alert(`読込完了\nサロン: ${sAdded}件追加\n代理店: ${aAdded}件追加`);
   } catch(e) {
     alert('読込に失敗しました: ' + e.message);
