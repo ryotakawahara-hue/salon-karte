@@ -1002,6 +1002,18 @@ body:not(.mode-report) .report-view { display: none !important; }
   .sv-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 }
 
+/* ─── Header reload wrap + cache age label ─── */
+.hdr-reload-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 0; flex-shrink: 0;
+}
+.hdr-cache-age {
+  font-size: 9px; color: rgba(255,255,255,.65); line-height: 1;
+  white-space: nowrap; display: none; margin-top: -2px;
+}
+@media (max-width: 767px) {
+  .hdr-cache-age { display: block; }
+}
+
 /* ─────────────── Toast Notification ─────────────── */
 #toastWrap {
   position: fixed; top: calc(var(--header-h) + 8px + var(--safe-top));
@@ -1047,7 +1059,10 @@ body:not(.mode-report) .report-view { display: none !important; }
   </div>
   <button class="hdr-btn-icon" id="sellMasterBtn" onclick="loadSellMaster()" title="売上マスター取込">📊</button>
   <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="スプレッドシートから追加読込">📥</button>
-  <button class="hdr-btn-icon" id="reloadBtn" onclick="reloadFromSheet()" title="データを再読込（ローカルをリセット）">🔄</button>
+  <div class="hdr-reload-wrap">
+    <button class="hdr-btn-icon" id="reloadBtn" onclick="reloadFromSheet()" title="データを再読込（ローカルをリセット）">🔄</button>
+    <span class="hdr-cache-age" id="cacheAgeLabel"></span>
+  </div>
   <button class="hdr-btn hdr-add-btn" onclick="openAddModal()">＋ 新規登録</button>
 </div>
 
@@ -1559,6 +1574,35 @@ async function fetchWithTimeout(url, timeout = 20000) {
   }
 }
 
+// ── GASフェッチキャッシュ管理（クォータ節約） ────────
+const CACHE_TTL   = 2 * 60 * 60 * 1000; // 2時間
+const CACHE_TS_KEY = 'karte_gas_fetch_ts';
+
+function isCacheFresh() {
+  const ts = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0');
+  return ts > 0 && (Date.now() - ts) < CACHE_TTL;
+}
+function markCacheFresh() {
+  localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+  updateCacheAgeLabel();
+}
+function cacheAgeText() {
+  const ts = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0');
+  if (!ts) return null;
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1)  return 'たった今';
+  if (mins < 60) return `${mins}分前`;
+  return `${Math.floor(mins / 60)}時間前`;
+}
+function updateCacheAgeLabel() {
+  const el = document.getElementById('cacheAgeLabel');
+  if (!el) return;
+  const age = cacheAgeText();
+  el.textContent = age ? age : '';
+}
+// 1分ごとにラベルを更新
+setInterval(updateCacheAgeLabel, 60000);
+
 // ── エラーメッセージを日本語に変換 ──────────────────
 function friendlyError(e) {
   const msg = (e && e.message) || '';
@@ -1673,8 +1717,15 @@ function mergeSalons(existing, loaded) {
   return { merged, added };
 }
 
-// 起動時サイレント自動ロード（alert なし・リトライあり）
+// 起動時サイレント自動ロード（alert なし・リトライあり・キャッシュ対応）
 async function autoLoadFromSheet(isRetry = false) {
+  // キャッシュが新鮮かつローカルデータあり → GAS呼び出しをスキップ
+  const hasSalon = (JSON.parse(localStorage.getItem('karte_salon_v1') || '[]')).length > 0;
+  const hasAgent = (JSON.parse(localStorage.getItem('karte_agent_v1') || '[]')).length > 0;
+  if (isCacheFresh() && hasSalon) {
+    console.log(`[Cache] GASスキップ（最終取得: ${cacheAgeText()}）`);
+    return; // レンダリングは起動時に既に実行済み
+  }
   try {
     const [smRes, sRes, aRes] = await Promise.all([
       fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
@@ -1706,6 +1757,7 @@ async function autoLoadFromSheet(isRetry = false) {
       localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
       agentPeople = merged;
     }
+    markCacheFresh();
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
   } catch(e) {
@@ -1762,6 +1814,7 @@ async function loadFromSheet() {
       localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
       agentPeople = merged;
     }
+    markCacheFresh();
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
     showToast(`読込完了 — サロン ${sAdded}件追加・代理店 ${aAdded}件追加`, 'success', null, 3500);
@@ -1829,6 +1882,7 @@ async function reloadFromSheet() {
       localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
       agentPeople = merged;
     }
+    markCacheFresh();
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
     showToast(`再読込完了 — サロン ${fresh.length}件`, 'success', null, 3500);
@@ -3922,7 +3976,9 @@ document.querySelectorAll('.overlay').forEach(o => {
     document.getElementById('mobileListView').style.display = 'flex';
     renderMobileList();
   }
-  // 起動時にスプシから自動読込（サイレント）
+  // キャッシュ経過時間ラベルを初期化
+  updateCacheAgeLabel();
+  // 起動時にスプシから自動読込（サイレント・キャッシュ有効時はスキップ）
   autoLoadFromSheet();
 })();
 </script>
