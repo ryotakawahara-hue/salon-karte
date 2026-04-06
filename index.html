@@ -590,7 +590,54 @@ body:not(.mode-report) .report-view { display: none !important; }
 .fu-chip.active[data-val="pending"] { background: #FFC107; color: #856404; border-color: #FFC107; }
 .fu-chip.active[data-val="done"]    { background: var(--success); color: white; border-color: var(--success); }
 
-/* ── Mobile Filter Strip ── */
+/* ── Activity Log — New Input UI ── */
+.act-section { margin-top: 14px; }
+.act-section-lbl {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 4px;
+}
+/* 訪問結果 */
+.act-result-row { display: flex; gap: 8px; }
+.act-result-chip {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px; padding: 11px 6px; border-radius: 12px;
+  border: 2px solid var(--border); background: white; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700; min-height: 64px;
+  transition: all .15s; color: var(--muted);
+}
+.act-result-chip .arc-ico { font-size: 22px; line-height: 1; }
+.act-result-chip:hover { border-color: var(--primary); }
+.act-result-chip[data-val="会えた"].active  { background: #e8f5e9; border-color: #28A745; color: #1a7a32; }
+.act-result-chip[data-val="不在"].active    { background: #fff3f0; border-color: var(--danger); color: var(--danger); }
+.act-result-chip[data-val="電話のみ"].active { background: #eef2ff; border-color: var(--primary); color: var(--primary); }
+/* 話題チップ (multi-select) */
+.act-topic-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.act-topic-chip {
+  padding: 7px 13px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--text); transition: all .15s; font-family: inherit;
+}
+.act-topic-chip.active { background: #eef2ff; border-color: var(--primary); color: var(--primary); }
+/* 次回FUプリセット */
+.act-fu-preset-row { display: flex; gap: 6px; }
+.act-fu-preset {
+  flex: 1; padding: 9px 4px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  border: 2px solid var(--border); background: white; cursor: pointer;
+  color: var(--muted); transition: all .15s; font-family: inherit;
+  text-align: center; white-space: nowrap; min-height: 44px;
+}
+.act-fu-preset:hover { border-color: var(--warning); }
+.act-fu-preset.active { background: #fff3e0; border-color: var(--warning); color: #bf5700; }
+.act-fu-preset[data-d="none"].active { background: #f1f3f5; border-color: #adb5bd; color: #495057; }
+.act-fu-date-hint {
+  margin-top: 6px; font-size: 11px; color: var(--muted);
+  background: #f8f9fa; border-radius: 6px; padding: 5px 10px;
+  display: none;
+}
+.act-fu-date-hint.show { display: block; }
+/* Mobile Filter Strip ── */
+.mobile-filter-strip {
 .mobile-filter-strip {
   display: none; padding: 8px 14px 6px;
   background: var(--card); border-bottom: 1px solid var(--border);
@@ -1201,8 +1248,10 @@ body:not(.mode-report) .report-view { display: none !important; }
       <button class="modal-close" onclick="closeActModal()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- ① 種別チップ（常時表示） -->
+
+      <!-- ① 接触方法 -->
       <div class="fg">
+        <div class="act-section-lbl">接触方法</div>
         <div class="type-chips" id="aTypeChips">
           <button type="button" class="type-chip active" data-val="訪問"       onclick="selectActType(this)">🚶 訪問</button>
           <button type="button" class="type-chip"        data-val="電話"       onclick="selectActType(this)">📞 電話</button>
@@ -1215,27 +1264,64 @@ body:not(.mode-report) .report-view { display: none !important; }
         </div>
         <input type="hidden" id="aType" value="訪問">
       </div>
-      <!-- ② 行動種類 -->
-      <div class="fg" style="margin-top:12px">
-        <label class="flbl" style="margin-bottom:6px">行動種類</label>
-        <div class="type-chips" id="aKindChips">
-          <button type="button" class="type-chip active" data-val="未導入訪問"   onclick="selectActKind(this)">🔵 未導入訪問</button>
-          <button type="button" class="type-chip"        data-val="商談"         onclick="selectActKind(this)">💼 商談</button>
-          <button type="button" class="type-chip"        data-val="導入店フォロー" onclick="selectActKind(this)">🟢 導入店フォロー</button>
-          <button type="button" class="type-chip"        data-val="臨店講習"     onclick="selectActKind(this)">📚 臨店講習</button>
-          <button type="button" class="type-chip"        data-val="その他"       onclick="selectActKind(this)">📌 その他</button>
+
+      <!-- ② 訪問結果（訪問・体験会・展示会時のみ） -->
+      <div class="act-section" id="aResultSection">
+        <div class="act-section-lbl">訪問結果</div>
+        <div class="act-result-row">
+          <button type="button" class="act-result-chip" data-val="会えた"    onclick="selectActResult(this)">
+            <span class="arc-ico">✅</span>会えた
+          </button>
+          <button type="button" class="act-result-chip" data-val="不在"      onclick="selectActResult(this)">
+            <span class="arc-ico">🚫</span>不在
+          </button>
+          <button type="button" class="act-result-chip" data-val="電話のみ"  onclick="selectActResult(this)">
+            <span class="arc-ico">📞</span>電話のみ
+          </button>
         </div>
-        <input type="hidden" id="aKind" value="未導入訪問">
+        <input type="hidden" id="aResult" value="">
       </div>
-      <!-- ③ 内容（常時表示） -->
-      <div class="fg" style="margin-top:12px">
-        <textarea class="finput" id="aContent" placeholder="話した内容・次のアクションを一言でも…" style="min-height:100px"></textarea>
+
+      <!-- ③ 話した内容（複数選択可） -->
+      <div class="act-section">
+        <div class="act-section-lbl">話した内容 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+        <div class="act-topic-row" id="aTopicChips">
+          <button type="button" class="act-topic-chip" data-val="新商品紹介"     onclick="toggleActTopic(this)">新商品紹介</button>
+          <button type="button" class="act-topic-chip" data-val="シストリ提案"   onclick="toggleActTopic(this)">シストリ提案</button>
+          <button type="button" class="act-topic-chip" data-val="定番補充"       onclick="toggleActTopic(this)">定番補充</button>
+          <button type="button" class="act-topic-chip" data-val="臨店講習"       onclick="toggleActTopic(this)">臨店講習</button>
+          <button type="button" class="act-topic-chip" data-val="クレーム対応"   onclick="toggleActTopic(this)">クレーム対応</button>
+          <button type="button" class="act-topic-chip" data-val="情報収集"       onclick="toggleActTopic(this)">情報収集</button>
+          <button type="button" class="act-topic-chip" data-val="体験会案内"     onclick="toggleActTopic(this)">体験会案内</button>
+          <button type="button" class="act-topic-chip" data-val="その他"         onclick="toggleActTopic(this)">その他</button>
+        </div>
       </div>
-      <!-- ③ 詳細トグル -->
+
+      <!-- ④ 補足メモ（任意） -->
+      <div class="act-section">
+        <div class="act-section-lbl">補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意）</span></div>
+        <textarea class="finput" id="aContent" placeholder="詳細・特記事項・次回のトークメモなど…" style="min-height:72px"></textarea>
+      </div>
+
+      <!-- ⑤ 次回フォロー（常時表示） -->
+      <div class="act-section">
+        <div class="act-section-lbl">次回フォロー</div>
+        <div class="act-fu-preset-row">
+          <button type="button" class="act-fu-preset" data-d="7"    onclick="selectFuPreset(this)">1週間後</button>
+          <button type="button" class="act-fu-preset" data-d="14"   onclick="selectFuPreset(this)">2週間後</button>
+          <button type="button" class="act-fu-preset" data-d="30"   onclick="selectFuPreset(this)">1ヶ月後</button>
+          <button type="button" class="act-fu-preset" data-d="none" onclick="selectFuPreset(this)">不要</button>
+        </div>
+        <div class="act-fu-date-hint" id="aFuDateHint"></div>
+        <input type="hidden" id="aFuStatus" value="none">
+        <input type="hidden" id="aFuDate" value="">
+      </div>
+
+      <!-- ⑥ 詳細トグル -->
       <button class="act-detail-toggle" id="actDetailToggle" onclick="toggleActDetails()" type="button">
-        詳細を追加（日付・フォロー期限・議事録リンクなど） ▼
+        詳細（日付・担当営業・行動種類など） ▼
       </button>
-      <!-- ④ 詳細セクション（折りたたみ） -->
+      <!-- ⑦ 詳細セクション（折りたたみ） -->
       <div class="act-details" id="actDetails" style="display:none">
         <div class="frow">
           <div class="fg">
@@ -1253,27 +1339,37 @@ body:not(.mode-report) .report-view { display: none !important; }
           <input class="finput" id="aLecturer" placeholder="例: 山田先生">
         </div>
         <div class="fg">
-          <label class="flbl">次のアクション</label>
+          <label class="flbl">行動種類</label>
+          <div class="type-chips" id="aKindChips">
+            <button type="button" class="type-chip active" data-val="未導入訪問"     onclick="selectActKind(this)">🔵 未導入訪問</button>
+            <button type="button" class="type-chip"        data-val="商談"           onclick="selectActKind(this)">💼 商談</button>
+            <button type="button" class="type-chip"        data-val="導入店フォロー" onclick="selectActKind(this)">🟢 導入店FU</button>
+            <button type="button" class="type-chip"        data-val="臨店講習"       onclick="selectActKind(this)">📚 臨店講習</button>
+            <button type="button" class="type-chip"        data-val="その他"         onclick="selectActKind(this)">📌 その他</button>
+          </div>
+          <input type="hidden" id="aKind" value="未導入訪問">
+        </div>
+        <div class="fg">
+          <label class="flbl">次のアクション（テキスト）</label>
           <input class="finput" id="aNext" placeholder="例: 来週サンプルを持参して再訪">
         </div>
         <div class="fg">
-          <label class="flbl">フォロー状況</label>
+          <label class="flbl">フォロー期限（手動指定）</label>
           <div class="fu-chips" id="aFuChips">
             <button type="button" class="fu-chip active" data-val="none"    onclick="selectFuStatus(this)">なし</button>
             <button type="button" class="fu-chip"        data-val="pending" onclick="selectFuStatus(this)">⚠ フォロー必要</button>
             <button type="button" class="fu-chip"        data-val="done"    onclick="selectFuStatus(this)">✓ 完了</button>
           </div>
-          <input type="hidden" id="aFuStatus" value="none">
-        </div>
-        <div class="fg" id="aFuDateWrap" style="display:none">
-          <label class="flbl">フォロー期限</label>
-          <input class="finput" id="aFuDate" type="date">
+          <div class="fg" id="aFuDateWrap" style="display:none; margin-top:8px">
+            <input class="finput" id="aFuDateManual" type="date">
+          </div>
         </div>
         <div class="fg">
           <label class="flbl">議事録リンク</label>
           <input class="finput" id="aMinutesUrl" type="url" placeholder="https://...">
         </div>
       </div>
+
     </div>
     <div class="modal-footer" style="gap:10px">
       <button class="btn btn-outline" onclick="closeActModal()" style="flex:1">キャンセル</button>
@@ -2635,9 +2731,56 @@ function selectActType(el) {
   el.classList.add('active');
   const val = el.dataset.val;
   document.getElementById('aType').value = val;
+  // 訪問結果セクション：訪問/体験会/展示会のみ表示
+  const showResult = ['訪問','体験会','展示会'].includes(val);
+  document.getElementById('aResultSection').style.display = showResult ? '' : 'none';
+  if (!showResult) {
+    document.getElementById('aResult').value = '';
+    document.querySelectorAll('.act-result-chip').forEach(c => c.classList.remove('active'));
+  }
   // 講師選択時だけ講師名フィールドを表示
-  document.getElementById('aLecturerWrap').style.display = val === '講師' ? 'block' : 'none';
-  if (val !== '講師') document.getElementById('aLecturer').value = '';
+  if (document.getElementById('aLecturerWrap'))
+    document.getElementById('aLecturerWrap').style.display = val === '講師' ? 'block' : 'none';
+  if (val !== '講師' && document.getElementById('aLecturer'))
+    document.getElementById('aLecturer').value = '';
+}
+
+function selectActResult(el) {
+  document.querySelectorAll('.act-result-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('aResult').value = el.dataset.val;
+}
+
+function toggleActTopic(el) {
+  el.classList.toggle('active');
+}
+
+function selectFuPreset(el) {
+  document.querySelectorAll('.act-fu-preset').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const d = el.dataset.d;
+  const hint = document.getElementById('aFuDateHint');
+  if (d === 'none') {
+    document.getElementById('aFuStatus').value = 'none';
+    document.getElementById('aFuDate').value = '';
+    hint.classList.remove('show');
+    // fuChips も「なし」に同期
+    document.querySelectorAll('#aFuChips .fu-chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.val === 'none'));
+    document.getElementById('aFuDateWrap').style.display = 'none';
+  } else {
+    const target = new Date();
+    target.setDate(target.getDate() + parseInt(d));
+    const iso = target.toISOString().split('T')[0];
+    document.getElementById('aFuStatus').value = 'pending';
+    document.getElementById('aFuDate').value = iso;
+    hint.textContent = `📅 ${iso} までにフォロー`;
+    hint.classList.add('show');
+    // fuChips も「フォロー必要」に同期
+    document.querySelectorAll('#aFuChips .fu-chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.val === 'pending'));
+    document.getElementById('aFuDateWrap').style.display = 'none';
+  }
 }
 
 function selectActKind(el) {
@@ -2651,9 +2794,15 @@ function selectFuStatus(el) {
   el.classList.add('active');
   const val = el.dataset.val;
   document.getElementById('aFuStatus').value = val;
-  // show/hide date field
   document.getElementById('aFuDateWrap').style.display = val === 'pending' ? 'block' : 'none';
-  if (val !== 'pending') document.getElementById('aFuDate').value = '';
+  if (val !== 'pending') {
+    document.getElementById('aFuDate').value = '';
+    if (document.getElementById('aFuDateManual'))
+      document.getElementById('aFuDateManual').value = '';
+    // プリセットクリア
+    document.querySelectorAll('.act-fu-preset').forEach(c => c.classList.remove('active'));
+    document.getElementById('aFuDateHint').classList.remove('show');
+  }
 }
 
 function refreshRepNameList() {
@@ -2669,35 +2818,49 @@ function refreshRepNameList() {
 function openActModal() {
   // 詳細セクションを閉じた状態でリセット
   document.getElementById('actDetails').style.display = 'none';
-  document.getElementById('actDetailToggle').textContent = '詳細を追加（日付・フォロー期限・議事録リンクなど） ▼';
-  // Reset type chips
+  document.getElementById('actDetailToggle').textContent = '詳細（日付・担当営業・行動種類など） ▼';
+
+  // 接触方法リセット → 訪問
   document.getElementById('aType').value = '訪問';
-  document.querySelectorAll('#aTypeChips .type-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.val === '訪問');
-  });
-  // Reset kind chips
-  document.getElementById('aKind').value = '未導入訪問';
-  document.querySelectorAll('#aKindChips .type-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.val === '未導入訪問');
-  });
+  document.querySelectorAll('#aTypeChips .type-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.val === '訪問'));
+  document.getElementById('aResultSection').style.display = '';
+
+  // 訪問結果リセット
+  document.getElementById('aResult').value = '';
+  document.querySelectorAll('.act-result-chip').forEach(c => c.classList.remove('active'));
+
+  // 話題チップリセット
+  document.querySelectorAll('#aTopicChips .act-topic-chip').forEach(c => c.classList.remove('active'));
+
+  // 補足メモリセット
   document.getElementById('aContent').value = '';
-  // 詳細フィールドもリセット
-  document.getElementById('aDate').value = toDay();
-  document.getElementById('aNext').value = '';
-  document.getElementById('aFuDate').value = '';
+
+  // フォロープリセットリセット
+  document.querySelectorAll('.act-fu-preset').forEach(c => c.classList.remove('active'));
   document.getElementById('aFuStatus').value = 'none';
-  document.querySelectorAll('#aFuChips .fu-chip').forEach(c => {
-    c.classList.toggle('active', c.dataset.val === 'none');
-  });
-  document.getElementById('aFuDateWrap').style.display = 'none';
+  document.getElementById('aFuDate').value = '';
+  document.getElementById('aFuDateHint').classList.remove('show');
+
+  // 詳細フィールドリセット
+  document.getElementById('aDate').value = toDay();
   document.getElementById('aRepName').value = localStorage.getItem('karte_last_rep') || '';
+  document.getElementById('aKind').value = '未導入訪問';
+  document.querySelectorAll('#aKindChips .type-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.val === '未導入訪問'));
+  document.getElementById('aNext').value = '';
+  document.querySelectorAll('#aFuChips .fu-chip').forEach(c =>
+    c.classList.toggle('active', c.dataset.val === 'none'));
+  document.getElementById('aFuDateWrap').style.display = 'none';
+  if (document.getElementById('aFuDateManual'))
+    document.getElementById('aFuDateManual').value = '';
   document.getElementById('aMinutesUrl').value = '';
   document.getElementById('aLecturer').value = '';
-  document.getElementById('aLecturerWrap').style.display = 'none';
+  if (document.getElementById('aLecturerWrap'))
+    document.getElementById('aLecturerWrap').style.display = 'none';
+
   refreshRepNameList();
   document.getElementById('actModal').classList.add('open');
-  // 内容テキストエリアにフォーカス
-  setTimeout(() => document.getElementById('aContent').focus(), 100);
 }
 
 function toggleActDetails() {
@@ -2718,8 +2881,35 @@ function closeActModal() {
 
 function saveAct() {
   const date = document.getElementById('aDate').value;
-  const content = document.getElementById('aContent').value.trim();
-  if (!date || !content) { alert('日付と内容は必須です'); return; }
+
+  // 選択チップから content を自動生成
+  const result = document.getElementById('aResult').value;
+  const topics = [...document.querySelectorAll('#aTopicChips .act-topic-chip.active')]
+    .map(c => c.dataset.val);
+  const memo = document.getElementById('aContent').value.trim();
+
+  let content = memo;
+  if (!content) {
+    const parts = [];
+    if (result) parts.push(result);
+    if (topics.length) parts.push(topics.join('・'));
+    content = parts.join(' / ');
+  } else if (result || topics.length) {
+    // メモがあってもチップ情報を先頭に付加
+    const prefix = [result, topics.join('・')].filter(Boolean).join(' / ');
+    content = prefix ? `[${prefix}] ${content}` : content;
+  }
+
+  if (!date) { alert('日付が設定されていません'); return; }
+  if (!content) { alert('訪問結果か話した内容を選択してください'); return; }
+
+  // 詳細パネルの手動フォロー日があれば反映
+  const fuDateManual = document.getElementById('aFuDateManual');
+  if (fuDateManual && fuDateManual.value &&
+      document.getElementById('aFuStatus').value === 'pending' &&
+      !document.getElementById('aFuDate').value) {
+    document.getElementById('aFuDate').value = fuDateManual.value;
+  }
 
   const targetId = _quickActPersonId || currentId;
   const p = getPerson(targetId);
@@ -2729,14 +2919,16 @@ function saveAct() {
   if (repName) localStorage.setItem('karte_last_rep', repName);
   const newAct = {
     id: uid(), date,
-    type: document.getElementById('aType').value,
-    kind: document.getElementById('aKind').value,
+    type:   document.getElementById('aType').value,
+    kind:   document.getElementById('aKind').value,
+    result: result,
+    topics: topics,
     content,
-    next: document.getElementById('aNext').value.trim(),
-    fuDate: document.getElementById('aFuDate').value,
-    fuStatus: document.getElementById('aFuStatus').value,
+    next:       document.getElementById('aNext').value.trim(),
+    fuDate:     document.getElementById('aFuDate').value,
+    fuStatus:   document.getElementById('aFuStatus').value,
     repName,
-    lecturer: document.getElementById('aLecturer').value.trim(),
+    lecturer:   document.getElementById('aLecturer')?.value.trim() || '',
     minutesUrl: document.getElementById('aMinutesUrl').value.trim(),
   };
   p.activities.push(newAct);
