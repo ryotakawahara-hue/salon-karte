@@ -1575,7 +1575,7 @@ async function fetchWithTimeout(url, timeout = 20000) {
 }
 
 // ── GASフェッチキャッシュ管理（クォータ節約） ────────
-const CACHE_TTL   = 2 * 60 * 60 * 1000; // 2時間
+const CACHE_TTL   = 8 * 60 * 60 * 1000; // 8時間
 const CACHE_TS_KEY = 'karte_gas_fetch_ts';
 
 function isCacheFresh() {
@@ -1762,15 +1762,28 @@ async function autoLoadFromSheet(isRetry = false) {
     refreshAgentList();
   } catch(e) {
     console.warn('自動読込スキップ:', e.message);
-    if (!isRetry) {
-      // 5秒後に1回リトライ
+    const isQuota = /quota/i.test(e.message || '');
+    if (!isRetry && !isQuota) {
+      // ネットワーク系エラーは5秒後に1回リトライ
       setTimeout(() => autoLoadFromSheet(true), 5000);
     } else {
-      // リトライも失敗 → トースト通知
-      showToast(friendlyError(e), 'error', {
-        label: '再試行',
-        fn: () => autoLoadFromSheet(false)
-      }, 0); // 0 = 消えない
+      // クォータ超過 or リトライも失敗
+      const cachedSalon = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+      if (cachedSalon.length > 0) {
+        // ローカルキャッシュがあれば表示して警告のみ
+        salonPeople = cachedSalon;
+        agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
+        renderSidebar(); renderMobileList(); renderMain();
+        refreshAgentList();
+        if (isQuota) {
+          showToast('GAS利用上限のため前回のデータを表示中', 'warn', null, 5000);
+        } else {
+          showToast(friendlyError(e), 'error', { label: '再試行', fn: () => autoLoadFromSheet(false) }, 0);
+        }
+      } else {
+        // データなし → エラートーストのみ
+        showToast(friendlyError(e), 'error', { label: '再試行', fn: () => autoLoadFromSheet(false) }, 0);
+      }
     }
   }
 }
