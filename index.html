@@ -823,7 +823,8 @@ body:not(.mode-report) .report-view { display: none !important; }
     <input type="text" id="searchInput" placeholder="担当者名・会社名で検索..." oninput="renderSidebar(); renderMobileList()">
   </div>
   <button class="hdr-btn-icon" id="sellMasterBtn" onclick="loadSellMaster()" title="売上マスター取込">📊</button>
-  <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="読込">📥</button>
+  <button class="hdr-btn-icon" id="loadBtn" onclick="loadFromSheet()" title="スプレッドシートから追加読込">📥</button>
+  <button class="hdr-btn-icon" id="reloadBtn" onclick="reloadFromSheet()" title="データを再読込（ローカルをリセット）">🔄</button>
   <button class="hdr-btn hdr-add-btn" onclick="openAddModal()">＋ 新規登録</button>
 </div>
 
@@ -1416,6 +1417,73 @@ async function loadFromSheet() {
     alert('読込に失敗しました: ' + e.message);
   } finally {
     btn.textContent = '📥';
+    btn.disabled = false;
+  }
+}
+
+// 再読込ボタン（localStorageをクリアしてスプシから全件取込）
+async function reloadFromSheet() {
+  if (!confirm('ローカルのサロンデータを削除してスプレッドシートから再取込します。\n活動ログ・タグなどのカルテ情報は保持されます。よろしいですか？')) return;
+  const btn = document.getElementById('reloadBtn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    // 既存サロンの活動ログ・タグ等をsalonIdをキーに退避
+    const saved = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+    const savedMap = {};
+    saved.forEach(p => {
+      if (p.salonId) savedMap[p.salonId] = { activities: p.activities||[], tags: p.tags||[], memo: p.memo||'', status: p.status||'active', salesRep: p.salesRep||'', targetSistri: p.targetSistri||0, targetSales: p.targetSales||0 };
+    });
+
+    const [smRes, sRes, aRes] = await Promise.all([
+      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
+      fetch(GAS_URL + '?action=getAll&type=salonMapping'),
+      fetch(GAS_URL + '?action=getAll&type=agent'),
+    ]);
+    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
+
+    let fresh = [];
+    if (smJson.ok && smJson.data && smJson.data.length > 0) {
+      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged } = mergeSalons(fresh, loaded);
+      fresh = merged;
+    }
+    if (sJson.ok && sJson.data && sJson.data.length > 0) {
+      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged } = mergeSalons(fresh, loaded);
+      fresh = merged;
+    }
+
+    // 退避していた活動ログ等を復元
+    fresh.forEach(p => {
+      const s = p.salonId ? savedMap[p.salonId] : null;
+      if (s) {
+        p.activities  = s.activities;
+        p.tags        = s.tags;
+        p.memo        = s.memo || p.memo;
+        p.status      = s.status;
+        p.salesRep    = s.salesRep || p.salesRep;
+        p.targetSistri = s.targetSistri;
+        p.targetSales  = s.targetSales;
+      }
+    });
+
+    localStorage.setItem('karte_salon_v1', JSON.stringify(fresh));
+    salonPeople = fresh;
+
+    if (aJson.ok && aJson.data && aJson.data.length > 0) {
+      const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
+      const { merged } = mergeByCompanyName([], loaded);
+      localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
+      agentPeople = merged;
+    }
+    renderSidebar(); renderMobileList(); renderMain();
+    refreshAgentList();
+    alert(`再読込完了\nサロン: ${fresh.length}件`);
+  } catch(e) {
+    alert('再読込に失敗しました: ' + e.message);
+  } finally {
+    btn.textContent = '🔄';
     btn.disabled = false;
   }
 }
