@@ -2114,10 +2114,21 @@ function switchTab(el, id) {
 
 // ── Agent Datalist & Company Select ───────────────
 function refreshAgentList() {
-  // 固定リスト ＋ データに独自登録がある場合はマージ
-  const extra = agentPeople.map(p => p.company).filter(Boolean)
+  // 固定リスト ＋ データに独自登録がある場合はマージ（郵便番号・数字のみ除外）
+  const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
+  const extra = agentPeople.map(p => p.company).filter(isValidAgent)
     .filter(n => !AGENT_NAMES.includes(n));
-  const names = [...AGENT_NAMES, ...new Set(extra)];
+  // salonPeopleのagentNameからも有効な代理店名を補完
+  const fromSalons = salonPeople.map(p => p.agentName).filter(isValidAgent)
+    .filter(n => !AGENT_NAMES.includes(n));
+  const names = [...AGENT_NAMES, ...new Set([...extra, ...fromSalons])].sort((a,b) => {
+    // AGENT_NAMESを先頭に固定
+    const ai = AGENT_NAMES.indexOf(a), bi = AGENT_NAMES.indexOf(b);
+    if (ai >= 0 && bi >= 0) return ai - bi;
+    if (ai >= 0) return -1;
+    if (bi >= 0) return 1;
+    return a.localeCompare(b, 'ja');
+  });
 
   // サロンフォームの担当代理店 select を更新
   const agentSel = document.getElementById('pAgentName');
@@ -2756,10 +2767,11 @@ function renderSearchView() {
     }
   }
 
-  // 代理店ドロップダウン更新
+  // 代理店ドロップダウン更新（郵便番号・数字のみの値を除外）
   const agentSel = document.getElementById('svAgent');
   const curAgent = agentSel.value;
-  const agents = [...new Set(salonPeople.map(p => p.agentName).filter(Boolean))].sort();
+  const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
+  const agents = [...new Set(salonPeople.map(p => p.agentName).filter(isValidAgent))].sort();
   agentSel.innerHTML = '<option value="">代理店: すべて</option>' +
     agents.map(a => `<option value="${esc(a)}" ${a === curAgent ? 'selected' : ''}>${esc(a)}</option>`).join('');
 
