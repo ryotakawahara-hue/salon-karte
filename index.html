@@ -332,6 +332,55 @@ body:not(.mode-search) .search-view { display: none; }
 }
 .sv-search input:focus { border-color: var(--primary); }
 .sv-search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+.sv-quick-row {
+  display: flex; gap: 6px; align-items: center;
+  overflow-x: auto; scrollbar-width: none; padding: 6px 0 2px; white-space: nowrap;
+}
+.sv-quick-row::-webkit-scrollbar { display: none; }
+.sv-qchip {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: white; cursor: pointer;
+  color: var(--muted); transition: all .15s; white-space: nowrap; font-family: inherit;
+}
+.sv-qchip-cnt {
+  font-size: 10px; background: rgba(0,0,0,.08); border-radius: 10px;
+  padding: 1px 5px; min-width: 16px; text-align: center;
+}
+.sv-qchip.active .sv-qchip-cnt { background: rgba(255,255,255,.3); }
+.sv-qchip.active { background: var(--primary); color: white; border-color: var(--primary); }
+.sv-qchip[data-q="overdue"] { border-color: #ffd0d0; color: #c0392b; }
+.sv-qchip[data-q="overdue"].active { background: var(--danger); border-color: var(--danger); color: white; }
+.sv-qchip[data-q="pending"] { border-color: #ffddb3; color: #e65c00; }
+.sv-qchip[data-q="pending"].active { background: var(--warning); border-color: var(--warning); color: white; }
+.sv-qchip[data-q="watch"] { border-color: #ccd9f0; color: #4A6FA5; }
+.sv-qchip[data-q="watch"].active { background: #4A6FA5; border-color: #4A6FA5; color: white; }
+.sv-qchip[data-q="inactive"] { border-color: #ddd; color: var(--muted); }
+.sv-qchip[data-q="inactive"].active { background: #6C757D; border-color: #6C757D; color: white; }
+.sv-detail-btn {
+  padding: 5px 12px; border: 1.5px solid var(--border); border-radius: 20px;
+  background: white; cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--muted); font-family: inherit; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;
+}
+.sv-detail-btn:hover { border-color: var(--primary); color: var(--primary); }
+.sv-detail-btn.on { background: #ebf3ff; border-color: var(--primary); color: var(--primary); }
+.sv-detail-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; border-radius: 8px; background: var(--primary);
+  color: white; font-size: 10px; font-weight: 700; padding: 0 4px;
+}
+.sv-detail-panel {
+  padding: 8px 0 4px; display: flex; gap: 8px; flex-wrap: wrap;
+  border-top: 1px solid var(--border); margin-top: 4px;
+}
+.sv-sort-right { margin-left: auto; flex-shrink: 0; }
+.sv-clear-btn {
+  padding: 5px 12px; border: 1.5px solid #ffd0d0; border-radius: 20px;
+  background: #fff5f5; cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--danger); font-family: inherit; transition: all .15s; white-space: nowrap;
+}
+.sv-clear-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
 .sv-filter {
   padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
   font-size: 14px; background: white; cursor: pointer; outline: none;
@@ -737,10 +786,10 @@ body:not(.mode-report) .report-view { display: none !important; }
   /* Search view mobile */
   .sv-toolbar { padding: 10px 12px; gap: 6px; }
   .sv-row1 { flex-wrap: nowrap; }
-  .sv-row2 { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-  .sv-row2::-webkit-scrollbar { display: none; }
   .sv-search input { font-size: 16px; }
   .sv-filter { flex-shrink: 0; font-size: 14px; }
+  .sv-quick-row { padding: 4px 0 2px; }
+  .sv-detail-panel { padding: 6px 0 2px; }
   .sv-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; padding-bottom: calc(var(--bottom-nav-h) + 12px); }
 
   /* Bottom nav */
@@ -917,7 +966,23 @@ body:not(.mode-report) .report-view { display: none !important; }
     <div class="sv-area-row" id="svRegionRow"></div>
     <div class="sv-area-row" id="svPrefRow" style="display:none"></div>
     <div class="sv-area-row" id="svCityRow" style="display:none"></div>
-    <div class="sv-row2">
+    <!-- クイックフィルター chips -->
+    <div class="sv-quick-row">
+      <button class="sv-qchip active" data-q="all"      onclick="setSvQuick('all',this)">すべて<span class="sv-qchip-cnt" id="sqcAll"></span></button>
+      <button class="sv-qchip"        data-q="overdue"  onclick="setSvQuick('overdue',this)">⚠ 期限超過<span class="sv-qchip-cnt" id="sqcOverdue"></span></button>
+      <button class="sv-qchip"        data-q="pending"  onclick="setSvQuick('pending',this)">📋 要フォロー<span class="sv-qchip-cnt" id="sqcPending"></span></button>
+      <button class="sv-qchip"        data-q="watch"    onclick="setSvQuick('watch',this)">👁 要観察<span class="sv-qchip-cnt" id="sqcWatch"></span></button>
+      <button class="sv-qchip"        data-q="inactive" onclick="setSvQuick('inactive',this)">💤 休眠<span class="sv-qchip-cnt" id="sqcInactive"></span></button>
+      <button class="sv-detail-btn" id="svDetailBtn" onclick="toggleSvDetail()">絞込 ▾</button>
+      <button class="sv-clear-btn"  id="svClearBtn"  onclick="clearSvFilters()" style="display:none">✕ クリア</button>
+      <select class="sv-filter sv-sort-right" id="svSort" onchange="renderSearchView()">
+        <option value="name">↕ 名前順</option>
+        <option value="follow">↕ フォロー優先</option>
+        <option value="activity">↕ 最終活動日</option>
+      </select>
+    </div>
+    <!-- 詳細絞込パネル（折り畳み） -->
+    <div class="sv-detail-panel" id="svDetailPanel" style="display:none">
       <select class="sv-filter" id="svAgent" onchange="renderSearchView()">
         <option value="">代理店: すべて</option>
       </select>
@@ -926,25 +991,8 @@ body:not(.mode-report) .report-view { display: none !important; }
         <option value="ヘアサロン">ヘアサロン</option>
         <option value="その他">その他</option>
       </select>
-      <select class="sv-filter" id="svStatus" onchange="renderSearchView()">
-        <option value="">ステータス: すべて</option>
-        <option value="active">アクティブ</option>
-        <option value="watch">要観察</option>
-        <option value="inactive">休眠</option>
-      </select>
-      <select class="sv-filter" id="svFollow" onchange="renderSearchView()">
-        <option value="">フォロー: すべて</option>
-        <option value="overdue">⚠ 期限超過</option>
-        <option value="pending">要フォロー</option>
-        <option value="none">フォローなし</option>
-      </select>
       <select class="sv-filter" id="svSalesRep" onchange="renderSearchView()">
         <option value="">担当営業: すべて</option>
-      </select>
-      <select class="sv-filter" id="svSort" onchange="renderSearchView()">
-        <option value="name">並び: 名前順</option>
-        <option value="follow">並び: フォロー優先</option>
-        <option value="activity">並び: 最終活動日</option>
       </select>
     </div>
   </div>
@@ -2781,6 +2829,37 @@ let _svTimer = null;
 let _svRegion = '';
 let _svPref   = '';
 let _svCity   = '';
+let svQuickFilter = 'all'; // 'all'|'overdue'|'pending'|'watch'|'inactive'
+let svDetailOpen  = false;
+
+function setSvQuick(val, el) {
+  svQuickFilter = val;
+  document.querySelectorAll('.sv-qchip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderSearchView();
+}
+
+function toggleSvDetail() {
+  svDetailOpen = !svDetailOpen;
+  document.getElementById('svDetailPanel').style.display = svDetailOpen ? 'flex' : 'none';
+  document.getElementById('svDetailBtn').classList.toggle('on', svDetailOpen);
+  renderSearchView();
+}
+
+function clearSvFilters() {
+  svQuickFilter = 'all';
+  _svRegion = ''; _svPref = ''; _svCity = '';
+  const si = document.getElementById('svSearch');
+  if (si) si.value = '';
+  ['svAgent','svType','svSalesRep'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.querySelectorAll('.sv-qchip').forEach(c => c.classList.remove('active'));
+  const allChip = document.querySelector('.sv-qchip[data-q="all"]');
+  if (allChip) allChip.classList.add('active');
+  renderSearchView();
+}
 
 // 地方→都道府県マップ
 const REGION_MAP = {
@@ -2854,13 +2933,11 @@ function openActModalForPerson(personId) {
 }
 
 function renderSearchView() {
-  const q = (document.getElementById('svSearch').value || '').toLowerCase();
-  const filterAgent  = document.getElementById('svAgent').value;
-  const filterType   = document.getElementById('svType').value;
-  const filterStatus = document.getElementById('svStatus').value;
-  const filterFollow = document.getElementById('svFollow').value;
-  const filterRep    = document.getElementById('svSalesRep').value;
-  const sortBy       = document.getElementById('svSort').value;
+  const q           = (document.getElementById('svSearch').value || '').toLowerCase();
+  const filterAgent = document.getElementById('svAgent').value;
+  const filterType  = document.getElementById('svType').value;
+  const filterRep   = document.getElementById('svSalesRep').value;
+  const sortBy      = document.getElementById('svSort').value;
 
   // ── 3段階エリアチップ描画 ──────────────────────────
   // 各サロンの地方・都道府県・市区町村を集計
@@ -2937,7 +3014,8 @@ function renderSearchView() {
   const statusLabel = { active:'アクティブ', watch:'要観察', inactive:'休眠' };
   const statusColor = { active:'#28A745', watch:'#e65c00', inactive:'#6C757D' };
 
-  let results = salonPeople.filter(p => {
+  // ベースフィルター（クイックチップ以外の条件）
+  const baseFilter = p => {
     const matchQ = !q ||
       (p.company    || '').toLowerCase().includes(q) ||
       (p.kamidoraId || '').toLowerCase().includes(q) ||
@@ -2948,27 +3026,58 @@ function renderSearchView() {
       (p.address    || '').toLowerCase().includes(q) ||
       (p.salonType  || '').toLowerCase().includes(q) ||
       (p.memo       || '').toLowerCase().includes(q);
-
-    const matchAgent  = !filterAgent  || p.agentName === filterAgent;
-    const matchType   = !filterType   || p.salonType === filterType;
-    const matchStatus = !filterStatus || (p.status || 'active') === filterStatus;
-    const matchRep    = !filterRep    || p.salesRep === filterRep;
-
-    const acts = p.activities || [];
-    const isOverdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
-    const isPending = acts.some(a => a.fuStatus === 'pending');
-    const matchFollow = !filterFollow ||
-      (filterFollow === 'overdue' && isOverdue) ||
-      (filterFollow === 'pending' && isPending && !isOverdue) ||
-      (filterFollow === 'none'    && !isPending);
-
+    const matchAgent = !filterAgent || p.agentName === filterAgent;
+    const matchType  = !filterType  || p.salonType === filterType;
+    const matchRep   = !filterRep   || p.salesRep  === filterRep;
     const pref   = extractPref(p.address);
     const city   = extractArea(p.address);
     const region = PREF_TO_REGION[pref] || '';
     const matchArea = (!_svRegion || region === _svRegion) &&
                       (!_svPref   || pref   === _svPref)   &&
                       (!_svCity   || city   === _svCity);
-    return matchQ && matchAgent && matchType && matchStatus && matchRep && matchFollow && matchArea;
+    return matchQ && matchAgent && matchType && matchRep && matchArea;
+  };
+
+  const baseResults = salonPeople.filter(baseFilter);
+
+  // クイックチップ件数を更新
+  const qCntOverdue  = baseResults.filter(p => (p.activities||[]).some(a => a.fuStatus==='pending' && a.fuDate && a.fuDate < today)).length;
+  const qCntPending  = baseResults.filter(p => { const acts=p.activities||[]; const ov=acts.some(a=>a.fuStatus==='pending'&&a.fuDate&&a.fuDate<today); return acts.some(a=>a.fuStatus==='pending')&&!ov; }).length;
+  const qCntWatch    = baseResults.filter(p => (p.status||'active')==='watch').length;
+  const qCntInactive = baseResults.filter(p => (p.status||'active')==='inactive').length;
+  const setQcnt = (id, n) => { const el=document.getElementById(id); if(el) el.textContent = n>0 ? n : ''; };
+  setQcnt('sqcAll',      baseResults.length);
+  setQcnt('sqcOverdue',  qCntOverdue);
+  setQcnt('sqcPending',  qCntPending);
+  setQcnt('sqcWatch',    qCntWatch);
+  setQcnt('sqcInactive', qCntInactive);
+
+  // 詳細絞込ボタンのバッジ更新
+  const detailActiveCnt = [filterAgent, filterType, filterRep].filter(Boolean).length;
+  const detailBtn = document.getElementById('svDetailBtn');
+  if (detailBtn) {
+    detailBtn.innerHTML = detailActiveCnt
+      ? `絞込 <span class="sv-detail-badge">${detailActiveCnt}</span>`
+      : '絞込 ▾';
+    detailBtn.classList.toggle('on', detailActiveCnt > 0 || svDetailOpen);
+  }
+
+  // クリアボタン表示切替
+  const hasFilter = svQuickFilter !== 'all' || _svRegion || filterAgent || filterType || filterRep || q;
+  const clearBtn = document.getElementById('svClearBtn');
+  if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
+
+  // クイックチップでフィルター
+  let results = baseResults.filter(p => {
+    if (svQuickFilter === 'all') return true;
+    const acts = p.activities || [];
+    const isOverdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
+    const isPending = acts.some(a => a.fuStatus === 'pending');
+    if (svQuickFilter === 'overdue')  return isOverdue;
+    if (svQuickFilter === 'pending')  return isPending && !isOverdue;
+    if (svQuickFilter === 'watch')    return (p.status || 'active') === 'watch';
+    if (svQuickFilter === 'inactive') return (p.status || 'active') === 'inactive';
+    return true;
   });
 
   // ソート
