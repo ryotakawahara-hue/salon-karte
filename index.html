@@ -1243,9 +1243,14 @@ const SELL_MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwd
 function parseSalonRow(row) {
   // サロンIDマッピングシートのカラム構造に対応
   // ["代理店名","代理店サロンコード","代理店サロン名","サロンID（自社）","サロン名（自社）","確認ステータス","備考"]
-  const company = String(row['サロン名（自社）'] || row['サロン名'] || '');
+  const _companyRaw = String(row['サロン名（自社）'] || row['サロン名'] || '');
+  // 数字のみ・空白のみのサロン名は無効データとして除外
+  const company = /^\d+$/.test(_companyRaw.trim()) ? '' : _companyRaw;
   const kamidoraId = String(row['サロンID（自社）'] || row['髪ドラID'] || '');
   const salonId = String(row['サロンID'] || '');
+  // 代理店名も郵便番号（数字・ハイフンのみ）は除外
+  const _agentRaw = String(row['代理店名'] || row['担当代理店'] || row['担当代理店'] || '');
+  const agentNameVal = /^[\d\-]+$/.test(_agentRaw.trim()) ? '' : _agentRaw;
   return {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     salonId,
@@ -1256,7 +1261,7 @@ function parseSalonRow(row) {
     phone:        String(row['電話番号']             || ''),
     address:      String(row['所在地']               || ''),
     hpbUrl:       String(row['HPBリンク']            || ''),
-    agentName:    String(row['代理店名']             || row['担当代理店'] || ''),
+    agentName:    agentNameVal,
     agentBranch:  String(row['代理店支店']           || ''),
     agentContact: String(row['代理店担当者']         || ''),
     salesRep:     String(row['担当営業']             || ''),
