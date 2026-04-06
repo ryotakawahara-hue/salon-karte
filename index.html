@@ -96,6 +96,11 @@ body.mode-salon .agent-only { display: none !important; }
 }
 .sb-count { padding: 6px 12px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--border); }
 .sb-list { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.sb-filter-bar { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--bg); }
+.sb-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
+.sb-chips .mf-chip { padding: 3px 10px; min-height: 26px; font-size: 11px; }
+.sb-sort-row { display: flex; gap: 6px; }
+.sb-sel { flex: 1; padding: 4px 6px; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); font-family: inherit; cursor: pointer; }
 .sb-item {
   padding: 11px 12px; border-bottom: 1px solid var(--border);
   cursor: pointer; transition: background .12s;
@@ -839,6 +844,23 @@ body:not(.mode-report) .report-view { display: none !important; }
 <div class="layout">
   <div class="sidebar">
     <div class="sb-count" id="sbCount">0名</div>
+    <div class="sb-filter-bar" id="sbFilterBar" style="display:none">
+      <div class="sb-chips">
+        <button class="mf-chip active" onclick="setSbFilter('all',this)">すべて</button>
+        <button class="mf-chip" onclick="setSbFilter('follow',this)">⚠ 要フォロー</button>
+        <button class="mf-chip" onclick="setSbFilter('watch',this)">👁 要観察</button>
+      </div>
+      <div class="sb-sort-row">
+        <select class="sb-sel" id="sbSort" onchange="renderSidebar()">
+          <option value="name">↕ 名前順</option>
+          <option value="recent">↕ 最終活動順</option>
+          <option value="follow">↕ フォロー優先</option>
+        </select>
+        <select class="sb-sel" id="sbArea" onchange="renderSidebar()">
+          <option value="">エリア: すべて</option>
+        </select>
+      </div>
+    </div>
     <div class="sb-list" id="sbList"></div>
   </div>
   <div class="main" id="main">
@@ -1640,6 +1662,7 @@ let currentTags = [];
 let editingId = null;
 let mobileFilter = 'all';  // 'all' | 'follow' | 'watch'
 let mobileSort   = 'name'; // 'name' | 'recent' | 'follow'
+let sbFilter     = 'all';  // sidebar agent filter
 
 const getPeople = () => currentMode === 'agent' ? agentPeople : salonPeople;
 const setPeople = arr => { if (currentMode === 'agent') agentPeople = arr; else salonPeople = arr; };
@@ -1767,6 +1790,14 @@ function mobileBack() {
   currentId = null;
 }
 
+// ── Sidebar Filter (agent mode) ───────────────────
+function setSbFilter(val, el) {
+  sbFilter = val;
+  document.querySelectorAll('#sbFilterBar .mf-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderSidebar();
+}
+
 // ── Mobile Filter / Sort helpers ─────────────────
 function setMobileFilter(val, el) {
   mobileFilter = val;
@@ -1884,10 +1915,57 @@ function renderMobileList() {
 // ── Sidebar ───────────────────────────────────────
 function renderSidebar() {
   const q = document.getElementById('searchInput').value.toLowerCase();
+  const isAgent = currentMode === 'agent';
 
-  let filtered = getPeople().filter(p =>
-    !q || p.name.toLowerCase().includes(q) || p.company.toLowerCase().includes(q)
-  ).sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+  // フィルターバーの表示切替
+  const filterBar = document.getElementById('sbFilterBar');
+  if (filterBar) filterBar.style.display = isAgent ? '' : 'none';
+
+  let filtered = getPeople().filter(p => {
+    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q)) return false;
+    if (isAgent) {
+      if (sbFilter === 'follow') {
+        if (!(p.activities||[]).some(a => a.fuStatus === 'pending')) return false;
+      } else if (sbFilter === 'watch') {
+        if (p.status !== 'watch') return false;
+      }
+      const areaFilter = document.getElementById('sbArea') ? document.getElementById('sbArea').value : '';
+      if (areaFilter && p.area !== areaFilter) return false;
+    }
+    return true;
+  });
+
+  // ソート
+  const sortVal = isAgent && document.getElementById('sbSort') ? document.getElementById('sbSort').value : 'name';
+  if (sortVal === 'recent') {
+    filtered.sort((a, b) => {
+      const aL = (a.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
+      const bL = (b.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
+      return bL.localeCompare(aL);
+    });
+  } else if (sortVal === 'follow') {
+    filtered.sort((a, b) => {
+      const rank = p => {
+        if ((p.activities||[]).some(x => x.fuStatus==='pending' && x.fuDate && x.fuDate < toDay())) return 0;
+        if ((p.activities||[]).some(x => x.fuStatus==='pending')) return 1;
+        return 2;
+      };
+      return rank(a) - rank(b) || a.company.localeCompare(b.company, 'ja');
+    });
+  } else {
+    filtered.sort((a, b) => a.company.localeCompare(b.company, 'ja'));
+  }
+
+  // エリア選択肢を更新（代理店モード時のみ）
+  if (isAgent) {
+    const areaSel = document.getElementById('sbArea');
+    if (areaSel) {
+      const curArea = areaSel.value;
+      const areas = [...new Set(agentPeople.map(p => p.area).filter(v => v))].sort();
+      areaSel.innerHTML = '<option value="">エリア: すべて</option>' +
+        areas.map(a => `<option value="${esc(a)}" ${a===curArea?'selected':''}>${esc(a)}</option>`).join('');
+    }
+  }
 
   document.getElementById('sbCount').textContent = `${filtered.length}名`;
 
