@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>代理店営業カルテ</title>
 <style>
 :root {
@@ -19,17 +19,32 @@
   --sidebar: 270px;
   --bottom-nav-h: 56px;
   --header-h: 54px;
+  /* Safe area insets (iPhone X+ / Android notch) */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
   background: var(--bg); color: var(--text);
   height: 100vh; display: flex; flex-direction: column; overflow: hidden;
   font-size: 15px;
+  /* Safe area padding for notch/status bar */
+  padding-left:  var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
 /* ── Active feedback ── */
-button:active, a:active, [onclick]:active { opacity: .75; transform: scale(.98); }
+button:active, a:active { opacity: .8; transform: scale(.97); transition: none; }
+[onclick]:active:not(button):not(a) { opacity: .85; }
+
+/* ── Overscroll containment ── */
+.sb-list, .main, .sv-grid, .mb-list-wrap, .mobile-detail-inner, .rp-body {
+  overscroll-behavior: contain;
+}
 
 /* ── Mode bar (desktop only) ── */
 .mode-bar {
@@ -664,7 +679,10 @@ body:not(.mode-report) .report-view { display: none !important; }
 .mf-sort.active { border-color: var(--primary); color: var(--primary); }
 
 /* ── Last Activity Info on cards ── */
-.mb-card-last { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.mb-card-last {
+  font-size: 11px; color: var(--muted); margin-top: 4px;
+  display: inline-flex; align-items: center; gap: 3px;
+}
 
 /* ── Checkbox group (稼働メニューなど) ── */
 .check-group {
@@ -699,7 +717,8 @@ body:not(.mode-report) .report-view { display: none !important; }
 /* ── FAB ── */
 .fab {
   display: none;
-  position: fixed; right: 20px; bottom: calc(var(--bottom-nav-h) + 16px);
+  position: fixed; right: 20px;
+  bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 16px);
   width: 56px; height: 56px; border-radius: 50%;
   background: var(--primary); color: white; font-size: 26px;
   border: none; cursor: pointer; z-index: 200;
@@ -713,7 +732,8 @@ body:not(.mode-report) .report-view { display: none !important; }
 .bottom-nav {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: var(--bottom-nav-h);
+  height: calc(var(--bottom-nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
   background: white; border-top: 1px solid var(--border);
   z-index: 150; flex-direction: row;
 }
@@ -732,6 +752,9 @@ body:not(.mode-report) .report-view { display: none !important; }
 .mobile-list-search {
   display: none; padding: 10px 14px 8px;
   background: var(--card); border-bottom: 1px solid var(--border);
+  /* Safe area padding for landscape notch */
+  padding-left: max(14px, calc(14px + var(--safe-left)));
+  padding-right: max(14px, calc(14px + var(--safe-right)));
 }
 .mobile-list-search input {
   width: 100%; padding: 10px 14px 10px 38px;
@@ -782,28 +805,34 @@ body:not(.mode-report) .report-view { display: none !important; }
 }
 .mobile-detail-inner {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 14px 14px calc(var(--bottom-nav-h) + 14px);
+  padding: 14px 14px calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
 }
 /* sticky add-act button in mobile detail */
 .mobile-add-act-bar {
   display: none;
   position: sticky; bottom: 0; left: 0; right: 0;
-  padding: 10px 16px; background: var(--card);
+  padding: 10px 16px calc(10px + var(--safe-bottom)) 16px;
+  background: var(--card);
   border-top: 1px solid var(--border); z-index: 10;
 }
 .mobile-add-act-bar .btn { width: 100%; font-size: 15px; min-height: 50px; }
 
-/* ─────────────── MOBILE STYLES (≤767px) ─────────────── */
+/* ─────────────── MOBILE (≤767px) ─────────────── */
+@keyframes modalSlideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
 @media (max-width: 767px) {
   body { overflow: hidden; }
 
-  /* Hide desktop elements */
-  .mode-bar { display: none; }
-  .hdr-search { display: none; }
+  /* ─ Hide desktop elements ─ */
+  .mode-bar    { display: none; }
+  .hdr-search  { display: none; }
   .hdr-add-btn { display: none; }
 
-  /* Mobile header */
-  .hdr { padding: 0 8px; gap: 4px; }
+  /* ─ Header ─ */
+  .hdr { padding: 0 6px 0 calc(6px + var(--safe-left)); gap: 4px; }
   .hdr-back { display: flex; }
   .hdr-back.hidden { display: none; }
   .hdr-title { display: none; }
@@ -814,12 +843,12 @@ body:not(.mode-report) .report-view { display: none !important; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  /* Layout: sidebar + main hidden; mobile list/detail shown */
+  /* ─ Layout: sidebar + main → mobile views ─ */
   .layout { overflow: hidden; position: relative; }
   .sidebar { display: none; }
-  .main { display: none; }
+  .main    { display: none; }
 
-  /* Mobile list */
+  /* ─ Mobile list ─ */
   .mobile-list-search { display: block; }
   .mobile-filter-strip { display: flex; }
   .mb-list-wrap {
@@ -827,70 +856,144 @@ body:not(.mode-report) .report-view { display: none !important; }
     display: flex; flex-direction: column;
   }
 
-  /* Mobile detail */
+  /* ─ Mobile detail ─ */
   .mobile-detail { display: flex; }
 
-  /* Search view mobile */
-  .sv-toolbar { padding: 10px 12px; gap: 6px; }
-  .sv-row1 { flex-wrap: nowrap; }
-  .sv-search input { font-size: 16px; }
-  .sv-filter { flex-shrink: 0; font-size: 14px; }
-  .sv-quick-row { padding: 4px 0 2px; }
-  .sv-detail-panel { padding: 6px 0 2px; }
-  .sv-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; padding-bottom: calc(var(--bottom-nav-h) + 12px); }
-
-  /* Bottom nav */
+  /* ─ Bottom nav ─ */
   .bottom-nav { display: flex; }
 
-  /* FAB */
+  /* ─ FAB ─ */
   .fab { display: flex; }
   body.mode-search .fab { display: none; }
   body.mode-report .fab { display: none; }
 
-  /* Mobile content area: fill between header and bottom nav */
+  /* ─ Content area bottom margin ─ */
   .layout, .search-view {
-    margin-bottom: var(--bottom-nav-h);
+    margin-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
   }
 
-  /* Modal → bottom sheet on mobile */
+  /* ─ Modal → Bottom sheet ─ */
   .overlay { align-items: flex-end; padding: 0; }
   .overlay.open { display: flex; }
   .modal {
     width: 100%; max-width: 100%;
-    border-radius: 18px 18px 0 0;
+    border-radius: 20px 20px 0 0;
     max-height: 92vh;
+    display: flex; flex-direction: column;
+    overflow: hidden; /* child scrolls, not modal */
+  }
+  .overlay.open .modal { animation: modalSlideUp .26s cubic-bezier(.32,.72,0,1); }
+  /* Drag handle */
+  .modal::before {
+    content: ''; display: block; flex-shrink: 0;
+    width: 36px; height: 4px;
+    background: #d0d5dd; border-radius: 2px;
+    margin: 10px auto 0;
+  }
+  .modal-hdr { position: static; } /* remove sticky inside bottom sheet */
+  .modal-body {
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 16px 18px; flex: 1;
+    overscroll-behavior: contain;
+  }
+  .modal-footer {
+    padding: 12px 18px calc(16px + var(--safe-bottom));
   }
 
-  /* Sticky add activity bar */
+  /* ─ Search view ─ */
+  .sv-toolbar { padding: 10px 12px; gap: 4px; }
+  .sv-row1 { flex-wrap: nowrap; gap: 6px; }
+  .sv-search input { font-size: 16px; }
+  .sv-count { display: none; } /* 件数はチップ内で見せる */
+  .sv-filter { flex-shrink: 0; font-size: 14px; }
+  .sv-quick-row { padding: 4px 0 2px; gap: 5px; }
+  .sv-qchip { padding: 5px 10px; font-size: 11px; }
+  .sv-detail-panel { padding: 6px 0 2px; }
+  .sv-grid {
+    grid-template-columns: 1fr; padding: 12px; gap: 10px;
+    padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 12px);
+  }
+  /* Search card compact on mobile */
+  .sv-card { padding: 12px 14px; }
+  .sv-card-name { font-size: 14px; }
+  .sv-card-actions { gap: 5px; }
+
+  /* ─ Sticky add activity bar ─ */
   .mobile-add-act-bar { display: block; }
 
-  /* Profile on mobile */
+  /* ─ Profile ─ */
   .profile { flex-direction: column; align-items: center; text-align: center; }
   .profile-actions { width: 100%; justify-content: center; margin-top: 4px; }
   .profile-name { font-size: 18px; }
 
-  /* Stats grid 2 cols on narrow */
+  /* ─ Stats 2 cols ─ */
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-grid > .stat:last-child { grid-column: 1 / -1; }
 
-  /* Info grid 1 col on narrow */
+  /* ─ Info grid 1 col ─ */
   .info-grid { grid-template-columns: 1fr; }
 
-  /* Activity tab default active handled in JS */
-
-  /* Table horizontal scroll */
+  /* ─ Table scroll ─ */
   .card-body { padding: 10px 12px; }
   .card-body table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  /* Tabs bigger touch area */
-  .tab { font-size: 12px; padding: 12px 4px; }
+  /* ─ Tabs: bigger touch target ─ */
+  .tab { font-size: 13px; padding: 13px 6px; }
+  .tabs { gap: 2px; }
 
-  /* Form rows: single col on mobile */
+  /* ─ Form ─ */
   .frow { grid-template-columns: 1fr; }
-
-  /* Wider form labels */
-  .finput { font-size: 16px; }
+  .finput   { font-size: 16px; min-height: 44px; }
   .tag-field { font-size: 16px; }
+  select.finput { min-height: 44px; }
+
+  /* ─ Activity form chips: bigger tap targets ─ */
+  .type-chip  { min-height: 44px; padding: 9px 14px; }
+  .fu-chip    { min-height: 44px; padding: 9px 14px; }
+  .act-result-chip { min-height: 68px; }
+  .act-topic-chip  { min-height: 40px; padding: 9px 14px; }
+  .act-fu-preset   { min-height: 48px; font-size: 13px; }
+
+  /* ─ Mobile card touch feedback ─ */
+  .mb-card:active { background: #dce8f5; }
+  .sv-card:active { background: #f0f5fc; }
+}
+
+/* ─────────────── TABLET (768px – 1023px) ─────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root { --sidebar: 210px; }
+  .mode-bar { font-size: 13px; }
+  .mode-tab-top { padding: 0 14px; }
+  .main { padding: 14px; }
+  /* Single-column search on narrow tablet */
+  .sv-grid { grid-template-columns: 1fr; }
+  /* Tighter sidebar items */
+  .sb-item { padding: 9px 10px; }
+  .sb-name { font-size: 12px; }
+}
+
+/* ─────────────── DESKTOP (≥768px) ─────────────── */
+@media (min-width: 768px) {
+  .bottom-nav          { display: none; }
+  .fab                 { display: none; }
+  .mobile-list-search  { display: none; }
+  .mb-list-wrap        { display: none; }
+  .mobile-detail       { display: none !important; }
+  .mobile-add-act-bar  { display: none !important; }
+  .sidebar             { display: flex; }
+  .main                { display: block; }
+  .hdr-back            { display: none !important; }
+  .hdr-title           { display: block; }
+  .hdr-title-center    { display: none !important; }
+  .hdr-search          { display: block; }
+  .hdr-add-btn         { display: flex; }
+  .hdr-btn-icon        { display: none; }
+}
+
+/* ─────────────── LARGE DESKTOP (≥1280px) ─────────────── */
+@media (min-width: 1280px) {
+  :root { --sidebar: 300px; }
+  .sv-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 }
 
 /* ─────────────── DESKTOP (≥768px) ─────────────── */
@@ -2023,7 +2126,7 @@ function renderMobileList() {
               : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : '',
       ...(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`)
     ].filter(Boolean).join('');
-    const lastActHtml = lastAct ? `<div class="mb-card-last">最終活動: ${lastAct}</div>` : '';
+    const lastActHtml = lastAct ? `<div class="mb-card-last">🕐 ${relativeDate(lastAct)}</div>` : '';
     return `<div class="mb-card" onclick="selectPerson('${p.id}')">
       <div class="mb-card-avatar" style="${overdue?'background:#DC3545':hasPending?'background:#e65c00':''}">${avatarTxt}</div>
       <div class="mb-card-body">
