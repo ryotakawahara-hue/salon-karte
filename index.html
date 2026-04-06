@@ -1244,8 +1244,10 @@ function parseSalonRow(row) {
   // ["代理店名","代理店サロンコード","代理店サロン名","サロンID（自社）","サロン名（自社）","確認ステータス","備考"]
   const company = String(row['サロン名（自社）'] || row['サロン名'] || '');
   const kamidoraId = String(row['サロンID（自社）'] || row['髪ドラID'] || '');
+  const salonId = String(row['サロンID'] || '');
   return {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    salonId,
     kamidoraId,
     company,
     legalName:    String(row['法人名']             || ''),
@@ -1286,7 +1288,7 @@ function parseAgentRow(row) {
   };
 }
 
-// マージ共通処理（key=company で重複排除）
+// マージ共通処理（key=company で重複排除）- 代理店用
 function mergeByCompanyName(existing, loaded) {
   const names = new Set(existing.map(p => p.company));
   const merged = [...existing];
@@ -1297,26 +1299,67 @@ function mergeByCompanyName(existing, loaded) {
   return { merged, added };
 }
 
+// サロン用マージ（salonId優先 → サロン名フォールバック）
+function mergeSalons(existing, loaded) {
+  const bySalonId  = {};
+  const byCompany  = {};
+  existing.forEach(p => {
+    if (p.salonId)  bySalonId[p.salonId]   = p;
+    if (p.company)  byCompany[p.company]   = p;
+  });
+  const merged = [...existing];
+  let added = 0;
+  for (const p of loaded) {
+    if (p.salonId && bySalonId[p.salonId]) {
+      // 既存レコードに不足情報を補完
+      const ex = bySalonId[p.salonId];
+      if (!ex.company    && p.company)    ex.company    = p.company;
+      if (!ex.agentName  && p.agentName)  ex.agentName  = p.agentName;
+      if (!ex.kamidoraId && p.kamidoraId) ex.kamidoraId = p.kamidoraId;
+    } else if (p.company && byCompany[p.company]) {
+      // 会社名一致 → salonId を付与
+      const ex = byCompany[p.company];
+      if (!ex.salonId && p.salonId) { ex.salonId = p.salonId; bySalonId[p.salonId] = ex; }
+    } else if (p.company) {
+      merged.push(p);
+      if (p.salonId) bySalonId[p.salonId] = p;
+      byCompany[p.company] = p;
+      added++;
+    }
+  }
+  return { merged, added };
+}
+
 // 起動時サイレント自動ロード（alert なし）
 async function autoLoadFromSheet() {
   try {
-    const [sRes, aRes] = await Promise.all([
+    const [smRes, sRes, aRes] = await Promise.all([
+      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
       fetch(GAS_URL + '?action=getAll&type=salonMapping'),
       fetch(GAS_URL + '?action=getAll&type=agent'),
     ]);
-    const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
+    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
 
-    if (sJson.ok && sJson.data.length > 0) {
-      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company);
-      const existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-      const { merged } = mergeByCompanyName(existing, loaded);
-      localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
-      salonPeople = merged;
+    let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+    // サロンマスター（MAPPING_SS）優先で取込
+    if (smJson.ok && smJson.data && smJson.data.length > 0) {
+      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged } = mergeSalons(existing, loaded);
+      existing = merged;
     }
-    if (aJson.ok && aJson.data.length > 0) {
+    // salonMapping（旧GAS）でsalonIdなどを補完
+    if (sJson.ok && sJson.data && sJson.data.length > 0) {
+      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged } = mergeSalons(existing, loaded);
+      existing = merged;
+    }
+    localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
+    salonPeople = existing;
+
+    if (aJson.ok && aJson.data && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
-      const existing = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
-      const { merged } = mergeByCompanyName(existing, loaded);
+      const existingA = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
+      const { merged } = mergeByCompanyName(existingA, loaded);
       localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
       agentPeople = merged;
     }
@@ -1332,26 +1375,35 @@ async function loadFromSheet() {
   btn.textContent = '⏳';
   btn.disabled = true;
   try {
-    const [sRes, aRes] = await Promise.all([
+    const [smRes, sRes, aRes] = await Promise.all([
+      fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
       fetch(GAS_URL + '?action=getAll&type=salonMapping'),
       fetch(GAS_URL + '?action=getAll&type=agent'),
     ]);
-    const [sJson, aJson] = await Promise.all([sRes.json(), aRes.json()]);
+    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
 
     let sAdded = 0, aAdded = 0;
 
-    if (sJson.ok && sJson.data.length > 0) {
-      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company);
-      const existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-      const { merged, added } = mergeByCompanyName(existing, loaded);
-      sAdded = added;
-      localStorage.setItem('karte_salon_v1', JSON.stringify(merged));
-      salonPeople = merged;
+    let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+    // サロンマスター（MAPPING_SS）優先
+    if (smJson.ok && smJson.data && smJson.data.length > 0) {
+      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged, added } = mergeSalons(existing, loaded);
+      sAdded += added; existing = merged;
     }
-    if (aJson.ok && aJson.data.length > 0) {
+    // salonMapping で補完
+    if (sJson.ok && sJson.data && sJson.data.length > 0) {
+      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const { merged, added } = mergeSalons(existing, loaded);
+      sAdded += added; existing = merged;
+    }
+    localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
+    salonPeople = existing;
+
+    if (aJson.ok && aJson.data && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
-      const existing = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
-      const { merged, added } = mergeByCompanyName(existing, loaded);
+      const existingA = JSON.parse(localStorage.getItem('karte_agent_v1') || '[]');
+      const { merged, added } = mergeByCompanyName(existingA, loaded);
       aAdded = added;
       localStorage.setItem('karte_agent_v1', JSON.stringify(merged));
       agentPeople = merged;
@@ -1477,23 +1529,25 @@ function syncToSheet(type, data) {
   }).catch(err => console.warn('スプレッドシート同期失敗:', err));
 }
 
-// 活動ログを Spreadsheet A に同期（no-cors: レスポンス不要）
+// 活動ログを MAPPING_SS の「活動ログ」シートに同期
 function syncActivityToSheet(person, activity) {
-  fetch(GAS_URL, {
+  fetch(SELL_MASTER_GAS_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
       type: 'activity',
       record: {
-        salonId:      person.salonId    || '',
-        hairDraId:    person.hairDraId  || '',
-        date:         activity.date     || '',
-        personType:   activity.type === 'lecture' ? '講師' : '営業',
-        personName:   activity.repName  || activity.lecturer || '',
-        activityType: activity.type     || '',
-        content:      activity.content  || '',
-        nextDate:     activity.fuDate   || '',
+        date:         activity.date       || '',
+        salonId:      person.salonId      || person.kamidoraId || '',
+        salonName:    person.company      || '',
+        personName:   activity.repName    || activity.lecturer || '',
+        activityType: activity.type       || '',
+        activityKind: activity.kind       || '',
+        content:      activity.content    || '',
+        next:         activity.next       || '',
+        nextDate:     activity.fuDate     || '',
+        fuStatus:     activity.fuStatus   || '',
       },
     }),
   }).catch(err => console.warn('活動ログ同期失敗:', err));
