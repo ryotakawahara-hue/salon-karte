@@ -1559,6 +1559,23 @@ async function fetchWithTimeout(url, timeout = 20000) {
   }
 }
 
+// ── エラーメッセージを日本語に変換 ──────────────────
+function friendlyError(e) {
+  const msg = (e && e.message) || '';
+  if (/quota/i.test(msg))      return 'GASの1日利用上限に達しました。時間をおいてから再試行してください。';
+  if (/abort|timeout/i.test(msg)) return 'サーバーへの接続がタイムアウトしました。ネットワークを確認してください。';
+  if (/failed to fetch|network/i.test(msg)) return 'ネットワークエラー。通信状況を確認してください。';
+  if (/HTTP 4/i.test(msg))     return 'サーバーエラー（アクセス不可）。しばらくしてから再試行してください。';
+  if (/HTTP 5/i.test(msg))     return 'サーバーエラー。しばらくしてから再試行してください。';
+  return msg || '不明なエラーが発生しました。';
+}
+
+// ── confirm の代わりに使えるシンプルなモーダル ──────
+function confirmAction(msg, onOk) {
+  // iOSではconfirmが問題なく動くので引き続き使用
+  if (window.confirm(msg)) onOk();
+}
+
 // サロンIDマッピング行 → オブジェクト変換
 function parseSalonRow(row) {
   // サロンIDマッピングシートのカラム構造に対応
@@ -1698,12 +1715,9 @@ async function autoLoadFromSheet(isRetry = false) {
       setTimeout(() => autoLoadFromSheet(true), 5000);
     } else {
       // リトライも失敗 → トースト通知
-      showToast('データの読込に失敗しました', 'error', {
-        label: '再読込',
-        fn: () => {
-          const btn = document.getElementById('reloadBtn');
-          if (btn) btn.click();
-        }
+      showToast(friendlyError(e), 'error', {
+        label: '再試行',
+        fn: () => autoLoadFromSheet(false)
       }, 0); // 0 = 消えない
     }
   }
@@ -1750,9 +1764,9 @@ async function loadFromSheet() {
     }
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
-    alert(`読込完了\nサロン: ${sAdded}件追加\n代理店: ${aAdded}件追加`);
+    showToast(`読込完了 — サロン ${sAdded}件追加・代理店 ${aAdded}件追加`, 'success', null, 3500);
   } catch(e) {
-    alert('読込に失敗しました: ' + e.message);
+    showToast(friendlyError(e), 'error', { label: '再試行', fn: loadFromSheet }, 0);
   } finally {
     btn.textContent = '📥';
     btn.disabled = false;
@@ -1817,9 +1831,9 @@ async function reloadFromSheet() {
     }
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
-    alert(`再読込完了\nサロン: ${fresh.length}件`);
+    showToast(`再読込完了 — サロン ${fresh.length}件`, 'success', null, 3500);
   } catch(e) {
-    alert('再読込に失敗しました: ' + e.message);
+    showToast(friendlyError(e), 'error', { label: '再試行', fn: reloadFromSheet }, 0);
   } finally {
     btn.textContent = '🔄';
     btn.disabled = false;
@@ -1832,7 +1846,7 @@ async function loadSellMaster() {
   btn.textContent = '⏳';
   btn.disabled = true;
   try {
-    const res = await fetch(SELL_MASTER_GAS_URL + '?action=getAll&type=sellMaster');
+    const res = await fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=sellMaster');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '読込失敗');
@@ -1840,9 +1854,9 @@ async function loadSellMaster() {
     const { salonAdded, salesUpdated } = mergeSellMaster(json.salons, json.sales);
     save();
     renderSidebar(); renderMobileList(); renderMain();
-    alert(`売上マスター取込完了\nサロン新規追加: ${salonAdded}件\n販売実績を更新しました（${salesUpdated}件）`);
+    showToast(`売上マスター取込完了 — 新規${salonAdded}件・実績${salesUpdated}件更新`, 'success', null, 3500);
   } catch(e) {
-    alert('売上マスター取込エラー: ' + e.message);
+    showToast(friendlyError(e), 'error', { label: '再試行', fn: loadSellMaster }, 0);
   } finally {
     btn.textContent = '📊';
     btn.disabled = false;
