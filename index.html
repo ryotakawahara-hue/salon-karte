@@ -443,6 +443,11 @@ body.mode-report .layout { display: none; }
 body.mode-report .search-view { display: none; }
 body.mode-report .report-view { display: flex !important; }
 body:not(.mode-report) .report-view { display: none !important; }
+body.mode-home .layout { display: none; }
+body.mode-home .search-view { display: none; }
+body.mode-home #dashView { display: block !important; }
+body:not(.mode-home) #dashView { display: none !important; }
+body.mode-home .fab { display: none; }
 
 .rp-toolbar {
   display: flex; align-items: center; gap: 0;
@@ -681,6 +686,40 @@ body:not(.mode-report) .report-view { display: none !important; }
 .mb-card-last {
   font-size: 11px; color: var(--muted); margin-top: 4px;
   display: inline-flex; align-items: center; gap: 3px;
+}
+/* ── Long-term unvisited (60+ days) ── */
+.mb-card.dormant { opacity: .55; }
+.mb-card.dormant .mb-card-avatar { background: #adb5bd !important; }
+.sv-card.dormant { opacity: .6; border-left: 3px solid #adb5bd; }
+.dormant-tag { font-size: 10px; background: #e9ecef; color: #6c757d; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+
+/* ── Home Dashboard ── */
+.dash-wrap { padding: 16px; max-width: 600px; margin: 0 auto; }
+.dash-greeting { font-size: 20px; font-weight: 800; margin-bottom: 16px; }
+.dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.dash-stat {
+  background: var(--card); border-radius: 14px; padding: 16px;
+  border: 1px solid var(--border); text-align: center;
+}
+.dash-stat-num { font-size: 32px; font-weight: 800; line-height: 1.1; }
+.dash-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
+.dash-section { margin-bottom: 18px; }
+.dash-section-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.dash-fu-item {
+  display: flex; align-items: center; gap: 10px; padding: 12px;
+  background: var(--card); border-radius: 10px; border: 1px solid var(--border);
+  margin-bottom: 6px; cursor: pointer; transition: background .15s;
+}
+.dash-fu-item:active { background: #f0f4f8; }
+.dash-fu-date { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.dash-fu-date.overdue { background: #f8d7da; color: #721c24; }
+.dash-fu-date.today { background: #fff3cd; color: #856404; }
+.dash-fu-date.upcoming { background: #e8f4ff; color: #2563eb; }
+.dash-fu-name { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-fu-content { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+#dashView {
+  padding-top: var(--hdr-h); padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
+  overflow-y: auto; -webkit-overflow-scrolling: touch; height: 100vh; box-sizing: border-box;
 }
 
 /* ── Checkbox group (稼働メニューなど) ── */
@@ -1188,6 +1227,11 @@ body:not(.mode-report) .report-view { display: none !important; }
   </div>
 </div>
 
+<!-- ── Home Dashboard ── -->
+<div id="dashView" style="display:none">
+  <div class="dash-wrap" id="dashContent"></div>
+</div>
+
 <!-- ── Report View (週報) ── -->
 <div class="report-view" id="reportView" style="display:none">
   <!-- ツールバー: 週選択 -->
@@ -1226,6 +1270,9 @@ body:not(.mode-report) .report-view { display: none !important; }
 
 <!-- ── Bottom Navigation (Mobile) ── -->
 <nav class="bottom-nav">
+  <button class="bn-tab" id="bnHome" onclick="switchMode('home')">
+    <span class="bn-tab-ico">🏠</span>ホーム
+  </button>
   <button class="bn-tab active" id="bnAgent" onclick="switchMode('agent')">
     <span class="bn-tab-ico">👥</span>代理店
   </button>
@@ -2018,28 +2065,84 @@ function syncToSheet(type, data) {
   }).catch(err => console.warn('スプレッドシート同期失敗:', err));
 }
 
-// 活動ログを MAPPING_SS の「活動ログ」シートに同期
-function syncActivityToSheet(person, activity) {
+// 活動ログを MAPPING_SS の「活動ログ」シートに同期（リトライ付き）
+const _syncQueue = JSON.parse(localStorage.getItem('karte_sync_queue') || '[]');
+
+function syncActivityToSheet(person, activity, retryCount = 0) {
+  const payload = {
+    type: 'activity',
+    record: {
+      date:         activity.date       || '',
+      salonId:      person.salonId      || person.kamidoraId || '',
+      salonName:    person.company      || '',
+      personName:   activity.repName    || activity.lecturer || '',
+      activityType: activity.type       || '',
+      activityKind: activity.kind       || '',
+      content:      activity.content    || '',
+      next:         activity.next       || '',
+      nextDate:     activity.fuDate     || '',
+      fuStatus:     activity.fuStatus   || '',
+    },
+  };
+  showSyncStatus('syncing');
   fetch(SELL_MASTER_GAS_URL, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({
-      type: 'activity',
-      record: {
-        date:         activity.date       || '',
-        salonId:      person.salonId      || person.kamidoraId || '',
-        salonName:    person.company      || '',
-        personName:   activity.repName    || activity.lecturer || '',
-        activityType: activity.type       || '',
-        activityKind: activity.kind       || '',
-        content:      activity.content    || '',
-        next:         activity.next       || '',
-        nextDate:     activity.fuDate     || '',
-        fuStatus:     activity.fuStatus   || '',
-      },
-    }),
-  }).catch(err => console.warn('活動ログ同期失敗:', err));
+    body: JSON.stringify(payload),
+  }).then(() => {
+    // no-cors returns opaque response; treat as success
+    showSyncStatus('ok');
+    // Remove from queue if it was a retry
+    const idx = _syncQueue.findIndex(q => q.record.date === payload.record.date && q.record.salonId === payload.record.salonId && q.record.content === payload.record.content);
+    if (idx >= 0) { _syncQueue.splice(idx, 1); localStorage.setItem('karte_sync_queue', JSON.stringify(_syncQueue)); }
+  }).catch(err => {
+    console.warn('活動ログ同期失敗:', err);
+    if (retryCount < 2) {
+      setTimeout(() => syncActivityToSheet(person, activity, retryCount + 1), 3000 * (retryCount + 1));
+      showSyncStatus('retrying');
+    } else {
+      // Save to queue for later retry
+      _syncQueue.push(payload);
+      localStorage.setItem('karte_sync_queue', JSON.stringify(_syncQueue));
+      showSyncStatus('error');
+    }
+  });
+}
+
+function showSyncStatus(state) {
+  let el = document.getElementById('syncStatusToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'syncStatusToast';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  if (state === 'syncing') {
+    el.textContent = '⏳ 同期中…';
+    el.style.background = '#fff3cd'; el.style.color = '#856404'; el.style.opacity = '1';
+  } else if (state === 'retrying') {
+    el.textContent = '🔄 再送中…';
+    el.style.background = '#fff3cd'; el.style.color = '#856404'; el.style.opacity = '1';
+  } else if (state === 'ok') {
+    el.textContent = '✓ 同期完了';
+    el.style.background = '#d4edda'; el.style.color = '#155724'; el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 2000);
+  } else if (state === 'error') {
+    el.textContent = '⚠ 同期失敗（後で再送します）';
+    el.style.background = '#f8d7da'; el.style.color = '#721c24'; el.style.opacity = '1';
+    setTimeout(() => { el.style.opacity = '0'; }, 4000);
+  }
+}
+
+function retrySyncQueue() {
+  if (!_syncQueue.length) return;
+  const items = [..._syncQueue];
+  items.forEach(payload => {
+    const fakePerson = { salonId: payload.record.salonId, kamidoraId: '', company: payload.record.salonName };
+    const fakeAct = { date: payload.record.date, repName: payload.record.personName, lecturer: '', type: payload.record.activityType, kind: payload.record.activityKind, content: payload.record.content, next: payload.record.next, fuDate: payload.record.nextDate, fuStatus: payload.record.fuStatus };
+    syncActivityToSheet(fakePerson, fakeAct);
+  });
 }
 
 // ── Data ──────────────────────────────────────────
@@ -2271,8 +2374,10 @@ function renderMobileList() {
               : hasPending ? '<span class="badge badge-fu">要フォロー</span>' : '',
       ...(p.tags || []).map(t => `<span class="badge badge-tag">${esc(t)}</span>`)
     ].filter(Boolean).join('');
-    const lastActHtml = lastAct ? `<div class="mb-card-last">🕐 ${relativeDate(lastAct)}</div>` : '';
-    return `<div class="mb-card" onclick="selectPerson('${p.id}')">
+    const daysSince = lastAct ? Math.floor((new Date() - new Date(lastAct)) / 86400000) : 9999;
+    const isDormant = daysSince >= 60 && !hasPending;
+    const lastActHtml = lastAct ? `<div class="mb-card-last">🕐 ${relativeDate(lastAct)}${isDormant ? ' <span class="dormant-tag">'+daysSince+'日未訪問</span>' : ''}</div>` : '<div class="mb-card-last"><span class="dormant-tag">未訪問</span></div>';
+    return `<div class="mb-card${isDormant ? ' dormant' : ''}" onclick="selectPerson('${p.id}')">
       <div class="mb-card-avatar" style="${overdue?'background:#DC3545':hasPending?'background:#e65c00':''}">${avatarTxt}</div>
       <div class="mb-card-body">
         <div class="mb-card-name">${esc(mainLabel)}</div>
@@ -3554,7 +3659,10 @@ function renderSearchView() {
     const hasPending = acts.some(a => a.fuStatus === 'pending');
     const overdue = acts.some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < today);
     const sc = p.status || 'active';
-    const urgentClass = overdue ? 'urgent' : hasPending ? 'pending' : '';
+    const lastActDate = acts[0]?.date || '';
+    const daysSinceLast = lastActDate ? Math.floor((new Date() - new Date(lastActDate)) / 86400000) : 9999;
+    const isDormant = daysSinceLast >= 60 && !hasPending && !overdue;
+    const urgentClass = overdue ? 'urgent' : hasPending ? 'pending' : isDormant ? 'dormant' : '';
     const nextFu = acts.filter(a => a.fuStatus === 'pending' && a.fuDate).sort((a, b) => a.fuDate.localeCompare(b.fuDate))[0];
     return `<div class="sv-card ${urgentClass}" onclick="openSalonFromSearch('${p.id}')">
       <div class="sv-card-name">${esc(p.company)}${p.kamidoraId ? `<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">${esc(p.kamidoraId)}</span>` : ''}</div>
@@ -3571,7 +3679,7 @@ function renderSearchView() {
         ${p.title || p.staffCount ? `<div class="sv-card-row"><span class="sv-card-label">規模</span><span class="sv-card-val">${p.title ? esc(p.title) + '席' : ''}${p.title && p.staffCount ? ' / ' : ''}${p.staffCount ? esc(String(p.staffCount)) + '名' : ''}</span></div>` : ''}
       </div>
       <div class="sv-card-last" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <span>${lastAct ? `📝 <span style="color:var(--muted)">${relativeDate(lastAct.date)}</span>　${esc(lastAct.content.slice(0, 30))}${lastAct.content.length > 30 ? '…' : ''}` : '<span style="color:var(--muted)">活動記録なし</span>'}</span>
+        <span>${lastAct ? `📝 <span style="color:var(--muted)">${relativeDate(lastAct.date)}</span>${isDormant ? ' <span class="dormant-tag">'+daysSinceLast+'日未訪問</span>' : ''}　${esc(lastAct.content.slice(0, 30))}${lastAct.content.length > 30 ? '…' : ''}` : '<span class="dormant-tag">未訪問</span>'}</span>
         ${nextFu ? `<span style="font-size:11px;color:${nextFu.fuDate < today ? 'var(--danger)' : '#e65c00'};font-weight:600;white-space:nowrap">📅 ${relativeDate(nextFu.fuDate)}</span>` : ''}
       </div>
       <div class="sv-card-actions">
@@ -3630,7 +3738,22 @@ function switchMode(mode) {
     }
   }
 
-  const allBnIds = ['bnAgent','bnSalon','bnSearch','bnReport'];
+  // Hide dashboard view when leaving home
+  document.getElementById('dashView').style.display = 'none';
+
+  const allBnIds = ['bnHome','bnAgent','bnSalon','bnSearch','bnReport'];
+
+  if (mode === 'home') {
+    document.body.className = 'mode-home';
+    document.getElementById('hdrTitle').textContent = '🏠 ホーム';
+    document.getElementById('hdrTitleCenter').textContent = 'ホーム';
+    allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById('bnHome').classList.add('active');
+    document.getElementById('mobileListView').style.display = 'none';
+    document.getElementById('dashView').style.display = 'block';
+    renderDashboard();
+    return;
+  }
 
   if (mode === 'search') {
     document.body.className = 'mode-search';
@@ -3976,6 +4099,114 @@ function copyReport() {
   });
 }
 
+// ── Home Dashboard ───────────────────────────────
+function renderDashboard() {
+  const today = toDay();
+  const allPeople = [...agentPeople, ...salonPeople];
+  const allActs = allPeople.flatMap(p => (p.activities || []).map(a => ({ ...a, _person: p })));
+
+  // 今日の活動件数
+  const todayActs = allActs.filter(a => a.date === today);
+
+  // 今週の活動件数（月曜起点）
+  const now = new Date();
+  const dayOfWeek = now.getDay() || 7;
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek + 1);
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+  const weekActs = allActs.filter(a => a.date >= weekStartStr && a.date <= today);
+
+  // 要フォローアップ
+  const pendingFUs = allActs
+    .filter(a => a.fuStatus === 'pending')
+    .sort((a, b) => (a.fuDate || '9999').localeCompare(b.fuDate || '9999'));
+  const overdueFUs = pendingFUs.filter(a => a.fuDate && a.fuDate < today);
+  const todayFUs = pendingFUs.filter(a => a.fuDate === today);
+  const upcomingFUs = pendingFUs.filter(a => a.fuDate && a.fuDate > today && a.fuDate <= new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10));
+
+  // 長期未訪問サロン（60日以上）
+  const dormantSalons = salonPeople.filter(p => {
+    const lastDate = (p.activities || []).reduce((m, a) => a.date > m ? a.date : m, '');
+    const days = lastDate ? Math.floor((new Date() - new Date(lastDate)) / 86400000) : 9999;
+    return days >= 60;
+  }).slice(0, 5);
+
+  const fuItemHtml = (a) => {
+    const dateClass = !a.fuDate ? 'upcoming' : a.fuDate < today ? 'overdue' : a.fuDate === today ? 'today' : 'upcoming';
+    const dateLabel = !a.fuDate ? '期限なし' : a.fuDate < today ? `${Math.floor((new Date() - new Date(a.fuDate)) / 86400000)}日超過` : a.fuDate === today ? '今日' : relativeDate(a.fuDate);
+    const name = a._person.company || a._person.name || '不明';
+    return `<div class="dash-fu-item" onclick="openSalonFromSearch('${a._person.id}')">
+      <span class="dash-fu-date ${dateClass}">${dateLabel}</span>
+      <span class="dash-fu-name">${esc(name)}</span>
+      <span class="dash-fu-content">${esc((a.content || '').slice(0, 25))}</span>
+    </div>`;
+  };
+
+  let html = `
+    <div class="dash-greeting">👋 おはようございます</div>
+    <div class="dash-stats">
+      <div class="dash-stat">
+        <div class="dash-stat-num" style="color:var(--primary)">${todayActs.length}</div>
+        <div class="dash-stat-lbl">今日の活動</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-num" style="color:#2563eb">${weekActs.length}</div>
+        <div class="dash-stat-lbl">今週の活動</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-num" style="color:${overdueFUs.length ? 'var(--danger)' : 'var(--warning)'}">${pendingFUs.length}</div>
+        <div class="dash-stat-lbl">要フォロー${overdueFUs.length ? ` (${overdueFUs.length}件超過)` : ''}</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-num" style="color:#6c757d">${dormantSalons.length > 0 ? salonPeople.filter(p => { const ld = (p.activities||[]).reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }).length : 0}</div>
+        <div class="dash-stat-lbl">60日以上未訪問</div>
+      </div>
+    </div>`;
+
+  // 期限超過
+  if (overdueFUs.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title">🚨 期限超過 (${overdueFUs.length}件)</div>
+      ${overdueFUs.slice(0, 5).map(fuItemHtml).join('')}
+      ${overdueFUs.length > 5 ? `<div style="text-align:center;padding:8px;font-size:12px;color:var(--muted)">他 ${overdueFUs.length - 5} 件</div>` : ''}
+    </div>`;
+  }
+
+  // 今日のフォロー
+  if (todayFUs.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title">📅 今日のフォロー (${todayFUs.length}件)</div>
+      ${todayFUs.map(fuItemHtml).join('')}
+    </div>`;
+  }
+
+  // 今週のフォロー
+  if (upcomingFUs.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title">📋 今週の予定 (${upcomingFUs.length}件)</div>
+      ${upcomingFUs.slice(0, 5).map(fuItemHtml).join('')}
+    </div>`;
+  }
+
+  // フォロー予定なし
+  if (!overdueFUs.length && !todayFUs.length && !upcomingFUs.length) {
+    html += `<div class="dash-section" style="text-align:center;padding:20px;color:var(--muted)">
+      <div style="font-size:28px;margin-bottom:8px">✨</div>
+      <div>直近のフォロー予定はありません</div>
+    </div>`;
+  }
+
+  // 同期キューに未送信があれば表示
+  if (_syncQueue.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title">⚠️ 未同期の活動ログ (${_syncQueue.length}件)</div>
+      <button class="btn btn-primary" onclick="retrySyncQueue()" style="width:100%">🔄 再送する</button>
+    </div>`;
+  }
+
+  document.getElementById('dashContent').innerHTML = html;
+}
+
 // ── Overlay close ─────────────────────────────────
 document.querySelectorAll('.overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
@@ -3993,6 +4224,8 @@ document.querySelectorAll('.overlay').forEach(o => {
   updateCacheAgeLabel();
   // 起動時にスプシから自動読込（サイレント・キャッシュ有効時はスキップ）
   autoLoadFromSheet();
+  // 未同期の活動ログを再送
+  if (_syncQueue.length) setTimeout(retrySyncQueue, 5000);
 })();
 </script>
 </body>
