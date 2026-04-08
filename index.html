@@ -17,7 +17,7 @@
   --text: #2C3E50;
   --muted: #7F8C8D;
   --sidebar: 270px;
-  --bottom-nav-h: 56px;
+  --bottom-nav-h: 58px;
   --header-h: 54px;
   /* Safe area insets (iPhone X+ / Android notch) */
   --safe-top:    env(safe-area-inset-top,    0px);
@@ -81,7 +81,7 @@ body.mode-salon .agent-only { display: none !important; }
 .hdr-search input {
   width: 100%; padding: 7px 10px 7px 32px;
   border: none; border-radius: 18px; background: rgba(255,255,255,.2);
-  color: white; font-size: 13px; outline: none;
+  color: white; font-size: 16px; outline: none;
 }
 .hdr-search input::placeholder { color: rgba(255,255,255,.65); }
 .hdr-search input:focus { background: rgba(255,255,255,.3); }
@@ -128,7 +128,7 @@ body.mode-salon .agent-only { display: none !important; }
 
 /* ── Badges ── */
 .badge { display: inline-block; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; }
-.badge-fu { background: #fff3cd; color: #856404; }
+.badge-fu { background: #fff3cd; color: #664d03; }
 .badge-tag { background: #ebf3ff; color: var(--primary); }
 
 /* ── Main ── */
@@ -193,8 +193,8 @@ body.mode-salon .agent-only { display: none !important; }
 
 /* ── Activity ── */
 .act-list { display: flex; flex-direction: column; gap: 10px; }
-.act-item { padding: 12px; background: var(--bg); border-radius: 8px; border-left: 3px solid var(--primary); }
-.act-item.fu-pending { border-left-color: var(--warning); }
+.act-item { padding: 14px; background: var(--bg); border-radius: 10px; border-left: 3px solid var(--primary); transition: background .15s; }
+.act-item.fu-pending { border-left-color: var(--warning); background: #fffdf5; }
 .act-item.fu-done { border-left-color: var(--success); }
 .act-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; }
 .act-type { font-size: 10px; font-weight: 700; background: var(--primary); color: white; padding: 2px 7px; border-radius: 10px; }
@@ -448,6 +448,12 @@ body.mode-home .search-view { display: none; }
 body.mode-home #dashView { display: block !important; }
 body:not(.mode-home) #dashView { display: none !important; }
 body.mode-home .fab { display: none; }
+body.mode-home .mobile-detail { display: none !important; }
+body.mode-home .mobile-list-search { display: none !important; }
+body.mode-home .mobile-filter-strip { display: none !important; }
+body.mode-home .mobile-add-act-bar { display: none !important; }
+body.mode-report .mobile-detail { display: none !important; }
+body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 
 .rp-toolbar {
   display: flex; align-items: center; gap: 0;
@@ -703,22 +709,23 @@ body.mode-home .fab { display: none; }
   cursor: pointer; transition: transform .1s; -webkit-tap-highlight-color: transparent;
 }
 .dash-stat:active { transform: scale(.95); }
-.dash-stat-num { font-size: 32px; font-weight: 800; line-height: 1.1; }
-.dash-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
+.dash-stat-num { font-size: 28px; font-weight: 800; line-height: 1.1; }
+.dash-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 600; letter-spacing: .02em; }
 .dash-section { margin-bottom: 18px; }
 .dash-section-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .dash-fu-item {
-  display: flex; align-items: center; gap: 10px; padding: 12px;
-  background: var(--card); border-radius: 10px; border: 1px solid var(--border);
-  margin-bottom: 6px; cursor: pointer; transition: background .15s;
+  display: flex; align-items: center; gap: 10px; padding: 14px;
+  background: var(--card); border-radius: 12px; border: 1px solid var(--border);
+  margin-bottom: 8px; cursor: pointer; transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.dash-fu-item:active { background: #f0f4f8; }
-.dash-fu-date { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.dash-fu-item:active { background: #f0f4f8; transform: scale(.98); }
+.dash-fu-date { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
 .dash-fu-date.overdue { background: #f8d7da; color: #721c24; }
-.dash-fu-date.today { background: #fff3cd; color: #856404; }
+.dash-fu-date.today { background: #fff3cd; color: #664d03; }
 .dash-fu-date.upcoming { background: #e8f4ff; color: #2563eb; }
-.dash-fu-name { font-size: 14px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dash-fu-content { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; }
+.dash-fu-name { font-size: 15px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-fu-content { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
 #dashView {
   padding-top: var(--hdr-h); padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
   overflow-y: auto; -webkit-overflow-scrolling: touch; height: 100vh; box-sizing: border-box;
@@ -1801,6 +1808,8 @@ async function autoLoadFromSheet(isRetry = false) {
     console.log(`[Cache] GASスキップ（最終取得: ${cacheAgeText()}）`);
     return; // レンダリングは起動時に既に実行済み
   }
+  // ローディング表示
+  const loadingToast = !hasSalon ? showToast('📡 データを取得しています…', 'info', null, 0) : null;
   try {
     const [smRes, sRes, aRes] = await Promise.all([
       fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
@@ -1833,9 +1842,11 @@ async function autoLoadFromSheet(isRetry = false) {
       agentPeople = merged;
     }
     markCacheFresh();
+    if (loadingToast) loadingToast.remove();
     renderSidebar(); renderMobileList(); renderMain();
     refreshAgentList();
   } catch(e) {
+    if (loadingToast) loadingToast.remove();
     console.warn('自動読込スキップ:', e.message);
     const isQuota = /quota/i.test(e.message || '');
     if (!isRetry && !isQuota) {
@@ -2382,7 +2393,7 @@ function renderMobileList() {
 
   const wrap = document.getElementById('mbListWrap');
   if (!filtered.length) {
-    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>該当なし</div></div>';
+    wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>${q ? '「'+q+'」に該当するカルテがありません' : 'カルテがありません'}</div>${!q ? '<button class="btn btn-primary btn-sm" onclick="openAddModal()" style="margin-top:12px;padding:10px 20px;font-size:14px">＋ 新規登録</button>' : ''}</div>`;
     return;
   }
   const isAgent = currentMode === 'agent';
@@ -2604,9 +2615,9 @@ function renderMain() {
         ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
       </div>
       <div class="profile-actions">
-        <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:13px;padding:6px 14px">＋ 接点記録</button>
-        <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deletePerson('${p.id}')">削除</button>
+        <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:14px;padding:8px 16px;border-radius:10px">＋ 接点記録</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')" style="padding:8px 14px;border-radius:10px">編集</button>
+        <button class="btn btn-outline btn-sm" onclick="deletePerson('${p.id}')" style="padding:8px 12px;border-radius:10px;color:var(--danger);border-color:var(--danger)">削除</button>
       </div>
     </div>
 
@@ -2704,26 +2715,27 @@ function renderAct(p) {
   const acts = [...(p.activities || [])].sort((a, b) => b.date.localeCompare(a.date));
   const listHtml = acts.length ? acts.map(a => {
     const cls = a.fuStatus === 'pending' ? 'fu-pending' : a.fuStatus === 'done' ? 'fu-done' : '';
+    const fuLabel = a.fuStatus === 'pending' ? `<span class="badge badge-fu" style="font-size:11px">📅 ${a.fuDate ? relativeDate(a.fuDate)+'まで' : '要フォロー'}</span>` : a.fuStatus === 'done' ? '<span class="badge" style="background:#d4edda;color:#155724;font-size:11px">✓ 完了</span>' : '';
     return `<div class="act-item ${cls}">
-      <div class="act-hdr">
-        <div style="display:flex;align-items:center;gap:7px">
+      <div class="act-hdr" style="flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="act-type">${esc(a.type)}</span>
           ${a.kind ? `<span class="act-type" style="background:#e8f4ff;color:#2563eb">${esc(a.kind)}</span>` : ''}
-          <span class="act-date">${a.date}</span>
+          <span class="act-date" title="${a.date}">${a.date} (${relativeDate(a.date)})</span>
         </div>
-        <div class="act-actions">
-          ${a.fuStatus === 'pending' ? `<span class="badge badge-fu">要フォロー${a.fuDate ? ' ('+a.fuDate+')' : ''}</span><button class="btn btn-success btn-sm" onclick="markDone('${a.id}')">完了</button>` : ''}
-          ${a.fuStatus === 'done' ? `<span class="badge" style="background:#d4edda;color:#155724">✓ 完了</span>` : ''}
-          <button class="btn btn-danger btn-sm" onclick="deleteAct('${a.id}')">削除</button>
+        <div class="act-actions" style="gap:6px">
+          ${fuLabel}
+          ${a.fuStatus === 'pending' ? `<button class="btn btn-success btn-sm" onclick="markDone('${a.id}')" style="min-height:32px;padding:4px 12px">✓ 完了</button>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="deleteAct('${a.id}')" style="min-height:32px;padding:4px 10px;font-size:11px;color:var(--muted);border-color:var(--border)">削除</button>
         </div>
       </div>
-      ${a.repName ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">👤 担当営業: ${esc(a.repName)}</div>` : ''}
-      ${a.lecturer ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px">📚 講師: ${esc(a.lecturer)}</div>` : ''}
+      ${a.repName ? `<div style="font-size:12px;color:var(--muted);margin-bottom:3px">👤 ${esc(a.repName)}</div>` : ''}
+      ${a.lecturer ? `<div style="font-size:12px;color:var(--muted);margin-bottom:3px">📚 ${esc(a.lecturer)}</div>` : ''}
       <div class="act-content">${esc(a.content)}</div>
-      ${a.next ? `<div class="act-next">${esc(a.next)}</div>` : ''}
+      ${a.next ? `<div class="act-next">→ ${esc(a.next)}</div>` : ''}
       ${a.minutesUrl ? `<div style="font-size:12px;margin-top:5px"><a href="${esc(a.minutesUrl)}" target="_blank" style="color:var(--primary)">📄 議事録を開く</a></div>` : ''}
     </div>`;
-  }).join('') : `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📝</div><div>活動記録がありません</div></div>`;
+  }).join('') : `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📝</div><div>活動記録がありません</div><button class="btn btn-primary btn-sm" onclick="openActModal()" style="margin-top:12px;padding:10px 20px;font-size:14px">＋ 最初の活動を記録する</button></div>`;
 
   return `<div class="card">
     <div class="card-hdr"><div class="card-title">活動ログ</div><button class="btn btn-primary btn-sm" onclick="openActModal()">＋ 追加</button></div>
