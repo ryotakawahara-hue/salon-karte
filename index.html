@@ -498,6 +498,40 @@ body:not(.mode-search) .search-view { display: none; }
 .sv-act-btn { background: #F0F7FF; color: var(--primary); border: 1px solid #C8DEFF; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; min-height: 36px; }
 .sv-act-btn:hover { background: #DDF0FF; }
 
+/* ── Agent Picker (代理店選択画面) ── */
+.agent-picker { padding: 20px 16px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.agent-picker-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.agent-picker-title .icon { color: var(--primary); }
+.agent-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.agent-pick-card {
+  background: var(--card); border: 2px solid var(--border); border-radius: var(--radius-md);
+  padding: 14px 12px; cursor: pointer; text-align: center; transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.agent-pick-card:active { transform: scale(.97); }
+.agent-pick-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+.agent-pick-card.selected { border-color: var(--primary); background: var(--primary-bg); }
+.agent-pick-avatar {
+  width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff; font-weight: 700; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.agent-pick-name { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.agent-pick-count { font-size: 11px; color: var(--muted); }
+.agent-pick-all {
+  background: var(--bg); border: 2px dashed var(--border); border-radius: var(--radius-md);
+  padding: 14px 12px; cursor: pointer; text-align: center; transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.agent-pick-all:hover { border-color: var(--primary); }
+.agent-pick-all .icon { width: 28px; height: 28px; color: var(--muted); }
+.agent-picker-back {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600;
+  color: var(--primary); cursor: pointer; padding: 6px 12px; border-radius: var(--radius-sm);
+  background: var(--primary-bg); border: none; margin-bottom: 10px;
+}
+.agent-picker-back:active { opacity: .7; }
+
 /* ── Report View ── */
 .report-view {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
@@ -1359,12 +1393,8 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       </select>
     </div>
   </div>
-  <div class="sv-grid" id="svGrid">
-    <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">
-      <svg class="icon" style="width:40px;height:40px;margin-bottom:10px"><use href="#i-search"/></svg>
-      <div style="font-size:15px">サロンカルテにデータを登録すると、ここに表示されます</div>
-    </div>
-  </div>
+  <div class="agent-picker" id="svAgentPicker"></div>
+  <div class="sv-grid" id="svGrid" style="display:none"></div>
 </div>
 
 <!-- ── Home Dashboard ── -->
@@ -2393,6 +2423,7 @@ let currentTags = [];
 let editingId = null;
 let mobileFilter = 'all';  // 'all' | 'follow' | 'watch'
 let mobileSort   = 'name'; // 'name' | 'recent' | 'follow'
+let _mbSelectedAgent = ''; // 代理店タブの代理店選択状態
 let sbFilter     = 'all';  // sidebar agent filter
 
 const getPeople = () => currentMode === 'agent' ? agentPeople : salonPeople;
@@ -2549,11 +2580,75 @@ function toggleMobileSort() {
 }
 
 // ── Mobile List ───────────────────────────────────
+function selectMbAgent(name) {
+  _mbSelectedAgent = name;
+  const title = name ? `${name}` : '代理店カルテ';
+  document.getElementById('hdrTitle').textContent = title;
+  document.getElementById('hdrTitleCenter').textContent = title;
+  renderMobileList();
+}
+
+function backToMbAgentPicker() {
+  _mbSelectedAgent = '';
+  document.getElementById('mobileSearchInput').value = '';
+  document.getElementById('hdrTitle').textContent = '代理店カルテ';
+  document.getElementById('hdrTitleCenter').textContent = '代理店カルテ';
+  renderMobileList();
+}
+
 function renderMobileList() {
   if (!isMobile()) return;
+
+  const wrap = document.getElementById('mbListWrap');
+  const searchBar = document.querySelector('.mobile-list-search');
+  const filterStrip = document.getElementById('mobileFilterStrip');
+
+  // 代理店モードかつ代理店未選択 → 代理店ピッカー表示
+  if (currentMode === 'agent' && !_mbSelectedAgent) {
+    const q = (document.getElementById('mobileSearchInput').value || '').toLowerCase();
+    if (!q) {
+      if (searchBar) searchBar.style.display = 'none';
+      if (filterStrip) filterStrip.style.display = 'none';
+
+      // 代理店ごとの担当者数を集計
+      const agentCounts = {};
+      agentPeople.forEach(p => {
+        const co = p.company || '';
+        if (co && !/^[\d\-]+$/.test(co.trim())) {
+          agentCounts[co] = (agentCounts[co] || 0) + 1;
+        }
+      });
+      const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
+      const extra = Object.keys(agentCounts).filter(n => !AGENT_NAMES.includes(n)).sort((a,b) => a.localeCompare(b, 'ja'));
+      const allAgents = [...AGENT_NAMES.filter(n => agentCounts[n]), ...extra];
+
+      let html = '<div class="agent-picker" style="padding:16px">';
+      html += '<div class="agent-picker-title"><svg class="icon icon-lg"><use href="#i-users"/></svg> 代理店を選択してください</div>';
+      html += '<div class="agent-picker-grid">';
+      allAgents.forEach(name => {
+        const cnt = agentCounts[name] || 0;
+        const avatar = esc(name.slice(0, 2));
+        html += `<div class="agent-pick-card" onclick="selectMbAgent('${esc(name)}')">
+          <div class="agent-pick-avatar">${avatar}</div>
+          <div class="agent-pick-name">${esc(name)}</div>
+          <div class="agent-pick-count">${cnt}名</div>
+        </div>`;
+      });
+      html += '</div></div>';
+      wrap.innerHTML = html;
+      return;
+    }
+  }
+
+  // 通常表示: 検索バー・フィルター表示
+  if (searchBar) searchBar.style.display = '';
+  if (filterStrip) filterStrip.style.display = '';
+
   const q = (document.getElementById('mobileSearchInput').value || document.getElementById('searchInput').value || '').toLowerCase();
 
   let filtered = getPeople().filter(p => {
+    // 代理店モードで代理店選択中 → その代理店だけ
+    if (currentMode === 'agent' && _mbSelectedAgent && p.company !== _mbSelectedAgent) return false;
     // text search
     if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q)) return false;
     // filter chip
@@ -2588,7 +2683,6 @@ function renderMobileList() {
     });
   }
 
-  const wrap = document.getElementById('mbListWrap');
   if (!filtered.length) {
     wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📋</div><div>${q ? '「'+q+'」に該当するカルテがありません' : 'カルテがありません'}</div>${!q ? '<button class="btn btn-primary btn-sm" onclick="openAddModal()" style="margin-top:12px;padding:10px 20px;font-size:14px">＋ 新規登録</button>' : ''}</div>`;
     return;
@@ -2628,6 +2722,10 @@ function renderMobileList() {
     </div>`;
   };
 
+  // 戻るボタン（代理店選択中）
+  const backBtn = (currentMode === 'agent' && _mbSelectedAgent)
+    ? `<div style="padding:8px 16px"><button class="agent-picker-back" onclick="backToMbAgentPicker()"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> 代理店を選び直す</button></div>` : '';
+
   // 代理店順: group by company with section headers
   if (mobileSort === 'agent' && isAgent) {
     let lastCo = null;
@@ -2635,13 +2733,13 @@ function renderMobileList() {
     for (const p of filtered) {
       if (p.company !== lastCo) {
         lastCo = p.company;
-        parts.push(`<div class="mb-agent-group-hdr">🏢 ${esc(p.company||'未設定')}</div>`);
+        parts.push(`<div class="mb-agent-group-hdr"><svg class="icon icon-sm" style="margin-right:4px"><use href="#i-briefcase"/></svg> ${esc(p.company||'未設定')}</div>`);
       }
       parts.push(cardHtml(p));
     }
-    wrap.innerHTML = parts.join('');
+    wrap.innerHTML = backBtn + parts.join('');
   } else {
-    wrap.innerHTML = filtered.map(cardHtml).join('');
+    wrap.innerHTML = backBtn + filtered.map(cardHtml).join('');
   }
 }
 
@@ -3612,6 +3710,7 @@ let _svRegion = '';
 let _svPref   = '';
 let _svCity   = '';
 let svQuickFilter = 'all'; // 'all'|'overdue'|'pending'|'watch'|'inactive'
+let _svSelectedAgent = ''; // サロンタブの代理店選択状態
 let svDetailOpen  = false;
 
 function setSvQuick(val, el) {
@@ -3756,9 +3855,94 @@ function openActModalForPerson(personId) {
   openActModal();
 }
 
+function renderAgentPicker() {
+  const picker = document.getElementById('svAgentPicker');
+  const grid = document.getElementById('svGrid');
+  const toolbar = document.querySelector('.sv-toolbar');
+
+  // 代理店が選択済み or 検索中 → ピッカー非表示、サロン一覧表示
+  const q = (document.getElementById('svSearch').value || '').trim();
+  if (_svSelectedAgent || q) {
+    picker.style.display = 'none';
+    grid.style.display = '';
+    if (toolbar) toolbar.style.display = '';
+    return false; // ピッカー非表示
+  }
+
+  // 代理店ピッカーを表示、ツールバー非表示
+  picker.style.display = '';
+  grid.style.display = 'none';
+  if (toolbar) toolbar.style.display = 'none';
+
+  // 代理店ごとのサロン数を集計
+  const agentCounts = {};
+  salonPeople.forEach(p => {
+    const a = p.agentName || '';
+    if (a && !/^[\d\-]+$/.test(a.trim())) {
+      agentCounts[a] = (agentCounts[a] || 0) + 1;
+    }
+  });
+
+  // AGENT_NAMES順 + その他
+  const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
+  const extra = Object.keys(agentCounts).filter(n => !AGENT_NAMES.includes(n)).sort((a,b) => a.localeCompare(b, 'ja'));
+  const allAgents = [...AGENT_NAMES.filter(n => agentCounts[n]), ...extra];
+
+  let html = `<div class="agent-picker-title"><svg class="icon icon-lg"><use href="#i-users"/></svg> 代理店を選択してください</div>`;
+  html += '<div class="agent-picker-grid">';
+  // 全サロン表示カード
+  html += `<div class="agent-pick-all" onclick="selectSvAgent('')">
+    <svg class="icon"><use href="#i-scissors"/></svg>
+    <div class="agent-pick-name">すべてのサロン</div>
+    <div class="agent-pick-count">${salonPeople.length}件</div>
+  </div>`;
+  allAgents.forEach(name => {
+    const cnt = agentCounts[name] || 0;
+    const avatar = esc(name.slice(0, 2));
+    html += `<div class="agent-pick-card" onclick="selectSvAgent('${esc(name)}')">
+      <div class="agent-pick-avatar">${avatar}</div>
+      <div class="agent-pick-name">${esc(name)}</div>
+      <div class="agent-pick-count">${cnt}件</div>
+    </div>`;
+  });
+  html += '</div>';
+  picker.innerHTML = html;
+  return true; // ピッカー表示中
+}
+
+function selectSvAgent(name) {
+  _svSelectedAgent = name;
+  // 代理店フィルターのselectにも反映
+  const sel = document.getElementById('svAgent');
+  if (sel) {
+    if (name && ![...sel.options].some(o => o.value === name)) {
+      sel.add(new Option(name, name));
+    }
+    sel.value = name;
+  }
+  // ヘッダータイトルを更新
+  const title = name ? `${name} のサロン` : 'サロンカルテ';
+  document.getElementById('hdrTitle').textContent = title;
+  document.getElementById('hdrTitleCenter').textContent = title;
+  renderSearchView();
+}
+
+function backToAgentPicker() {
+  _svSelectedAgent = '';
+  document.getElementById('svSearch').value = '';
+  document.getElementById('svAgent').value = '';
+  document.getElementById('hdrTitle').textContent = 'サロンカルテ';
+  document.getElementById('hdrTitleCenter').textContent = 'サロンカルテ';
+  toggleSearchClear();
+  renderSearchView();
+}
+
 function renderSearchView() {
+  // 代理店ピッカー表示判定
+  if (renderAgentPicker()) return;
+
   const q           = (document.getElementById('svSearch').value || '').toLowerCase();
-  const filterAgent = document.getElementById('svAgent').value;
+  const filterAgent = _svSelectedAgent || document.getElementById('svAgent').value;
   const filterType  = document.getElementById('svType').value;
   const filterRep   = document.getElementById('svSalesRep').value;
   const sortBy      = document.getElementById('svSort').value;
@@ -3993,6 +4177,10 @@ function renderSearchView() {
   let rendered = 0;
 
   let html = '';
+  // 代理店選択中なら「戻る」ボタン表示
+  if (_svSelectedAgent) {
+    html += `<div style="grid-column:1/-1"><button class="agent-picker-back" onclick="backToAgentPicker()"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> 代理店を選び直す</button></div>`;
+  }
   if (overdueItems.length) {
     html += `<div class="sv-pinned-hdr"><svg class="icon icon-sm" style="width:14px;height:14px"><use href="#i-alert-tri"/></svg> 期限超過 — 要対応 (${overdueItems.length}件)</div>`;
   }
@@ -4092,8 +4280,10 @@ function switchMode(mode) {
     allBnIds.forEach(id => document.getElementById(id).classList.remove('active'));
     document.getElementById('bnSalon').classList.add('active');
     document.getElementById('mobileListView').style.display = 'none';
+    _svSelectedAgent = ''; // 代理店ピッカーに戻す
+    document.getElementById('svSearch').value = '';
+    document.getElementById('svAgent').value = '';
     renderSearchView();
-    // Don't auto-focus: let the user tap the search box intentionally
     return;
   }
 
@@ -4111,6 +4301,7 @@ function switchMode(mode) {
   }
 
   currentMode = mode;
+  _mbSelectedAgent = ''; // 代理店ピッカーに戻す
   document.body.className = 'mode-' + mode;
   document.getElementById('tabAgent').classList.toggle('active', mode === 'agent');
   document.getElementById('tabSalon').classList.toggle('active', mode === 'salon');
