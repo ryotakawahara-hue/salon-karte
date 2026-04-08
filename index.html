@@ -1904,10 +1904,13 @@ function confirmAction(msg, onOk) {
 }
 
 // サロンIDマッピング行 → オブジェクト変換
+// 文字化け(U+FFFD)除去ユーティリティ
+const cleanStr = s => typeof s === 'string' ? s.replace(/\uFFFD/g, '') : s;
+
 function parseSalonRow(row) {
   // サロンIDマッピングシートのカラム構造に対応
   // ["代理店名","代理店サロンコード","代理店サロン名","サロンID（自社）","サロン名（自社）","確認ステータス","備考"]
-  const _companyRaw = String(row['サロン名（自社）'] || row['サロン名'] || '');
+  const _companyRaw = cleanStr(String(row['サロン名（自社）'] || row['サロン名'] || ''));
   // 数字のみ・空白のみのサロン名は無効データとして除外
   const company = /^\d+$/.test(_companyRaw.trim()) ? '' : _companyRaw;
   const kamidoraId = String(row['サロンID（自社）'] || row['髪ドラID'] || '');
@@ -1920,10 +1923,10 @@ function parseSalonRow(row) {
     salonId,
     kamidoraId,
     company,
-    legalName:    String(row['法人名']             || ''),
-    name:         String(row['代表者/担当者']       || ''),
-    phone:        String(row['電話番号']             || ''),
-    address:      String(row['所在地']               || ''),
+    legalName:    cleanStr(String(row['法人名']             || '')),
+    name:         cleanStr(String(row['代表者/担当者']       || '')),
+    phone:        cleanStr(String(row['電話番号']             || '')),
+    address:      cleanStr(String(row['所在地']               || '')),
     hpbUrl:       String(row['HPBリンク']            || ''),
     agentName:    normalizeAgentName(agentNameVal),
     agentBranch:  String(row['代理店支店']           || ''),
@@ -2421,8 +2424,19 @@ function normalizeAgentName(name) { return AGENT_NAME_FIX[name] || name; }
 let currentMode = localStorage.getItem('karte_mode') || 'agent';
 let agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || localStorage.getItem('karte_v1') || '[]');
 let salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-// 既存データの代理店名を正規化
-salonPeople.forEach(p => { if (p.agentName) p.agentName = normalizeAgentName(p.agentName); });
+// 既存データの代理店名を正規化 & 文字化け(U+FFFD)除去
+salonPeople.forEach(p => {
+  if (p.agentName) p.agentName = normalizeAgentName(p.agentName);
+  // U+FFFD (文字化け replacement char) をテキスト系フィールドから除去
+  ['salonName','name','address','phone','email','memo','company'].forEach(k => {
+    if (typeof p[k] === 'string') p[k] = p[k].replace(/\uFFFD/g, '');
+  });
+});
+agentPeople.forEach(p => {
+  ['salonName','name','address','phone','email','memo','company'].forEach(k => {
+    if (typeof p[k] === 'string') p[k] = p[k].replace(/\uFFFD/g, '');
+  });
+});
 let currentId = null;
 let currentTags = [];
 let editingId = null;
