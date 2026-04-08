@@ -1825,8 +1825,8 @@ function isCacheFresh() {
 function isQuotaBlocked() {
   const ts = parseInt(localStorage.getItem(QUOTA_HIT_KEY) || '0');
   if (!ts) return false;
-  // GAS quotaは太平洋時間の午前0時にリセット。安全に24時間ブロック
-  return (Date.now() - ts) < 24 * 60 * 60 * 1000;
+  // GAS quotaは太平洋時間の午前0時(JST 16-17時)にリセット。4時間ブロック後に自動解除
+  return (Date.now() - ts) < 4 * 60 * 60 * 1000;
 }
 function markQuotaHit() {
   localStorage.setItem(QUOTA_HIT_KEY, String(Date.now()));
@@ -2053,7 +2053,7 @@ async function autoLoadFromSheet(isRetry = false) {
 // 手動ロードボタン（両方読込 + 結果を通知）
 async function loadFromSheet() {
   if (isQuotaBlocked()) {
-    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    showToast('GAS利用上限中', 'warn', { label: '解除して再試行', fn: () => { clearQuotaBlock(); location.reload(); } }, 0);
     return;
   }
   const btn = document.getElementById('loadBtn');
@@ -2109,7 +2109,7 @@ async function loadFromSheet() {
 // 再読込ボタン（localStorageをクリアしてスプシから全件取込）
 async function reloadFromSheet() {
   if (isQuotaBlocked()) {
-    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    showToast('GAS利用上限中', 'warn', { label: '解除して再試行', fn: () => { clearQuotaBlock(); location.reload(); } }, 0);
     return;
   }
   if (!confirm('ローカルのサロンデータを削除してスプレッドシートから再取込します。\n活動ログ・タグなどのカルテ情報は保持されます。よろしいですか？')) return;
@@ -2182,7 +2182,7 @@ async function reloadFromSheet() {
 // ── 売上マスター取込 ──────────────────────────────
 async function loadSellMaster() {
   if (isQuotaBlocked()) {
-    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    showToast('GAS利用上限中', 'warn', { label: '解除して再試行', fn: () => { clearQuotaBlock(); location.reload(); } }, 0);
     return;
   }
   const btn = document.getElementById('sellMasterBtn');
