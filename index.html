@@ -792,7 +792,8 @@ body.mode-home .fab { display: none; }
   width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--primary);
 }
 .bn-tab:active { opacity: .6; }
-.bn-tab-ico { font-size: 22px; line-height: 1; }
+.bn-tab-ico { font-size: 22px; line-height: 1; pointer-events: none; }
+.bn-tab > * { pointer-events: none; }
 
 /* ── Mobile List View ── */
 .mobile-list-search {
