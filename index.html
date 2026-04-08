@@ -1816,10 +1816,24 @@ async function fetchWithTimeout(url, timeout = 20000) {
 // ── GASフェッチキャッシュ管理（クォータ節約） ────────
 const CACHE_TTL   = 24 * 60 * 60 * 1000; // 24時間（GAS上限節約のため1日1回同期）
 const CACHE_TS_KEY = 'karte_gas_fetch_ts';
+const QUOTA_HIT_KEY = 'karte_gas_quota_hit';
 
 function isCacheFresh() {
   const ts = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0');
   return ts > 0 && (Date.now() - ts) < CACHE_TTL;
+}
+function isQuotaBlocked() {
+  const ts = parseInt(localStorage.getItem(QUOTA_HIT_KEY) || '0');
+  if (!ts) return false;
+  // GAS quotaは太平洋時間の午前0時にリセット。安全に24時間ブロック
+  return (Date.now() - ts) < 24 * 60 * 60 * 1000;
+}
+function markQuotaHit() {
+  localStorage.setItem(QUOTA_HIT_KEY, String(Date.now()));
+  markCacheFresh(); // キャッシュも有効化して自動読込も抑止
+}
+function clearQuotaBlock() {
+  localStorage.removeItem(QUOTA_HIT_KEY);
 }
 function markCacheFresh() {
   localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
@@ -1961,8 +1975,8 @@ async function autoLoadFromSheet(isRetry = false) {
   // キャッシュが新鮮かつローカルデータあり → GAS呼び出しをスキップ
   const hasSalon = (JSON.parse(localStorage.getItem('karte_salon_v1') || '[]')).length > 0;
   const hasAgent = (JSON.parse(localStorage.getItem('karte_agent_v1') || '[]')).length > 0;
-  if (isCacheFresh() && hasSalon) {
-    console.log(`[Cache] GASスキップ（最終取得: ${cacheAgeText()}）`);
+  if ((isCacheFresh() || isQuotaBlocked()) && hasSalon) {
+    console.log(`[Cache] GASスキップ（最終取得: ${cacheAgeText()}${isQuotaBlocked() ? ' / quota制限中' : ''}）`);
     return; // レンダリングは起動時に既に実行済み
   }
   // ローディング表示
@@ -2008,9 +2022,7 @@ async function autoLoadFromSheet(isRetry = false) {
     const isQuota = /quota/i.test(e.message || '');
 
     if (isQuota) {
-      // GAS上限到達 → キャッシュを「有効」にマークして翌日まで自動呼び出しを抑止
-      markCacheFresh();
-      localStorage.setItem('karte_gas_quota_hit', String(Date.now()));
+      markQuotaHit();
     }
 
     if (!isRetry && !isQuota) {
@@ -2026,7 +2038,7 @@ async function autoLoadFromSheet(isRetry = false) {
         renderSidebar(); renderMobileList(); renderMain();
         refreshAgentList();
         if (isQuota) {
-          showToast('GAS利用上限のため前回のデータを表示中（次回は自動で再取得します）', 'warn', null, 5000);
+          showToast('GAS利用上限のため前回データを表示中。明日リセットされます', 'warn', null, 5000);
         } else {
           showToast(friendlyError(e), 'error', { label: '再試行', fn: () => autoLoadFromSheet(false) }, 0);
         }
@@ -2040,6 +2052,10 @@ async function autoLoadFromSheet(isRetry = false) {
 
 // 手動ロードボタン（両方読込 + 結果を通知）
 async function loadFromSheet() {
+  if (isQuotaBlocked()) {
+    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    return;
+  }
   const btn = document.getElementById('loadBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
@@ -2082,6 +2098,7 @@ async function loadFromSheet() {
     refreshAgentList();
     showToast(`読込完了 — サロン ${sAdded}件追加・代理店 ${aAdded}件追加`, 'success', null, 3500);
   } catch(e) {
+    if (/quota/i.test(e.message || '')) markQuotaHit();
     showToast(friendlyError(e), 'error', { label: '再試行', fn: loadFromSheet }, 0);
   } finally {
     btn.textContent = '📥';
@@ -2091,6 +2108,10 @@ async function loadFromSheet() {
 
 // 再読込ボタン（localStorageをクリアしてスプシから全件取込）
 async function reloadFromSheet() {
+  if (isQuotaBlocked()) {
+    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    return;
+  }
   if (!confirm('ローカルのサロンデータを削除してスプレッドシートから再取込します。\n活動ログ・タグなどのカルテ情報は保持されます。よろしいですか？')) return;
   const btn = document.getElementById('reloadBtn');
   btn.textContent = '⏳';
@@ -2150,6 +2171,7 @@ async function reloadFromSheet() {
     refreshAgentList();
     showToast(`再読込完了 — サロン ${fresh.length}件`, 'success', null, 3500);
   } catch(e) {
+    if (/quota/i.test(e.message || '')) markQuotaHit();
     showToast(friendlyError(e), 'error', { label: '再試行', fn: reloadFromSheet }, 0);
   } finally {
     btn.textContent = '🔄';
@@ -2159,6 +2181,10 @@ async function reloadFromSheet() {
 
 // ── 売上マスター取込 ──────────────────────────────
 async function loadSellMaster() {
+  if (isQuotaBlocked()) {
+    showToast('GAS利用上限のため読込できません。明日自動リセットされます。', 'warn', null, 4000);
+    return;
+  }
   const btn = document.getElementById('sellMasterBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
@@ -2173,6 +2199,7 @@ async function loadSellMaster() {
     renderSidebar(); renderMobileList(); renderMain();
     showToast(`売上マスター取込完了 — 新規${salonAdded}件・実績${salesUpdated}件更新`, 'success', null, 3500);
   } catch(e) {
+    if (/quota/i.test(e.message || '')) markQuotaHit();
     showToast(friendlyError(e), 'error', { label: '再試行', fn: loadSellMaster }, 0);
   } finally {
     btn.textContent = '📊';
