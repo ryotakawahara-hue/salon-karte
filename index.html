@@ -700,7 +700,9 @@ body.mode-home .fab { display: none; }
 .dash-stat {
   background: var(--card); border-radius: 14px; padding: 16px;
   border: 1px solid var(--border); text-align: center;
+  cursor: pointer; transition: transform .1s; -webkit-tap-highlight-color: transparent;
 }
+.dash-stat:active { transform: scale(.95); }
 .dash-stat-num { font-size: 32px; font-weight: 800; line-height: 1.1; }
 .dash-stat-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 600; }
 .dash-section { margin-bottom: 18px; }
@@ -778,13 +780,19 @@ body.mode-home .fab { display: none; }
 .bn-tab {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 2px; cursor: pointer; color: var(--muted);
-  font-size: 10px; font-weight: 600; transition: color .15s;
-  border: none; background: none; padding: 0;
-  min-height: 44px;
+  gap: 3px; cursor: pointer; color: var(--muted);
+  font-size: 10px; font-weight: 600; transition: all .15s;
+  border: none; background: none; padding: 4px 0;
+  min-height: 52px; -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 .bn-tab.active { color: var(--primary); }
-.bn-tab-ico { font-size: 20px; line-height: 1; }
+.bn-tab.active::after {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--primary);
+}
+.bn-tab:active { opacity: .6; }
+.bn-tab-ico { font-size: 22px; line-height: 1; }
 
 /* ── Mobile List View ── */
 .mobile-list-search {
@@ -917,15 +925,15 @@ body.mode-home .fab { display: none; }
     margin-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
   }
 
-  /* ─ Modal → Bottom sheet ─ */
+  /* ─ Modal → Bottom sheet (near fullscreen) ─ */
   .overlay { align-items: flex-end; padding: 0; }
   .overlay.open { display: flex; }
   .modal {
     width: 100%; max-width: 100%;
     border-radius: 20px 20px 0 0;
-    max-height: 92vh;
+    max-height: 95vh;
     display: flex; flex-direction: column;
-    overflow: hidden; /* child scrolls, not modal */
+    overflow: hidden;
   }
   .overlay.open .modal { animation: modalSlideUp .26s cubic-bezier(.32,.72,0,1); }
   /* Drag handle */
@@ -935,7 +943,7 @@ body.mode-home .fab { display: none; }
     background: #d0d5dd; border-radius: 2px;
     margin: 10px auto 0;
   }
-  .modal-hdr { position: static; } /* remove sticky inside bottom sheet */
+  .modal-hdr { position: static; }
   .modal-body {
     overflow-y: auto; -webkit-overflow-scrolling: touch;
     padding: 16px 18px; flex: 1;
@@ -943,6 +951,7 @@ body.mode-home .fab { display: none; }
   }
   .modal-footer {
     padding: 12px 18px calc(16px + var(--safe-bottom));
+    box-shadow: 0 -2px 10px rgba(0,0,0,.06);
   }
 
   /* ─ Search view ─ */
@@ -960,8 +969,13 @@ body.mode-home .fab { display: none; }
   }
   /* Search card compact on mobile */
   .sv-card { padding: 12px 14px; }
-  .sv-card-name { font-size: 14px; }
-  .sv-card-actions { gap: 5px; }
+  .sv-card-name { font-size: 15px; }
+  .sv-card-badges { margin-bottom: 6px; }
+  .sv-card-rows { margin-bottom: 8px; gap: 3px; }
+  .sv-card-last { margin-bottom: 8px; }
+  .sv-card-actions { gap: 6px; }
+  .sv-card-actions .btn { min-height: 40px; font-size: 13px; padding: 8px 12px; }
+  .sv-act-btn { min-height: 40px; font-size: 13px; padding: 8px 14px; }
 
   /* ─ Sticky add activity bar ─ */
   .mobile-add-act-bar { display: block; }
@@ -1000,8 +1014,20 @@ body.mode-home .fab { display: none; }
   .act-fu-preset   { min-height: 48px; font-size: 13px; }
 
   /* ─ Mobile card touch feedback ─ */
-  .mb-card:active { background: #dce8f5; }
-  .sv-card:active { background: #f0f5fc; }
+  .mb-card:active { background: #dce8f5; transform: scale(.98); }
+  .sv-card { transition: transform .1s; }
+  .sv-card:active { background: #f0f5fc; transform: scale(.98); }
+
+  /* ─ Header: hide non-essential buttons on home ─ */
+  body.mode-home #sellMasterBtn,
+  body.mode-home #loadBtn,
+  body.mode-home .hdr-reload-wrap,
+  body.mode-home .hdr-search,
+  body.mode-home .hdr-add-btn { display: none !important; }
+
+  /* ─ Scroll snap for type-chips on narrow screens ─ */
+  .type-chips { scroll-snap-type: x proximity; padding: 0 2px 4px; }
+  .type-chip  { scroll-snap-align: start; }
 }
 
 /* ─────────────── TABLET (768px – 1023px) ─────────────── */
@@ -1196,6 +1222,7 @@ body.mode-home .fab { display: none; }
       <button class="sv-qchip"        data-q="pending"  onclick="setSvQuick('pending',this)">📋 要フォロー<span class="sv-qchip-cnt" id="sqcPending"></span></button>
       <button class="sv-qchip"        data-q="watch"    onclick="setSvQuick('watch',this)">👁 要観察<span class="sv-qchip-cnt" id="sqcWatch"></span></button>
       <button class="sv-qchip"        data-q="inactive" onclick="setSvQuick('inactive',this)">💤 休眠<span class="sv-qchip-cnt" id="sqcInactive"></span></button>
+      <button class="sv-qchip"        data-q="dormant"  onclick="setSvQuick('dormant',this)">🕐 60日未訪問<span class="sv-qchip-cnt" id="sqcDormant"></span></button>
       <button class="sv-detail-btn" id="svDetailBtn" onclick="toggleSvDetail()">絞込 ▾</button>
       <button class="sv-clear-btn"  id="svClearBtn"  onclick="clearSvFilters()" style="display:none">✕ クリア</button>
       <select class="sv-filter sv-sort-right" id="svSort" onchange="renderSearchView()">
@@ -3591,11 +3618,13 @@ function renderSearchView() {
   const qCntWatch    = baseResults.filter(p => (p.status||'active')==='watch').length;
   const qCntInactive = baseResults.filter(p => (p.status||'active')==='inactive').length;
   const setQcnt = (id, n) => { const el=document.getElementById(id); if(el) el.textContent = n>0 ? n : ''; };
+  const qCntDormant  = baseResults.filter(p => { const ld = (p.activities||[]).reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }).length;
   setQcnt('sqcAll',      baseResults.length);
   setQcnt('sqcOverdue',  qCntOverdue);
   setQcnt('sqcPending',  qCntPending);
   setQcnt('sqcWatch',    qCntWatch);
   setQcnt('sqcInactive', qCntInactive);
+  setQcnt('sqcDormant',  qCntDormant);
 
   // 詳細絞込ボタンのバッジ更新
   const detailActiveCnt = [filterAgent, filterType, filterRep].filter(Boolean).length;
@@ -3622,6 +3651,7 @@ function renderSearchView() {
     if (svQuickFilter === 'pending')  return isPending && !isOverdue;
     if (svQuickFilter === 'watch')    return (p.status || 'active') === 'watch';
     if (svQuickFilter === 'inactive') return (p.status || 'active') === 'inactive';
+    if (svQuickFilter === 'dormant') { const ld = acts.reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }
     return true;
   });
 
@@ -4143,22 +4173,26 @@ function renderDashboard() {
   };
 
   let html = `
-    <div class="dash-greeting">👋 おはようございます</div>
+    <div class="dash-greeting">${(() => { const h = new Date().getHours(); return h < 11 ? '☀️ おはようございます' : h < 17 ? '👋 おつかれさまです' : '🌙 おつかれさまでした'; })()}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;border-radius:12px" onclick="switchMode('search')">💇 サロンを探す</button>
+      <button class="btn btn-outline" style="flex:1;padding:12px;font-size:14px;border-radius:12px" onclick="switchMode('report')">📊 週報を書く</button>
+    </div>
     <div class="dash-stats">
-      <div class="dash-stat">
+      <div class="dash-stat" onclick="switchMode('report')">
         <div class="dash-stat-num" style="color:var(--primary)">${todayActs.length}</div>
         <div class="dash-stat-lbl">今日の活動</div>
       </div>
-      <div class="dash-stat">
+      <div class="dash-stat" onclick="switchMode('report')">
         <div class="dash-stat-num" style="color:#2563eb">${weekActs.length}</div>
         <div class="dash-stat-lbl">今週の活動</div>
       </div>
-      <div class="dash-stat">
+      <div class="dash-stat" onclick="switchMode('search');setTimeout(()=>{const c=document.querySelector('[data-q=\\'overdue\\']')||document.querySelector('[data-q=\\'pending\\']');if(c)c.click();},100)">
         <div class="dash-stat-num" style="color:${overdueFUs.length ? 'var(--danger)' : 'var(--warning)'}">${pendingFUs.length}</div>
         <div class="dash-stat-lbl">要フォロー${overdueFUs.length ? ` (${overdueFUs.length}件超過)` : ''}</div>
       </div>
-      <div class="dash-stat">
-        <div class="dash-stat-num" style="color:#6c757d">${dormantSalons.length > 0 ? salonPeople.filter(p => { const ld = (p.activities||[]).reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }).length : 0}</div>
+      <div class="dash-stat" onclick="switchMode('search');setTimeout(()=>{const c=document.querySelector('[data-q=\\'dormant\\']');if(c)c.click();},100)">
+        <div class="dash-stat-num" style="color:#6c757d">${salonPeople.filter(p => { const ld = (p.activities||[]).reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }).length}</div>
         <div class="dash-stat-lbl">60日以上未訪問</div>
       </div>
     </div>`;
