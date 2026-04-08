@@ -1925,7 +1925,7 @@ function parseSalonRow(row) {
     phone:        String(row['電話番号']             || ''),
     address:      String(row['所在地']               || ''),
     hpbUrl:       String(row['HPBリンク']            || ''),
-    agentName:    agentNameVal,
+    agentName:    normalizeAgentName(agentNameVal),
     agentBranch:  String(row['代理店支店']           || ''),
     agentContact: String(row['代理店担当者']         || ''),
     salesRep:     String(row['担当営業']             || ''),
@@ -2414,10 +2414,15 @@ function retrySyncQueue() {
 // ── Data ──────────────────────────────────────────
 // ── 固定代理店リスト ───────────────────────────────
 const AGENT_NAMES = ['ミツイ','フジシン','キクヤ','カトレア','アイビックス','かすが','ピュア商会','菊地','GOROI','リリー','FIT','ガモウ広島'];
+// 代理店名の表記ゆれ修正マップ
+const AGENT_NAME_FIX = {'カトレヤ':'カトレア','かとれあ':'カトレア','ｶﾄﾚｱ':'カトレア','ｶﾄﾚﾔ':'カトレア'};
+function normalizeAgentName(name) { return AGENT_NAME_FIX[name] || name; }
 
 let currentMode = localStorage.getItem('karte_mode') || 'agent';
 let agentPeople = JSON.parse(localStorage.getItem('karte_agent_v1') || localStorage.getItem('karte_v1') || '[]');
 let salonPeople = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+// 既存データの代理店名を正規化
+salonPeople.forEach(p => { if (p.agentName) p.agentName = normalizeAgentName(p.agentName); });
 let currentId = null;
 let currentTags = [];
 let editingId = null;
@@ -2692,7 +2697,8 @@ function renderMobileList() {
   // helper: render single card HTML
   const cardHtml = p => {
     const mainLabel = isAgent ? p.name : p.company;
-    const subLabel  = isAgent ? p.company : (p.name ? 'オーナー: ' + p.name : '');
+    const branchInfo = isAgent && p.agentBranch ? ` / ${p.agentBranch}` : '';
+    const subLabel  = isAgent ? (p.company + branchInfo) : (p.name ? 'オーナー: ' + p.name : '');
     const hasPending = (p.activities || []).some(a => a.fuStatus === 'pending');
     const overdue    = (p.activities || []).some(a => a.fuStatus === 'pending' && a.fuDate && a.fuDate < toDay());
     const lastAct    = (p.activities||[]).reduce((m,x) => x.date > m ? x.date : m, '');
