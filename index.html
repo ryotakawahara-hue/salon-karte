@@ -1814,7 +1814,7 @@ async function fetchWithTimeout(url, timeout = 20000) {
 }
 
 // ── GASフェッチキャッシュ管理（クォータ節約） ────────
-const CACHE_TTL   = 8 * 60 * 60 * 1000; // 8時間
+const CACHE_TTL   = 24 * 60 * 60 * 1000; // 24時間（GAS上限節約のため1日1回同期）
 const CACHE_TS_KEY = 'karte_gas_fetch_ts';
 
 function isCacheFresh() {
@@ -2006,6 +2006,13 @@ async function autoLoadFromSheet(isRetry = false) {
     if (loadingToast) loadingToast.remove();
     console.warn('自動読込スキップ:', e.message);
     const isQuota = /quota/i.test(e.message || '');
+
+    if (isQuota) {
+      // GAS上限到達 → キャッシュを「有効」にマークして翌日まで自動呼び出しを抑止
+      markCacheFresh();
+      localStorage.setItem('karte_gas_quota_hit', String(Date.now()));
+    }
+
     if (!isRetry && !isQuota) {
       // ネットワーク系エラーは5秒後に1回リトライ
       setTimeout(() => autoLoadFromSheet(true), 5000);
@@ -2019,7 +2026,7 @@ async function autoLoadFromSheet(isRetry = false) {
         renderSidebar(); renderMobileList(); renderMain();
         refreshAgentList();
         if (isQuota) {
-          showToast('GAS利用上限のため前回のデータを表示中', 'warn', null, 5000);
+          showToast('GAS利用上限のため前回のデータを表示中（次回は自動で再取得します）', 'warn', null, 5000);
         } else {
           showToast(friendlyError(e), 'error', { label: '再試行', fn: () => autoLoadFromSheet(false) }, 0);
         }
@@ -3932,9 +3939,9 @@ function renderSearchView() {
     const nextFu = acts.filter(a => a.fuStatus === 'pending' && a.fuDate).sort((a, b) => a.fuDate.localeCompare(b.fuDate))[0];
     // Subtitle: show agent/rep/address but skip if same as search query
     const subParts = [];
-    if (p.agentName && p.agentName.toLowerCase() !== searchQ.toLowerCase()) subParts.push(p.agentName);
-    if (p.salesRep && p.salesRep.toLowerCase() !== searchQ.toLowerCase()) subParts.push(p.salesRep);
-    if (p.address) subParts.push('<svg class="icon" style="width:11px;height:11px;vertical-align:-1px;opacity:.5"><use href="#i-map-pin"/></svg>' + p.address.slice(0,20));
+    if (p.agentName && p.agentName.toLowerCase() !== searchQ.toLowerCase()) subParts.push({text: p.agentName});
+    if (p.salesRep && p.salesRep.toLowerCase() !== searchQ.toLowerCase()) subParts.push({text: p.salesRep});
+    if (p.address) subParts.push({text: p.address.slice(0,20), icon: 'i-map-pin'});
     const badgeHtml = [
       overdue ? '<span class="badge badge-fu"><svg class="icon icon-sm" style="width:10px;height:10px"><use href="#i-alert-tri"/></svg> 超過</span>' : hasPending ? '<span class="badge badge-fu">FU</span>' : '',
       sc !== 'active' ? `<span class="badge" style="background:${statusColor[sc]}15;color:${statusColor[sc]}">${statusLabel[sc]}</span>` : '',
@@ -3954,7 +3961,7 @@ function renderSearchView() {
         ${badgeHtml ? `<div class="sv-card-badges">${badgeHtml}</div>` : ''}
         ${quickActions}
       </div>
-      ${subParts.length ? `<div class="sv-card-sub">${subParts.map(s => `<span>${highlightMatch(s)}</span>`).join('<span style="color:var(--border)">·</span>')}</div>` : ''}
+      ${subParts.length ? `<div class="sv-card-sub">${subParts.map(s => `<span>${s.icon ? `<svg class="icon" style="width:11px;height:11px;vertical-align:-1px;opacity:.5"><use href="#${s.icon}"/></svg>` : ''}${highlightMatch(s.text)}</span>`).join('<span style="color:var(--border)">·</span>')}</div>` : ''}
       <div class="sv-card-last">${lastLine}${fuLine}</div>
     </div>`;
   };
