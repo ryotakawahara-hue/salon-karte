@@ -170,6 +170,8 @@ tr:hover td { background: #F8FAFF; }
             <option value="GOROI">GOROI</option>
             <option value="カトレア">カトレア</option>
             <option value="リリー">リリー</option>
+            <option value="菊地">菊地</option>
+            <option value="ピュア商会">ピュア商会</option>
             <option value="FIT">FIT（EC）</option>
           </select>
         </div>
@@ -184,6 +186,12 @@ tr:hover td { background: #F8FAFF; }
       </div>
       <div id="mitsuiNote" class="alert alert-info" style="display:none">
         ⓘ ミツイのデータは日付列がありません。ファイル名から期間を自動取得します（例: ミツイ様202504.xlsx → 2025-04）。
+      </div>
+      <div id="kikuchiNote" class="alert alert-warn" style="display:none">
+        ⚠ 菊地の列マッピングはフジシン形式を初期設定しています。CSVの列名が異なる場合は AGENT_MAP['菊地'] を修正してください。
+      </div>
+      <div id="pureNote" class="alert alert-warn" style="display:none">
+        ⚠ ピュア商会の列マッピングはフジシン形式を初期設定しています。CSVの列名が異なる場合は AGENT_MAP['ピュア商会'] を修正してください。
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="normalizeData()" id="normalizeBtn" disabled>データを正規化する</button>
@@ -304,6 +312,18 @@ const AGENT_MAP = {
     date: '伝票日付', product: '商品名', jan: '商品ｺｰﾄﾞ',
     rep: '担当者',
   },
+  '菊地': {
+    // ※ CSVの列名が異なる場合はここを修正してください
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', productCode: '商品ｺｰﾄﾞ',
+    jan: 'JAN', rep: '担当者名称', branch: '拠点名',
+  },
+  'ピュア商会': {
+    // ※ CSVの列名が異なる場合はここを修正してください
+    salon: '得意先名称', qty: '売上数量', amount: '売上金額',
+    date: '伝票日付', product: '商品名', productCode: '商品ｺｰﾄﾞ',
+    jan: 'JAN', rep: '担当者名称', branch: '拠点名',
+  },
   'FIT': {
     salon: '会社名', qty: '個数', amountPer: '価格',
     date: '受注日', product: '商品名', productCode: '商品コード',
@@ -370,6 +390,8 @@ function onFileLoaded(name, data) {
     'goroi': 'GOROI',
     'katrea': 'カトレア', 'カトレア': 'カトレア',
     'lily': 'リリー', 'リリー': 'リリー',
+    'kikuchi': '菊地', '菊地': '菊地',
+    'pure': 'ピュア商会', 'ピュア': 'ピュア商会', 'ピュア商会': 'ピュア商会',
     'fit': 'FIT',
   };
   for (const [key, agent] of Object.entries(autoMap)) {
@@ -389,8 +411,9 @@ function onFileLoaded(name, data) {
 
 function onAgentChange() {
   const agent = document.getElementById('agentSelect').value;
-  const mitsuiNote = document.getElementById('mitsuiNote');
-  mitsuiNote.style.display = agent === 'ミツイ' ? 'block' : 'none';
+  document.getElementById('mitsuiNote').style.display   = agent === 'ミツイ'    ? 'block' : 'none';
+  document.getElementById('kikuchiNote').style.display  = agent === '菊地'      ? 'block' : 'none';
+  document.getElementById('pureNote').style.display     = agent === 'ピュア商会' ? 'block' : 'none';
   document.getElementById('normalizeBtn').disabled = !agent;
 
   // ミツイはファイル名から期間抽出
@@ -529,11 +552,14 @@ async function uploadToSheet() {
   progBar.style.display = 'block';
   progFill.style.width = '0%';
   status.textContent = '送信中...';
+  status.style.color = 'var(--muted)';
 
   // バッチ分割（GASの制限対策）
   const BATCH = 200;
   const total = normalizedData.length;
   let sent = 0;
+  let totalInserted = 0;
+  let totalSkipped = 0;
 
   const records = normalizedData.map(r => ({
     period: r.period,
@@ -553,18 +579,32 @@ async function uploadToSheet() {
   try {
     for (let i = 0; i < records.length; i += BATCH) {
       const batch = records.slice(i, i + BATCH);
-      await fetch(GAS_URL, {
+      const resp = await fetch(GAS_URL, {
         method: 'POST',
-        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ type: 'sales', records: batch }),
       });
       sent += batch.length;
       progFill.style.width = Math.round(sent / total * 100) + '%';
       status.textContent = `${sent} / ${total} 件送信中...`;
+
+      // GASのレスポンスを読み取り（重複スキップ数を集計）
+      try {
+        const json = await resp.json();
+        if (json.ok) {
+          totalInserted += json.inserted ?? batch.length;
+          totalSkipped  += json.skipped  ?? 0;
+        } else {
+          throw new Error(json.error || 'GASエラー');
+        }
+      } catch(_) {
+        // レスポンス解析失敗時はバッチサイズをそのまま加算
+        totalInserted += batch.length;
+      }
     }
     progFill.style.width = '100%';
-    status.textContent = `✅ ${total}件を売上マスターに書き込みました`;
+    const skipNote = totalSkipped > 0 ? `（重複スキップ: ${totalSkipped}件）` : '';
+    status.textContent = `✅ ${totalInserted}件を書き込みました ${skipNote}`;
     status.style.color = 'var(--success)';
     btn.textContent = '✅ 完了';
     setTimeout(() => loadHistory(), 1500);
