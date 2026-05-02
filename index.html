@@ -1955,6 +1955,115 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   </div>
 </div>
 
+<!-- ── Training Modal （講習ログ） ── -->
+<div class="overlay" id="trainModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">📚 講習ログを追加</div>
+      <button class="modal-close" onclick="closeTrainingModal()"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 1. 講習日 + 講師名 -->
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl">講習日 *</label>
+          <input class="finput" id="tDate" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">講師名 *</label>
+          <input class="finput" id="tLecturer" placeholder="例: 山田先生">
+        </div>
+      </div>
+
+      <!-- 2. 講習種別（複数選択可） -->
+      <div class="act-section">
+        <div class="act-section-lbl">講習種別 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+        <div class="act-topic-row" id="tSubjectChips">
+          <button type="button" class="act-topic-chip" data-val="シストリ"           onclick="toggleActChipMulti(this,'tSubjects')">シストリ</button>
+          <button type="button" class="act-topic-chip" data-val="つるりんちょ"       onclick="toggleActChipMulti(this,'tSubjects')">つるりんちょ</button>
+          <button type="button" class="act-topic-chip" data-val="ホームケア"         onclick="toggleActChipMulti(this,'tSubjects')">ホームケア</button>
+          <button type="button" class="act-topic-chip" data-val="矯正"               onclick="toggleActChipMulti(this,'tSubjects')">矯正</button>
+          <button type="button" class="act-topic-chip" data-val="微還元"             onclick="toggleActChipMulti(this,'tSubjects')">微還元</button>
+          <button type="button" class="act-topic-chip" data-val="酸熱"               onclick="toggleActChipMulti(this,'tSubjects')">酸熱</button>
+          <button type="button" class="act-topic-chip" data-val="髪質改善カラー"     onclick="toggleActChipMulti(this,'tSubjects')">髪質改善カラー</button>
+          <button type="button" class="act-topic-chip" data-val="美髪の掟"           onclick="toggleActChipMulti(this,'tSubjects')">美髪の掟</button>
+          <button type="button" class="act-topic-chip" data-val="カウンセリング"     onclick="toggleActChipMulti(this,'tSubjects')">カウンセリング</button>
+          <button type="button" class="act-topic-chip" data-val="その他"             onclick="toggleActChipMulti(this,'tSubjects')">その他</button>
+        </div>
+        <input type="hidden" id="tSubjects" value="">
+      </div>
+
+      <!-- 3. 参加者 -->
+      <div class="act-section">
+        <div class="act-section-lbl">参加者 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+        <div class="act-topic-row" id="tAttendeeChips">
+          <button type="button" class="act-topic-chip" data-val="オーナー"       onclick="toggleActChipMulti(this,'tAttendees')">オーナー</button>
+          <button type="button" class="act-topic-chip" data-val="店長"           onclick="toggleActChipMulti(this,'tAttendees')">店長</button>
+          <button type="button" class="act-topic-chip" data-val="スタイリスト"   onclick="toggleActChipMulti(this,'tAttendees')">スタイリスト</button>
+          <button type="button" class="act-topic-chip" data-val="アシスタント"   onclick="toggleActChipMulti(this,'tAttendees')">アシスタント</button>
+          <button type="button" class="act-topic-chip" data-val="新人"           onclick="toggleActChipMulti(this,'tAttendees')">新人</button>
+        </div>
+        <input type="hidden" id="tAttendees" value="">
+      </div>
+
+      <!-- 4. 参加人数 + 講習時間 -->
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl">参加人数</label>
+          <input class="finput" id="tAttendeeCount" type="number" placeholder="例: 5" min="0">
+        </div>
+        <div class="fg">
+          <label class="flbl">講習時間（分）</label>
+          <input class="finput" id="tDuration" type="number" placeholder="例: 60" min="0">
+        </div>
+      </div>
+
+      <!-- 5. 習熟度評価 -->
+      <div class="act-section">
+        <div class="act-section-lbl">習熟度評価</div>
+        <div class="type-chips" id="tSkillChips">
+          <button type="button" class="type-chip" data-val="1" onclick="selectActSingle(this,'tSkillLevel')">★☆☆☆☆ 初級</button>
+          <button type="button" class="type-chip" data-val="2" onclick="selectActSingle(this,'tSkillLevel')">★★☆☆☆</button>
+          <button type="button" class="type-chip" data-val="3" onclick="selectActSingle(this,'tSkillLevel')">★★★☆☆ 中級</button>
+          <button type="button" class="type-chip" data-val="4" onclick="selectActSingle(this,'tSkillLevel')">★★★★☆</button>
+          <button type="button" class="type-chip" data-val="5" onclick="selectActSingle(this,'tSkillLevel')">★★★★★ 上級</button>
+        </div>
+        <input type="hidden" id="tSkillLevel" value="">
+      </div>
+
+      <!-- 6. 今回の内容 -->
+      <div class="act-section">
+        <div class="act-section-lbl" style="color:#6b21a8">📝 今回の講習内容 *</div>
+        <textarea class="finput" id="tContent" placeholder="今回行った技術内容・カリキュラム・実習した内容を具体的に…&#10;例: シストリのカウンセリング基礎、塗布実習、仕上がりチェック" style="min-height:90px"></textarea>
+      </div>
+
+      <!-- 7. 今回の課題 -->
+      <div class="act-section">
+        <div class="act-section-lbl" style="color:#92400e">⚠️ 今回の課題・改善点</div>
+        <textarea class="finput" id="tIssues" placeholder="技術面・知識面・接客面など気付いた課題&#10;例: 塗布スピードが遅い／カウンセリングで質問が浅い／薬剤選定の根拠が曖昧" style="min-height:80px"></textarea>
+      </div>
+
+      <!-- 8. 次回提案 -->
+      <div class="act-section">
+        <div class="act-section-lbl" style="color:#1e40af">→ 次回おすすめ講習</div>
+        <textarea class="finput" id="tNextProposal" placeholder="課題を踏まえた次回の推奨カリキュラム&#10;例: シストリ応用編／カウンセリングロープレ／薬剤選定理論" style="min-height:80px"></textarea>
+      </div>
+
+      <!-- 9. メモ -->
+      <div class="act-section">
+        <div class="act-section-lbl">補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意）</span></div>
+        <textarea class="finput" id="tMemo" placeholder="その他特記事項" style="min-height:60px"></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="gap:10px">
+      <button class="btn btn-outline" onclick="closeTrainingModal()" style="flex:0 0 auto;padding:12px 20px">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveTraining()" style="flex:1;font-size:15px;min-height:52px;border-radius:var(--radius-md);background:#8b5cf6;box-shadow:0 4px 12px rgba(139,92,246,.3)"><svg class="icon icon-sm" style="margin-right:4px"><use href="#i-check"/></svg> 講習を記録</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Sales Modal ── -->
 <div class="overlay" id="salesModal">
   <div class="modal">
@@ -3271,12 +3380,14 @@ function renderMain() {
     <div class="tabs">
       <div class="tab" onclick="switchTab(this,'tb-basic')">基本情報</div>
       <div class="tab active" onclick="switchTab(this,'tb-act')">活動ログ（${(p.activities||[]).length}）</div>
+      ${!isAgent ? `<div class="tab" onclick="switchTab(this,'tb-train')">講習ログ（${(p.trainings||[]).length}）</div>` : ''}
       <div class="tab" onclick="switchTab(this,'tb-sales')">販売実績</div>
       ${!isAgent ? `<div class="tab" onclick="switchTab(this,'tb-hdra');loadHDRASales('${p.id}')">髪ドラ売上</div>` : ''}
     </div>
 
     <div class="tab-content" id="tb-basic">${renderBasic(p)}</div>
     <div class="tab-content active" id="tb-act">${renderAct(p)}</div>
+    ${!isAgent ? `<div class="tab-content" id="tb-train">${renderTraining(p)}</div>` : ''}
     <div class="tab-content" id="tb-sales">${renderSales(p)}</div>
     ${!isAgent ? `<div class="tab-content" id="tb-hdra"><div id="hdra-sales-wrap" style="padding:8px 0"><div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">「髪ドラ売上」タブをクリックして読み込む</div></div></div>` : ''}
   `;
@@ -3386,6 +3497,37 @@ function renderAct(p) {
 
   return `<div class="card">
     <div class="card-hdr"><div class="card-title">活動ログ</div><button class="btn btn-primary btn-sm" onclick="openActModal()">＋ 追加</button></div>
+    <div class="card-body"><div class="act-list">${listHtml}</div></div>
+  </div>`;
+}
+
+// 講習ログのレンダリング
+function renderTraining(p) {
+  const trainings = [...(p.trainings || [])].sort((a, b) => (b.date||'').localeCompare(a.date||''));
+  const skillStars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const listHtml = trainings.length ? trainings.map(t => `
+    <div class="act-item" style="border-left:3px solid #8b5cf6">
+      <div class="act-hdr" style="flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${(t.subjects||[]).map(s => `<span class="act-type" style="background:#f3e8ff;color:#6b21a8">${esc(s)}</span>`).join('')}
+          <span class="act-date" title="${t.date}">${t.date} (${relativeDate(t.date)})</span>
+        </div>
+        <div class="act-actions" style="gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="deleteTraining('${t.id}')" style="min-height:32px;padding:4px 10px;font-size:11px;color:var(--muted);border-color:var(--border)">削除</button>
+        </div>
+      </div>
+      ${t.lecturer ? `<div style="font-size:12px;color:var(--muted);margin-bottom:3px">📚 講師: ${esc(t.lecturer)}</div>` : ''}
+      ${(t.attendees && t.attendees.length) || t.attendeeCount ? `<div style="font-size:12px;color:var(--muted);margin-bottom:6px">👥 ${t.attendeeCount ? t.attendeeCount + '名' : ''}${(t.attendees||[]).length ? ' (' + t.attendees.join('・') + ')' : ''}${t.duration ? ' / ' + t.duration + '分' : ''}</div>` : ''}
+      ${t.skillLevel ? `<div style="font-size:12px;margin-bottom:6px"><span style="color:#f59e0b">${skillStars(t.skillLevel)}</span> <span style="color:var(--muted)">習熟度</span></div>` : ''}
+      ${t.content ? `<div style="font-size:13px;line-height:1.6;margin-bottom:8px;background:#faf5ff;padding:8px 10px;border-radius:8px"><strong style="color:#6b21a8">📝 今回の内容</strong><br>${esc(t.content).replace(/\n/g,'<br>')}</div>` : ''}
+      ${t.issues ? `<div style="font-size:13px;line-height:1.6;margin-bottom:8px;background:#fef3c7;padding:8px 10px;border-radius:8px"><strong style="color:#92400e">⚠️ 今回の課題</strong><br>${esc(t.issues).replace(/\n/g,'<br>')}</div>` : ''}
+      ${t.nextProposal ? `<div style="font-size:13px;line-height:1.6;margin-bottom:6px;background:#dbeafe;padding:8px 10px;border-radius:8px"><strong style="color:#1e40af">→ 次回おすすめ講習</strong><br>${esc(t.nextProposal).replace(/\n/g,'<br>')}</div>` : ''}
+      ${t.memo ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(t.memo)}</div>` : ''}
+    </div>
+  `).join('') : `<div style="text-align:center;padding:28px;color:var(--muted)"><div style="font-size:30px;margin-bottom:7px">📚</div><div>講習記録がありません</div><button class="btn btn-primary btn-sm" onclick="openTrainingModal()" style="margin-top:12px;padding:10px 20px;font-size:14px;background:#8b5cf6">＋ 最初の講習を記録する</button></div>`;
+
+  return `<div class="card">
+    <div class="card-hdr"><div class="card-title">講習ログ</div><button class="btn btn-primary btn-sm" onclick="openTrainingModal()" style="background:#8b5cf6">＋ 追加</button></div>
     <div class="card-body"><div class="act-list">${listHtml}</div></div>
   </div>`;
 }
@@ -4086,6 +4228,76 @@ function deleteAct(actId) {
   if (!p) return;
   p.activities = (p.activities || []).filter(a => a.id !== actId);
   save(); renderMain(); renderSidebar(); renderMobileList();
+  if (isMobile() && currentId) selectPerson(currentId);
+}
+
+// ── Training Modal （講習ログ） ─────────────────────
+function openTrainingModal() {
+  document.getElementById('tDate').value = toDay();
+  document.getElementById('tLecturer').value = localStorage.getItem('karte_last_lecturer') || '';
+  ['tContent', 'tIssues', 'tNextProposal', 'tMemo', 'tAttendeeCount', 'tDuration'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  // チップリセット
+  ['tSubjectChips', 'tAttendeeChips'].forEach(parentId => {
+    document.querySelectorAll('#' + parentId + ' .act-topic-chip').forEach(c => c.classList.remove('active'));
+  });
+  document.querySelectorAll('#tSkillChips .type-chip').forEach(c => c.classList.remove('active'));
+  ['tSubjects', 'tAttendees', 'tSkillLevel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('trainModal').classList.add('open');
+}
+
+function closeTrainingModal() {
+  document.getElementById('trainModal').classList.remove('open');
+}
+
+function saveTraining() {
+  const date = document.getElementById('tDate').value;
+  const lecturer = document.getElementById('tLecturer').value.trim();
+  const content = document.getElementById('tContent').value.trim();
+  if (!date) { alert('講習日が設定されていません'); return; }
+  if (!lecturer) { alert('講師名を入力してください'); return; }
+  if (!content) { alert('今回の講習内容を入力してください'); return; }
+
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.trainings = p.trainings || [];
+  if (lecturer) localStorage.setItem('karte_last_lecturer', lecturer);
+
+  const newTrain = {
+    id: uid(),
+    date,
+    lecturer,
+    subjects:      (document.getElementById('tSubjects').value || '').split(',').filter(Boolean),
+    attendees:     (document.getElementById('tAttendees').value || '').split(',').filter(Boolean),
+    attendeeCount: parseInt(document.getElementById('tAttendeeCount').value) || 0,
+    duration:      parseInt(document.getElementById('tDuration').value) || 0,
+    skillLevel:    parseInt(document.getElementById('tSkillLevel').value) || 0,
+    content,
+    issues:        document.getElementById('tIssues').value.trim(),
+    nextProposal:  document.getElementById('tNextProposal').value.trim(),
+    memo:          document.getElementById('tMemo').value.trim(),
+  };
+  p.trainings.push(newTrain);
+  save();
+  closeTrainingModal();
+  renderMain();
+  renderSidebar();
+  if (isMobile() && currentId) selectPerson(currentId);
+  showToast('📚 講習ログを記録しました', 'success', null, 2500);
+}
+
+function deleteTraining(trainId) {
+  if (!confirm('この講習ログを削除しますか？')) return;
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.trainings = (p.trainings || []).filter(t => t.id !== trainId);
+  save();
+  renderMain();
   if (isMobile() && currentId) selectPerson(currentId);
 }
 
