@@ -1228,6 +1228,31 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .stage-badge-lg {
   padding: 6px 14px; font-size: 14px;
 }
+/* === Contact Summary (最終接点・次回予定サマリーカード) === */
+.contact-summary-card {
+  background: linear-gradient(135deg, rgba(0,122,255,.06), rgba(0,122,255,.02)) !important;
+}
+.contact-summary-item {
+  padding: 10px 0;
+  border-bottom: .5px solid var(--separator);
+}
+.contact-summary-item:last-of-type { border-bottom: none; }
+.contact-summary-lbl {
+  font-size: 11px; font-weight: 600;
+  color: var(--label-secondary);
+  text-transform: uppercase; letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.contact-summary-val {
+  font-size: 15px; color: var(--text);
+  letter-spacing: -.01em;
+}
+.contact-summary-date {
+  font-size: 18px; font-weight: 700; color: var(--primary);
+  margin-right: 8px;
+  letter-spacing: -.022em;
+}
+
 /* === Adoption Level Summary (導入レベル別サマリー) === */
 .adoption-picker {
   display: flex; flex-wrap: wrap; gap: 6px;
@@ -1389,6 +1414,24 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 }
 .dash-fu-item:hover { box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 6px 16px rgba(0,0,0,.08); transform: translateY(-1px); }
 .dash-fu-item:active { transform: scale(.97); }
+.dash-fu-item-vert {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+}
+.dash-fu-row1 {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.dash-fu-row1 .dash-fu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-fu-purpose {
+  padding: 7px 10px;
+  background: rgba(0,122,255,.08);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  color: var(--primary);
+  letter-spacing: -.005em;
+  line-height: 1.3;
+}
 .dash-fu-date { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-sm); white-space: nowrap; }
 .dash-fu-date.overdue { background: var(--danger-bg); color: #B91C1C; }
 .dash-fu-date.today { background: var(--warning-bg); color: #92400E; }
@@ -2716,14 +2759,33 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
-      <!-- ⑨ 次回フォロー -->
-      <div class="act-section">
-        <div class="act-section-lbl"><svg class="icon icon-sm" style="vertical-align:-2px"><use href="#i-calendar"/></svg> 次回フォロー</div>
+      <!-- ⑨ 次回の目的（最重要・営業の核心） -->
+      <div class="act-section" style="background:linear-gradient(135deg, rgba(0,122,255,.06), rgba(0,122,255,.02)); border-radius:12px; padding:14px; margin-top:14px">
+        <div class="act-section-lbl" style="color:var(--primary); font-size:13px">
+          <svg class="icon icon-sm" style="vertical-align:-2px"><use href="#i-target"/></svg>
+          次回このサロンに何のために行くか *
+        </div>
+        <div class="act-topic-row" id="aNextPurposeChips" style="margin-bottom:10px">
+          <button type="button" class="act-topic-chip" data-val="サンプル持参"     onclick="selectNextPurpose(this,'サンプル持参')">📦 サンプル持参</button>
+          <button type="button" class="act-topic-chip" data-val="ホームケア提案"   onclick="selectNextPurpose(this,'ホームケア提案')">🏠 ホームケア提案</button>
+          <button type="button" class="act-topic-chip" data-val="業務品 試用提案"  onclick="selectNextPurpose(this,'業務品 試用提案')">💼 業務品 試用提案</button>
+          <button type="button" class="act-topic-chip" data-val="価格表説明"       onclick="selectNextPurpose(this,'価格表説明')">💰 価格表説明</button>
+          <button type="button" class="act-topic-chip" data-val="体験会案内"       onclick="selectNextPurpose(this,'体験会案内')">✨ 体験会案内</button>
+          <button type="button" class="act-topic-chip" data-val="講習日調整"       onclick="selectNextPurpose(this,'講習日調整')">📚 講習日調整</button>
+          <button type="button" class="act-topic-chip" data-val="在庫・取扱い確認" onclick="selectNextPurpose(this,'在庫・取扱い確認')">📋 在庫・取扱い確認</button>
+          <button type="button" class="act-topic-chip" data-val="使い心地ヒアリング" onclick="selectNextPurpose(this,'使い心地ヒアリング')">🎤 使い心地ヒアリング</button>
+          <button type="button" class="act-topic-chip" data-val="クロージング"     onclick="selectNextPurpose(this,'クロージング')">🤝 クロージング</button>
+          <button type="button" class="act-topic-chip" data-val="関係構築"         onclick="selectNextPurpose(this,'関係構築')">💬 関係構築</button>
+          <button type="button" class="act-topic-chip" data-val="クレーム対応"     onclick="selectNextPurpose(this,'クレーム対応')">⚠️ クレーム対応</button>
+        </div>
+        <input class="finput" id="aNext" placeholder="目的の詳細メモ（任意）  例: 〇〇のサンプル持参して試用結果ヒアリング" style="margin-bottom:10px; font-size:14px">
+        <div class="act-section-lbl" style="margin-top:8px; font-size:12px">📅 いつ訪問するか</div>
         <div class="act-fu-preset-row">
+          <button type="button" class="act-fu-preset" data-d="3"    onclick="selectFuPreset(this)">3日後</button>
           <button type="button" class="act-fu-preset" data-d="7"    onclick="selectFuPreset(this)">1週間後</button>
           <button type="button" class="act-fu-preset" data-d="14"   onclick="selectFuPreset(this)">2週間後</button>
           <button type="button" class="act-fu-preset" data-d="30"   onclick="selectFuPreset(this)">1ヶ月後</button>
-          <button type="button" class="act-fu-preset" data-d="none" onclick="selectFuPreset(this)">不要</button>
+          <button type="button" class="act-fu-preset" data-d="none" onclick="selectFuPreset(this)">未定</button>
         </div>
         <div class="act-fu-date-hint" id="aFuDateHint"></div>
         <input type="hidden" id="aFuStatus" value="none">
@@ -4439,7 +4501,53 @@ function renderBasic(p) {
         ${adoption.icon} ${adoption.label}
       </span>
     ` : '';
+    // 最終接点 / 次回予定 サマリー
+    const acts = [...(p.activities || [])].sort((a, b) => (b.date||'').localeCompare(a.date||''));
+    const lastAct = acts[0];
+    const nextPending = acts.find(a => a.fuStatus === 'pending' && a.fuDate);
+    const today = toDay();
+    const daysFromLast = lastAct ? Math.floor((new Date() - new Date(lastAct.date)) / 86400000) : null;
+    const lastSummary = lastAct ? `
+      <div class="contact-summary-item">
+        <div class="contact-summary-lbl">最終接点</div>
+        <div class="contact-summary-val">
+          <span class="contact-summary-date">${daysFromLast === 0 ? '今日' : daysFromLast === 1 ? '昨日' : daysFromLast + '日前'}</span>
+          <span style="color:var(--label-secondary); font-size:12px">${esc(lastAct.type || '')}${lastAct.result ? ' / ' + esc(lastAct.result) : ''}</span>
+        </div>
+      </div>
+    ` : `
+      <div class="contact-summary-item">
+        <div class="contact-summary-lbl">最終接点</div>
+        <div class="contact-summary-val" style="color:var(--label-tertiary)">記録なし</div>
+      </div>
+    `;
+    const nextSummary = nextPending ? `
+      <div class="contact-summary-item">
+        <div class="contact-summary-lbl">次回の目的</div>
+        <div class="contact-summary-val" style="font-weight:600">${esc(nextPending.next || '—')}</div>
+        <div style="font-size:12px; color:${nextPending.fuDate < today ? 'var(--danger)' : 'var(--primary)'}; margin-top:2px">
+          📅 ${nextPending.fuDate} (${relativeDate(nextPending.fuDate)})
+        </div>
+      </div>
+    ` : `
+      <div class="contact-summary-item" style="background:rgba(255,149,0,.08); border-radius:10px; padding:10px 12px">
+        <div class="contact-summary-lbl" style="color:var(--warning)">⚠️ 次回予定 未設定</div>
+        <div class="contact-summary-val" style="font-size:13px; color:var(--label-secondary)">活動を記録して次回の目的を設定しましょう</div>
+      </div>
+    `;
+    const summaryCard = `
+    <div class="card contact-summary-card">
+      <div class="card-body" style="padding-top:14px">
+        ${lastSummary}
+        ${nextSummary}
+        <button class="btn btn-primary" onclick="openActModal()" style="width:100%; margin-top:10px">
+          <svg class="icon icon-sm"><use href="#i-plus"/></svg> 接点を記録する
+        </button>
+      </div>
+    </div>`;
+
     return `
+    ${summaryCard}
     <div class="card">
       <div class="card-hdr">
         <div class="card-title">提案ステージ ${p.salesStage === 'won' ? '・導入レベル' : ''}</div>
@@ -5150,6 +5258,23 @@ function selectActSingle(el, hiddenId) {
   parent.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   document.getElementById(hiddenId).value = el.dataset.val;
+}
+
+// 次回の目的（テンプレート → aNext入力欄に挿入）
+function selectNextPurpose(el, purpose) {
+  // 同じチップを再選択した場合は解除
+  const isActive = el.classList.contains('active');
+  document.querySelectorAll('#aNextPurposeChips .act-topic-chip').forEach(c => c.classList.remove('active'));
+  const nextInput = document.getElementById('aNext');
+  if (isActive) {
+    // 解除: テンプレート部分のみ削除
+    nextInput.value = nextInput.value.replace(new RegExp('^\\[' + purpose + '\\]\\s*'), '');
+  } else {
+    el.classList.add('active');
+    // 既存テキストの先頭に [目的] を追加
+    const cur = nextInput.value.replace(/^\[[^\]]+\]\s*/, '');
+    nextInput.value = `[${purpose}] ${cur}`.trim();
+  }
 }
 
 function selectFuPreset(el) {
@@ -6534,11 +6659,14 @@ function renderDashboard() {
     const dateClass = !a.fuDate ? 'upcoming' : a.fuDate < today ? 'overdue' : a.fuDate === today ? 'today' : 'upcoming';
     const dateLabel = !a.fuDate ? '期限なし' : a.fuDate < today ? `${Math.floor((new Date() - new Date(a.fuDate)) / 86400000)}日超過` : a.fuDate === today ? '今日' : relativeDate(a.fuDate);
     const name = a._person.company || a._person.name || '不明';
-    return `<div class="dash-fu-item" onclick="openSalonFromSearch('${a._person.id}')">
-      <span class="dash-fu-date ${dateClass}">${dateLabel}</span>
-      <span class="dash-fu-name">${esc(name)}</span>
-      <span class="dash-fu-content">${esc((a.content || '').slice(0, 25))}</span>
-      <span class="dash-fu-arrow"><svg class="icon"><use href="#i-chevron-right"/></svg></span>
+    const purpose = a.next || '';  // 次回目的を最重要表示に
+    return `<div class="dash-fu-item dash-fu-item-vert" onclick="openSalonFromSearch('${a._person.id}')">
+      <div class="dash-fu-row1">
+        <span class="dash-fu-date ${dateClass}">${dateLabel}</span>
+        <span class="dash-fu-name">${esc(name)}</span>
+        <span class="dash-fu-arrow"><svg class="icon"><use href="#i-chevron-right"/></svg></span>
+      </div>
+      ${purpose ? `<div class="dash-fu-purpose">🎯 ${esc(purpose)}</div>` : '<div class="dash-fu-purpose" style="color:var(--label-tertiary)">目的未設定</div>'}
     </div>`;
   };
 
