@@ -1850,7 +1850,7 @@ async function fetchWithTimeout(url, timeout = 20000) {
 }
 
 // ── GASフェッチキャッシュ管理（クォータ節約） ────────
-const CACHE_TTL   = 24 * 60 * 60 * 1000; // 24時間（GAS上限節約のため1日1回同期）
+const CACHE_TTL   = 3 * 60 * 1000; // 3分（複数営業の同時利用を考慮し、他人の登録が早く反映されるよう短く）
 const CACHE_TS_KEY = 'karte_gas_fetch_ts';
 const QUOTA_HIT_KEY = 'karte_gas_quota_hit';
 
@@ -2351,17 +2351,78 @@ function syncSalonToSalesRegSheet(data, isNew) {
     '年間取引額目安':   data.annualTarget|| '',
     '備考':             data.memo        || '',
   };
-  fetch(SALES_REG_GAS_URL, {
+  // CORSモードでレスポンスを読み、サーバー発番のサロンIDを受け取る（複数営業の同時登録でも衝突しない）
+  return fetch(SALES_REG_GAS_URL, {
     method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
     body: JSON.stringify({ action: 'upsert', salon }),
-  }).then(() => {
-    if (isNew) showToast('📊 スプレッドシートに登録しました', 'success', null, 2500);
+  }).then(r => r.json()).then(j => {
+    if (j && j.ok) {
+      // サーバー側で発番されたIDが返ってきたらローカルのサロンに反映
+      if (isNew && j.salonId && data.id) {
+        const local = salonPeople.find(p => p.id === data.id);
+        if (local) {
+          local.salonId = j.salonId;
+          data.salonId = j.salonId;
+          save();
+        }
+      }
+      if (isNew) showToast(`📊 登録完了 (${j.salonId || ''})`, 'success', null, 2500);
+    } else if (j && !j.ok && j.error === 'busy, try again') {
+      // ロック取得失敗 → 1秒後にリトライ（1回だけ）
+      console.warn('GAS busy, retrying in 1s...');
+      return new Promise(resolve => setTimeout(() => {
+        resolve(syncSalonToSalesRegSheetRaw(salon, data, isNew));
+      }, 1000));
+    }
+    return j;
   }).catch(err => {
     console.warn('営業登録シート同期失敗:', err);
-    showToast('スプレッドシート同期失敗（ローカルには保存済）', 'warn', null, 3500);
+    showToast('スプレッドシート同期失敗（ローカルには保存済・後で再同期）', 'warn', null, 3500);
+    // 失敗キューに積んで後で再送
+    queueSyncRetry(salon, data, isNew);
   });
+}
+
+// リトライ・キュー再送用に内部関数を分離
+function syncSalonToSalesRegSheetRaw(salon, data, isNew) {
+  return fetch(SALES_REG_GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify({ action: 'upsert', salon }),
+  }).then(r => r.json()).then(j => {
+    if (j && j.ok && isNew && j.salonId && data.id) {
+      const local = salonPeople.find(p => p.id === data.id);
+      if (local) { local.salonId = j.salonId; save(); }
+    }
+    return j;
+  });
+}
+
+// 失敗時の再送キュー
+const SYNC_QUEUE_KEY = 'karte_salesreg_queue';
+function queueSyncRetry(salon, data, isNew) {
+  const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
+  queue.push({ salon, dataId: data.id, isNew, ts: Date.now() });
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+async function flushSyncQueue() {
+  const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
+  if (queue.length === 0) return;
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const data = { id: item.dataId };
+      const r = await syncSalonToSalesRegSheetRaw(item.salon, data, item.isNew);
+      if (!r || !r.ok) remaining.push(item);
+    } catch (e) {
+      remaining.push(item);
+    }
+  }
+  localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(remaining));
+  if (queue.length > remaining.length) {
+    showToast(`📊 ${queue.length - remaining.length}件の同期が完了しました`, 'success', null, 2500);
+  }
 }
 
 // 活動ログを MAPPING_SS の「活動ログ」シートに同期（リトライ付き）
@@ -2502,9 +2563,16 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 const toDay = () => new Date().toISOString().slice(0, 10);
 
 // サロンID 自動採番（SAL-XXXXX形式、既存最大値+1）
+// サーバー側で発番される前の仮ID（同時登録でも衝突しないようランダムサフィックス付き）
+// サーバーがレスポンスでSAL-XXXXを返したら上書きされる
 function generateSalonId() {
-  const nums = salonPeople.map(p => parseInt((p.salonId || '').replace('SAL-', '')) || 0);
-  return 'SAL-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0');
+  const nums = salonPeople.map(p => {
+    const m = (p.salonId || '').match(/^SAL-(\d+)/);
+    return m ? parseInt(m[1]) : 0;
+  });
+  const next = (nums.length ? Math.max(...nums) : 0) + 1;
+  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return 'SAL-' + String(next).padStart(4, '0') + '-' + rand;
 }
 
 // 髪ドラ売上タブ: 売上マスターシート（Spreadsheet A）からサロンIDで購買履歴を取得して表示
@@ -4843,6 +4911,18 @@ document.querySelectorAll('.overlay').forEach(o => {
   autoLoadFromSheet();
   // 未同期の活動ログを再送
   if (_syncQueue.length) setTimeout(retrySyncQueue, 5000);
+  // 営業登録の失敗キューを再送
+  setTimeout(flushSyncQueue, 3000);
+
+  // タブ復帰時に最新データを自動取得（他の営業が登録した分も反映）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      autoLoadFromSheet();
+      flushSyncQueue();
+    }
+  });
+  // ネットワーク復帰時にも失敗キューを再送
+  window.addEventListener('online', () => { flushSyncQueue(); autoLoadFromSheet(); });
 })();
 </script>
 </body>
