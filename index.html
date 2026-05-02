@@ -1069,35 +1069,38 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 
 /* ── Home Dashboard ── */
 .dash-wrap { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
-.dash-greeting { font-size: 22px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
-.dash-date { font-size: 13px; color: var(--muted); margin-bottom: 20px; font-weight: 500; }
-.dash-quick-actions { display: flex; gap: 8px; margin-bottom: 20px; }
-.dash-quick-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 8px; border-radius: var(--radius-md); border: none; cursor: pointer;
-  font-family: inherit; font-weight: 700; font-size: 12px; transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
+.dash-greeting {
+  font-size: 28px; font-weight: 700; margin-bottom: 2px; color: var(--text);
+  letter-spacing: -.03em; line-height: 1.15;
+  animation: ios-slide-down var(--duration-base) var(--ease-standard);
 }
-.dash-quick-btn:active { transform: scale(.95); }
-.dash-quick-btn .icon { width: 24px; height: 24px; }
-.dash-quick-btn.qb-primary { background: linear-gradient(135deg, #2563EB, #3B82F6); color: white; box-shadow: 0 4px 12px rgba(37,99,235,.3); }
-.dash-quick-btn.qb-secondary { background: var(--card); color: var(--text); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+.dash-date {
+  font-size: 14px; color: var(--label-secondary); margin-bottom: 20px;
+  letter-spacing: -.01em;
+}
 .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 .dash-stat {
-  background: var(--card); border-radius: var(--radius-md); padding: 16px;
-  box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,.04);
-  cursor: pointer; transition: transform .1s; -webkit-tap-highlight-color: transparent;
+  background: var(--card); border-radius: var(--radius-md); padding: 14px;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer; transition: transform var(--duration-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
   display: flex; align-items: center; gap: 12px;
 }
-.dash-stat:active { transform: scale(.95); }
+.dash-stat:active { transform: scale(.96); }
 .dash-stat-icon {
-  width: 40px; height: 40px; border-radius: 10px; display: flex;
+  width: 36px; height: 36px; border-radius: 10px; display: flex;
   align-items: center; justify-content: center; flex-shrink: 0;
 }
-.dash-stat-icon .icon { width: 20px; height: 20px; }
+.dash-stat-icon .icon { width: 18px; height: 18px; stroke-width: 2.4; }
 .dash-stat-body { flex: 1; min-width: 0; }
-.dash-stat-num { font-size: 24px; font-weight: 800; line-height: 1.1; }
-.dash-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+.dash-stat-num {
+  font-size: 24px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -.022em;
+}
+.dash-stat-lbl {
+  font-size: 12px; color: var(--label-secondary); margin-top: 2px; font-weight: 500;
+  letter-spacing: -.005em;
+}
 .dash-section { margin-bottom: 20px; }
 .dash-section-title {
   font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px;
@@ -1120,6 +1123,201 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dash-fu-content { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
 .dash-fu-arrow { color: var(--muted); flex-shrink: 0; }
 .dash-fu-arrow .icon { width: 16px; height: 16px; }
+
+/* === Home Dashboard - 新コンポーネント === */
+/* 検索バー */
+.dash-search-wrap {
+  position: relative; margin-bottom: 14px;
+  animation: ios-fade-in var(--duration-base) var(--ease-standard);
+}
+.dash-search {
+  width: 100%; padding: 12px 40px 12px 40px;
+  background: var(--fill-secondary);
+  border: none; border-radius: var(--radius-md);
+  font-size: 16px; outline: none;
+  font-family: inherit;
+  letter-spacing: -.01em;
+  transition: background var(--duration-fast);
+}
+.dash-search:focus { background: var(--card); box-shadow: 0 0 0 2px var(--primary); }
+.dash-search::placeholder { color: var(--label-secondary); }
+.dash-search-ico {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; color: var(--label-secondary); pointer-events: none;
+}
+.dash-search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--label-tertiary); color: white;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+}
+.dash-search-results {
+  margin-bottom: 12px;
+}
+.dash-search-results:not(:empty) {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  animation: ios-slide-down var(--duration-base) var(--ease-standard);
+}
+.dash-search-result {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: .5px solid var(--separator);
+  transition: background var(--duration-fast);
+}
+.dash-search-result:last-child { border-bottom: none; }
+.dash-search-result:hover { background: var(--fill-tertiary); }
+.dash-search-result:active { background: var(--fill-secondary); }
+.dash-search-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white; font-weight: 600; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dash-search-info { flex: 1; min-width: 0; }
+.dash-search-name {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -.015em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-search-meta {
+  font-size: 13px; color: var(--label-secondary);
+  letter-spacing: -.01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-search-arrow {
+  width: 14px; height: 14px; color: var(--label-tertiary); flex-shrink: 0;
+}
+.dash-search-empty {
+  padding: 20px; text-align: center;
+  color: var(--label-secondary); font-size: 14px;
+  background: var(--card); border-radius: var(--radius-md);
+}
+
+/* メインアクション (新規サロン登録) */
+.dash-primary-action {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border: none; border-radius: var(--radius-lg);
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,122,255,.30);
+  transition: all var(--duration-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+.dash-primary-action:hover { box-shadow: 0 2px 4px rgba(0,0,0,.1), 0 12px 32px rgba(0,122,255,.40); }
+.dash-primary-action:active { transform: scale(.98); }
+.dash-primary-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,.22);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.dash-primary-icon .icon { width: 22px; height: 22px; stroke-width: 2.5; }
+.dash-primary-title { font-size: 17px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
+.dash-primary-sub { font-size: 13px; opacity: .85; margin-top: 2px; letter-spacing: -.01em; }
+
+/* 最近のサロン (横スクロール) */
+.dash-recent-row {
+  display: flex; gap: 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 4px;
+  margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+}
+.dash-recent-row::-webkit-scrollbar { display: none; }
+.dash-recent-card {
+  flex: 0 0 100px; padding: 14px 10px;
+  background: var(--card);
+  border: none; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  transition: all var(--duration-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+}
+.dash-recent-card:active { transform: scale(.96); }
+.dash-recent-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white; font-weight: 600; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dash-recent-name {
+  font-size: 13px; font-weight: 600; text-align: center;
+  letter-spacing: -.01em;
+  width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-recent-meta {
+  font-size: 11px; color: var(--label-secondary);
+  letter-spacing: -.005em;
+}
+
+/* 最近の活動リスト */
+.dash-act-list {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+.dash-act-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: .5px solid var(--separator);
+  transition: background var(--duration-fast);
+}
+.dash-act-item:last-child { border-bottom: none; }
+.dash-act-item:hover { background: var(--fill-tertiary); }
+.dash-act-item:active { background: var(--fill-secondary); }
+.dash-act-bullet {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  align-self: flex-start; margin-top: 7px;
+}
+.dash-act-body { flex: 1; min-width: 0; }
+.dash-act-title {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -.01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-act-content {
+  font-size: 13px; color: var(--label-secondary);
+  margin-top: 2px;
+  letter-spacing: -.005em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dash-act-date {
+  font-size: 12px; color: var(--label-tertiary);
+  white-space: nowrap; flex-shrink: 0;
+}
+
+/* 空状態のオンボーディング */
+.dash-empty-onboarding {
+  text-align: center; padding: 40px 20px;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  margin-top: 20px;
+  box-shadow: var(--shadow-xs);
+}
+.dash-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.dash-empty-title {
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -.015em;
+  margin-bottom: 6px;
+}
+.dash-empty-sub {
+  font-size: 14px; color: var(--label-secondary);
+  letter-spacing: -.01em; line-height: 1.5;
+  max-width: 280px; margin: 0 auto;
+}
 #dashView {
   padding-top: var(--hdr-h); padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
   overflow-y: auto; -webkit-overflow-scrolling: touch; height: 100vh; box-sizing: border-box;
@@ -5142,6 +5340,7 @@ function renderSearchView() {
 }
 
 function openSalonFromSearch(id) {
+  rememberRecentSalon(id);
   currentMode = 'salon';
   currentId = id;
   document.body.className = 'mode-salon';
@@ -5565,12 +5764,17 @@ function renderDashboard() {
   const todayFUs = pendingFUs.filter(a => a.fuDate === today);
   const upcomingFUs = pendingFUs.filter(a => a.fuDate && a.fuDate > today && a.fuDate <= new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10));
 
-  // 長期未訪問サロン（60日以上）
-  const dormantSalons = salonPeople.filter(p => {
-    const lastDate = (p.activities || []).reduce((m, a) => a.date > m ? a.date : m, '');
-    const days = lastDate ? Math.floor((new Date() - new Date(lastDate)) / 86400000) : 9999;
-    return days >= 60;
-  }).slice(0, 5);
+  // 最近の活動 (10件)
+  const recentActs = [...allActs]
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .slice(0, 10);
+
+  // 最近開いたサロン (localStorage から、最大8件)
+  const recentSalonIds = JSON.parse(localStorage.getItem('karte_recent_salons') || '[]');
+  const recentSalons = recentSalonIds
+    .map(id => salonPeople.find(p => p.id === id))
+    .filter(Boolean)
+    .slice(0, 8);
 
   const fuItemHtml = (a) => {
     const dateClass = !a.fuDate ? 'upcoming' : a.fuDate < today ? 'overdue' : a.fuDate === today ? 'today' : 'upcoming';
@@ -5584,6 +5788,16 @@ function renderDashboard() {
     </div>`;
   };
 
+  const recentSalonHtml = recentSalons.map(p => {
+    const initial = (p.company || '?').charAt(0);
+    const lastAct = (p.activities||[]).reduce((m,a) => a.date > m ? a.date : m, '');
+    return `<button class="dash-recent-card" onclick="openSalonFromSearch('${p.id}')">
+      <div class="dash-recent-avatar">${esc(initial)}</div>
+      <div class="dash-recent-name">${esc(p.company || '無題')}</div>
+      ${lastAct ? `<div class="dash-recent-meta">${relativeDate(lastAct)}</div>` : '<div class="dash-recent-meta" style="color:var(--label-tertiary)">記録なし</div>'}
+    </button>`;
+  }).join('');
+
   const dayNames = ['日','月','火','水','木','金','土'];
   const nowDate = new Date();
   const dateStr = `${nowDate.getMonth()+1}月${nowDate.getDate()}日（${dayNames[nowDate.getDay()]}）`;
@@ -5594,17 +5808,23 @@ function renderDashboard() {
   let html = `
     <div class="dash-greeting"><svg class="icon icon-md" style="vertical-align:-3px;margin-right:4px"><use href="${greetIcon}"/></svg>${greetText}</div>
     <div class="dash-date">${dateStr}</div>
-    <div class="dash-quick-actions">
-      <button class="dash-quick-btn qb-primary" onclick="switchMode('search')">
-        <svg class="icon"><use href="#i-scissors"/></svg>サロンを探す
-      </button>
-      <button class="dash-quick-btn qb-secondary" onclick="openActModal()">
-        <svg class="icon"><use href="#i-edit"/></svg>活動を記録
-      </button>
-      <button class="dash-quick-btn qb-secondary" onclick="switchMode('report')">
-        <svg class="icon"><use href="#i-bar-chart"/></svg>週報
-      </button>
+
+    <!-- 検索バー（ホームから直接サロン検索） -->
+    <div class="dash-search-wrap">
+      <svg class="icon dash-search-ico"><use href="#i-search"/></svg>
+      <input type="text" class="dash-search" id="dashSearchInput" placeholder="サロン名・住所・代理店で検索..." oninput="handleDashSearch()">
+      <button class="dash-search-clear" id="dashSearchClear" onclick="clearDashSearch()" style="display:none">✕</button>
     </div>
+    <div class="dash-search-results" id="dashSearchResults"></div>
+
+    <!-- メインアクション: 新規サロン登録 -->
+    <button class="dash-primary-action" onclick="goToSalonRegistration()">
+      <span class="dash-primary-icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+      <span>
+        <div class="dash-primary-title">新しいサロンを登録</div>
+        <div class="dash-primary-sub">訪問先のサロンを追加</div>
+      </span>
+    </button>
     <div class="dash-stats">
       <div class="dash-stat" onclick="switchMode('report')">
         <div class="dash-stat-icon" style="background:var(--primary-bg);color:var(--primary)"><svg class="icon"><use href="#i-activity"/></svg></div>
@@ -5669,6 +5889,46 @@ function renderDashboard() {
     </div>`;
   }
 
+  // 最近開いたサロン
+  if (recentSalons.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title"><svg class="icon"><use href="#i-clock"/></svg> 最近のサロン</div>
+      <div class="dash-recent-row">${recentSalonHtml}</div>
+    </div>`;
+  }
+
+  // 最近の活動ログ（タップでサロン詳細へ）
+  if (recentActs.length) {
+    html += `<div class="dash-section">
+      <div class="dash-section-title"><svg class="icon"><use href="#i-activity"/></svg> 最近の活動</div>
+      <div class="dash-act-list">
+        ${recentActs.map(a => {
+          const name = a._person.company || a._person.name || '不明';
+          const ago = relativeDate(a.date);
+          const typeColor = a.type === '訪問' ? 'var(--primary)' : a.type === '電話' ? 'var(--success)' : 'var(--warning)';
+          return `<div class="dash-act-item" onclick="openSalonFromSearch('${a._person.id}')">
+            <div class="dash-act-bullet" style="background:${typeColor}"></div>
+            <div class="dash-act-body">
+              <div class="dash-act-title">${esc(name)} <span style="color:var(--label-secondary);font-weight:400;font-size:12px">· ${esc(a.type || '')}</span></div>
+              ${a.content ? `<div class="dash-act-content">${esc((a.content || '').slice(0, 60))}</div>` : ''}
+            </div>
+            <div class="dash-act-date">${ago}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
+  // 全データなしの場合のオンボーディング
+  if (!salonPeople.length && !recentActs.length) {
+    html += `<div class="dash-empty-onboarding">
+      <div class="dash-empty-icon">📋</div>
+      <div class="dash-empty-title">最初のサロンを登録しましょう</div>
+      <div class="dash-empty-sub">訪問先のサロンを追加すると、活動ログ・講習ログ・販売実績が記録できるようになります</div>
+      <button class="btn btn-primary btn-lg" onclick="goToSalonRegistration()" style="margin-top:16px">＋ サロンを追加</button>
+    </div>`;
+  }
+
   // 同期キューに未送信があれば表示
   if (_syncQueue.length) {
     html += `<div class="dash-section">
@@ -5678,6 +5938,62 @@ function renderDashboard() {
   }
 
   document.getElementById('dashContent').innerHTML = html;
+}
+
+// ── ホームから新規サロン登録へジャンプ ──
+function goToSalonRegistration() {
+  // サロンモードに切り替えて、すぐに新規登録モーダルを開く
+  switchMode('search');
+  setTimeout(() => {
+    document.body.classList.add('mode-search');
+    openAddModal();
+  }, 100);
+}
+
+// ── ホーム画面のインライン検索 ──
+let _dashSearchTimer = null;
+function handleDashSearch() {
+  const q = (document.getElementById('dashSearchInput').value || '').trim().toLowerCase();
+  document.getElementById('dashSearchClear').style.display = q ? 'flex' : 'none';
+  clearTimeout(_dashSearchTimer);
+  _dashSearchTimer = setTimeout(() => {
+    const results = document.getElementById('dashSearchResults');
+    if (!q) { results.innerHTML = ''; return; }
+    const matched = salonPeople.filter(p =>
+      (p.company || '').toLowerCase().includes(q) ||
+      (p.companyKana || '').toLowerCase().includes(q) ||
+      (p.address || '').toLowerCase().includes(q) ||
+      (p.agentName || '').toLowerCase().includes(q) ||
+      (p.salonId || '').toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (matched.length === 0) {
+      results.innerHTML = `<div class="dash-search-empty">該当するサロンがありません</div>`;
+      return;
+    }
+    results.innerHTML = matched.map(p => `
+      <div class="dash-search-result" onclick="openSalonFromSearch('${p.id}');clearDashSearch()">
+        <div class="dash-search-avatar">${esc((p.company || '?').charAt(0))}</div>
+        <div class="dash-search-info">
+          <div class="dash-search-name">${esc(p.company || '無題')}</div>
+          <div class="dash-search-meta">${esc(p.agentName || '')}${p.address ? ' · ' + esc(p.address.slice(0, 25)) : ''}</div>
+        </div>
+        <svg class="icon dash-search-arrow"><use href="#i-chevron-right"/></svg>
+      </div>
+    `).join('');
+  }, 150);
+}
+function clearDashSearch() {
+  document.getElementById('dashSearchInput').value = '';
+  document.getElementById('dashSearchResults').innerHTML = '';
+  document.getElementById('dashSearchClear').style.display = 'none';
+}
+
+// 最近開いたサロンを記録
+function rememberRecentSalon(id) {
+  if (!id) return;
+  let list = JSON.parse(localStorage.getItem('karte_recent_salons') || '[]');
+  list = [id, ...list.filter(x => x !== id)].slice(0, 12);
+  localStorage.setItem('karte_recent_salons', JSON.stringify(list));
 }
 
 // ── Overlay close ─────────────────────────────────
