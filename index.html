@@ -1565,52 +1565,97 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
     </div>
     <div class="modal-body">
       <div class="fsec">基本情報</div>
-      <div class="frow">
+
+      <!-- 1. 担当営業（自社の入力者） -->
+      <div class="fg salon-only">
+        <label class="flbl">担当営業（自社） *</label>
+        <input class="finput" id="pSalesRep" placeholder="例: 川原 太郎">
+      </div>
+
+      <!-- 代理店モード時の代理店名 -->
+      <div class="fg agent-only">
+        <label class="flbl">代理店名 *</label>
+        <select class="finput" id="pCompanySelect" onchange="handleCompanySelect()">
+          <option value="">-- 代理店を選択 --</option>
+          <option value="__new__">＋ 新規代理店を入力...</option>
+        </select>
+        <input class="finput" id="pCompanyNew" placeholder="新しい代理店名を入力" style="display:none;margin-top:6px">
+      </div>
+
+      <!-- 2. サロン法人名 -->
+      <div class="fg salon-only">
+        <label class="flbl">サロン法人名</label>
+        <input class="finput" id="pLegalName" placeholder="株式会社〇〇">
+      </div>
+
+      <!-- 3-4. サロン名 + フリガナ -->
+      <div class="frow salon-only">
         <div class="fg">
-          <label class="flbl"><span class="agent-only">担当者名</span><span class="salon-only">オーナー名</span> *</label>
-          <input class="finput" id="pName" placeholder="">
+          <label class="flbl">サロン名 *</label>
+          <input class="finput" id="pCompany" placeholder="美容室〇〇">
         </div>
         <div class="fg">
-          <label class="flbl"><span class="agent-only">代理店名</span><span class="salon-only">サロン名</span> *</label>
-          <select class="finput agent-only" id="pCompanySelect" onchange="handleCompanySelect()">
-            <option value="">-- 代理店を選択 --</option>
-            <option value="__new__">＋ 新規代理店を入力...</option>
-          </select>
-          <input class="finput agent-only" id="pCompanyNew" placeholder="新しい代理店名を入力" style="display:none;margin-top:6px">
-          <input class="finput salon-only" id="pCompany" placeholder="">
-        </div>
-        <div class="fg salon-only">
           <label class="flbl">サロン名ふりがな</label>
-          <input class="finput" id="pCompanyKana" placeholder="さろんめい">
+          <input class="finput" id="pCompanyKana" placeholder="びようしつまるまる">
         </div>
       </div>
-      <div class="frow">
-        <div class="fg">
-          <label class="flbl"><span class="agent-only">役職</span><span class="salon-only">席数</span></label>
-          <input class="finput" id="pTitle" placeholder="">
-        </div>
-        <div class="fg"><label class="flbl">電話番号</label><input class="finput" id="pPhone" type="tel" placeholder="090-1234-5678"></div>
-      </div>
-      <div class="frow">
-        <div class="fg"><label class="flbl">メール</label><input class="finput" id="pEmail" type="email" placeholder="tanaka@example.com"></div>
-        <div class="fg"><label class="flbl">エリア</label><input class="finput" id="pArea" placeholder="関東・東北"></div>
-      </div>
+
+      <!-- 5. 担当代理店 -->
       <div class="fg salon-only">
         <label class="flbl">担当代理店</label>
         <select class="finput" id="pAgentName">
           <option value="">-- 代理店を選択 --</option>
         </select>
       </div>
+
+      <!-- 6-7. 代理店支店 + 代理店担当者 -->
       <div class="frow salon-only">
         <div class="fg"><label class="flbl">代理店支店</label><input class="finput" id="pAgentBranch" placeholder="渋谷支店"></div>
         <div class="fg"><label class="flbl">代理店担当者</label><input class="finput" id="pAgentContact" placeholder="鈴木 花子"></div>
       </div>
-      <div class="frow salon-only">
-        <div class="fg"><label class="flbl">担当営業</label><input class="finput" id="pSalesRep" placeholder="自社担当者名"></div>
-        <div class="fg"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
+
+      <!-- 8. 担当者名/オーナー名 + 席数/役職 -->
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl"><span class="agent-only">担当者名 *</span><span class="salon-only">オーナー名 *</span></label>
+          <input class="finput" id="pName" placeholder="">
+        </div>
+        <div class="fg">
+          <label class="flbl"><span class="agent-only">役職</span><span class="salon-only">席数</span></label>
+          <input class="finput" id="pTitle" placeholder="">
+        </div>
       </div>
-      <div class="fg salon-only"><label class="flbl">サロン法人名</label><input class="finput" id="pLegalName" placeholder="株式会社〇〇"></div>
+
+      <!-- 連絡先 -->
+      <div class="frow">
+        <div class="fg"><label class="flbl">電話番号</label><input class="finput" id="pPhone" type="tel" placeholder="090-1234-5678"></div>
+        <div class="fg"><label class="flbl">メール</label><input class="finput" id="pEmail" type="email" placeholder="tanaka@example.com"></div>
+      </div>
+
+      <!-- 住所（郵便番号＋エリア＋住所） -->
+      <div class="frow">
+        <div class="fg" style="flex:0 0 160px">
+          <label class="flbl">郵便番号</label>
+          <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
+        </div>
+        <div class="fg">
+          <label class="flbl">エリア</label>
+          <select class="finput" id="pArea">
+            <option value="">選択してください</option>
+            <option value="北海道・東北">北海道・東北</option>
+            <option value="関東">関東</option>
+            <option value="中部">中部</option>
+            <option value="関西">関西</option>
+            <option value="中国">中国</option>
+            <option value="四国">四国</option>
+            <option value="九州・沖縄">九州・沖縄</option>
+          </select>
+        </div>
+      </div>
       <div class="fg"><label class="flbl">住所</label><input class="finput" id="pAddress" placeholder="東京都渋谷区〇〇 1-2-3"></div>
+
+      <!-- HPB -->
+      <div class="fg salon-only"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
 
       <div class="fsec salon-only">サロン特性・規模</div>
       <div class="frow salon-only">
@@ -1976,6 +2021,7 @@ function parseSalonRow(row) {
     legalName:    cleanStr(String(row['法人名']             || '')),
     name:         cleanStr(String(row['代表者/担当者']       || '')),
     phone:        cleanStr(String(row['電話番号']             || '')),
+    postalCode:   cleanStr(String(row['郵便番号']             || '')),
     address:      cleanStr(String(row['所在地']               || '')),
     hpbUrl:       String(row['HPBリンク']            || ''),
     agentName:    normalizeAgentName(agentNameVal),
@@ -2424,17 +2470,20 @@ function syncSalonToSalesRegSheet(data, isNew) {
   }
   const salon = {
     'サロンID':         data.salonId     || '',
+    '担当営業':         data.salesRep    || '',
+    '法人名':           data.legalName   || '',
     'サロン名':         data.company     || '',
     'サロン名ふりがな': data.companyKana || '',
     '代理店名':         data.agentName   || '',
     '代理店支店':       data.agentBranch || '',
     '代理店担当者':     data.agentContact|| '',
-    '法人名':           data.legalName   || '',
     '代表者/担当者':    data.name        || '',
     '電話番号':         data.phone       || '',
+    'メール':           data.email       || '',
+    '郵便番号':         data.postalCode  || '',
+    'エリア':           data.area        || '',
     '所在地':           data.address     || '',
     'HPBリンク':        data.hpbUrl      || '',
-    '担当営業':         data.salesRep    || '',
     'サロンタイプ':     data.salonType   || '',
     'ターゲット層':     data.target      || '',
     'スタッフ数':       data.staffCount  || '',
@@ -3351,6 +3400,36 @@ function handleCompanySelect() {
   if (isNew) { inp.value = ''; inp.focus(); }
 }
 
+// 郵便番号 → 住所・エリア自動入力（zipcloud API使用）
+// PREF_TO_REGION は別途REGION_MAPから生成済み
+let _postalLookupTimer = null;
+function handlePostalLookup() {
+  const raw = document.getElementById('pPostalCode').value;
+  const digits = raw.replace(/[^\d]/g, '');
+  // 自動でハイフンを挿入
+  if (digits.length >= 4 && raw.indexOf('-') === -1) {
+    document.getElementById('pPostalCode').value = digits.slice(0, 3) + '-' + digits.slice(3, 7);
+  }
+  if (digits.length !== 7) return;
+  clearTimeout(_postalLookupTimer);
+  _postalLookupTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${digits}`);
+      const json = await res.json();
+      if (json.results && json.results[0]) {
+        const r = json.results[0];
+        const region = PREF_TO_REGION[r.address1] || '';
+        const areaSel = document.getElementById('pArea');
+        if (region) areaSel.value = region;
+        const addrInput = document.getElementById('pAddress');
+        if (!addrInput.value.trim()) {
+          addrInput.value = `${r.address1}${r.address2}${r.address3}`;
+        }
+      }
+    } catch(e) { console.warn('郵便番号検索失敗:', e); }
+  }, 250);
+}
+
 // ── CSV Import ────────────────────────────────────
 function parseCSV(text) {
   const rows = [];
@@ -3427,7 +3506,7 @@ function openAddModal() {
   document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
   document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : '美容室〇〇';
   document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
-  ['pName','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget'].forEach(id => document.getElementById(id).value = '');
+  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pSalonType').value = '';
   document.getElementById('pCompanySelect').value = '';
   document.getElementById('pCompanyNew').value = '';
@@ -3465,6 +3544,7 @@ function openEditModal(id) {
   document.getElementById('pPhone').value = p.phone || '';
   document.getElementById('pEmail').value = p.email || '';
   document.getElementById('pArea').value = p.area || '';
+  document.getElementById('pPostalCode').value = p.postalCode || '';
   document.getElementById('pAddress').value = p.address || '';
   document.getElementById('pStatus').value = p.status || 'active';
   document.getElementById('pTargetSistri').value = p.targetSistri || '';
@@ -3513,6 +3593,7 @@ function savePerson() {
     phone: document.getElementById('pPhone').value.trim(),
     email: document.getElementById('pEmail').value.trim(),
     area: document.getElementById('pArea').value.trim(),
+    postalCode: document.getElementById('pPostalCode').value.trim(),
     address: document.getElementById('pAddress').value.trim(),
     agentName: document.getElementById('pAgentName').value.trim(),
     agentBranch: document.getElementById('pAgentBranch').value.trim(),
