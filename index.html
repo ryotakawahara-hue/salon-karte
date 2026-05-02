@@ -1197,6 +1197,108 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   background: rgba(255,149,0,.12); color: var(--warning);
 }
 .dash-name-set:hover { background: rgba(255,149,0,.20); }
+
+/* === 提案ステージピッカー === */
+.stage-picker {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.stage-chip {
+  padding: 8px 14px; border-radius: 9999px;
+  background: var(--fill-secondary);
+  border: none; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all var(--duration-fast) var(--ease-spring);
+  letter-spacing: -.01em;
+}
+.stage-chip:active { transform: scale(.94); }
+.stage-chip.active {
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+/* ステージバッジ（詳細画面・サロンカードで表示） */
+.stage-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 9999px;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+.stage-badge-lg {
+  padding: 6px 14px; font-size: 14px;
+}
+/* === Pipeline (パイプライン管理) === */
+.pipeline-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.pipeline-tile {
+  background: var(--card);
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: transform var(--duration-fast) var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+.pipeline-tile:active { transform: scale(.94); }
+.pipeline-icon { font-size: 18px; line-height: 1; }
+.pipeline-num {
+  font-size: 24px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -.022em;
+}
+.pipeline-lbl {
+  font-size: 11px; font-weight: 500;
+  color: var(--label-secondary);
+  letter-spacing: -.005em;
+}
+.pipeline-total {
+  margin-top: 12px; padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(0,122,255,.10), rgba(0,122,255,.04));
+  border-radius: var(--radius-md);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pipeline-total-lbl {
+  font-size: 12px; color: var(--label-secondary); font-weight: 500;
+  letter-spacing: -.005em;
+}
+.pipeline-total-num {
+  font-size: 22px; font-weight: 700; color: var(--primary);
+  letter-spacing: -.022em;
+}
+.pipeline-lost-btn {
+  width: 100%; margin-top: 8px;
+  padding: 11px 14px;
+  background: var(--danger-bg); color: var(--danger);
+  border: none; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: inherit; letter-spacing: -.01em;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+.pipeline-lost-btn:hover { background: rgba(255,59,48,.18); }
+.pipeline-lost-btn:active { transform: scale(.98); }
+.pipeline-lost-btn .icon { width: 14px; height: 14px; stroke-width: 2.5; }
+
+/* 競合情報カード */
+.competitor-card {
+  background: var(--fill-tertiary);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+.competitor-row {
+  display: flex; gap: 12px; padding: 5px 0;
+  border-bottom: .5px solid var(--separator);
+}
+.competitor-row:last-child { border-bottom: none; }
+.competitor-row label {
+  flex: 0 0 110px; color: var(--label-secondary);
+  font-size: 12px; font-weight: 500;
+}
+.competitor-row span { flex: 1; color: var(--text); font-weight: 500; }
 .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 .dash-stat {
   background: rgba(255,255,255,.78);
@@ -2312,6 +2414,44 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       <!-- HPB -->
       <div class="fg salon-only"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
 
+      <!-- 提案ステージ -->
+      <div class="fsec salon-only">提案ステージ・パイプライン</div>
+      <div class="fg salon-only">
+        <label class="flbl">現在のステージ</label>
+        <div class="stage-picker" id="pStagePicker"></div>
+        <input type="hidden" id="pSalesStage" value="lead">
+      </div>
+      <!-- 失注理由 (ステージ=失注 のとき表示) -->
+      <div class="fg salon-only" id="pLostReasonWrap" style="display:none">
+        <label class="flbl">失注理由</label>
+        <select class="finput" id="pLostReason">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+
+      <!-- 競合製品情報 -->
+      <div class="fsec salon-only">競合・現使用製品</div>
+      <div class="frow salon-only">
+        <div class="fg">
+          <label class="flbl">主要取引メーカー</label>
+          <input class="finput" id="pCompMain" placeholder="例: ミルボン">
+        </div>
+        <div class="fg">
+          <label class="flbl">切替可能性</label>
+          <select class="finput" id="pSwitchPot">
+            <option value="">選択してください</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow salon-only">
+        <div class="fg"><label class="flbl">現使用シャンプー</label><input class="finput" id="pCompShampoo" placeholder="例: AUJUA"></div>
+        <div class="fg"><label class="flbl">現使用矯正剤</label><input class="finput" id="pCompStraightener" placeholder="例: フォルム"></div>
+      </div>
+      <div class="fg salon-only">
+        <label class="flbl">現使用カラー剤</label>
+        <input class="finput" id="pCompColor" placeholder="例: オルディーブ">
+      </div>
+
       <div class="fsec salon-only">サロン特性・規模</div>
       <div class="frow salon-only">
         <div class="fg">
@@ -2899,6 +3039,16 @@ function parseSalonRow(row) {
     staffCount:   parseInt(row['スタッフ数'])       || 0,
     groupStores:  parseInt(row['グループ店舗数'])   || 0,
     annualTarget: String(row['年間取引額目安']       || ''),
+    // 提案ステージ管理
+    salesStage:   String(row['提案ステージ']         || 'lead'),
+    lostReason:   String(row['失注理由']             || ''),
+    lostDate:     String(row['失注日']               || ''),
+    // 競合製品情報
+    compShampoo:    cleanStr(String(row['競合シャンプー']   || '')),
+    compStraightener: cleanStr(String(row['競合矯正剤']     || '')),
+    compColor:      cleanStr(String(row['競合カラー剤']     || '')),
+    compMain:       cleanStr(String(row['主要取引メーカー'] || '')),
+    switchPot:      String(row['切替可能性']         || ''),
     memo:         String(row['備考'] || row['メモ'] || ''),
     activities: [], sales: [], tags: [],
     status: 'active', title: '', email: '', area: '',
@@ -3355,6 +3505,16 @@ function syncSalonToSalesRegSheet(data, isNew) {
     'スタッフ数':       data.staffCount  || '',
     'グループ店舗数':   data.groupStores || '',
     '年間取引額目安':   data.annualTarget|| '',
+    // 提案ステージ管理
+    '提案ステージ':     data.salesStage  || 'lead',
+    '失注理由':         data.lostReason  || '',
+    '失注日':           data.lostDate    || '',
+    // 競合情報
+    '主要取引メーカー': data.compMain    || '',
+    '切替可能性':       data.switchPot   || '',
+    '競合シャンプー':   data.compShampoo || '',
+    '競合矯正剤':       data.compStraightener || '',
+    '競合カラー剤':     data.compColor   || '',
     '備考':             data.memo        || '',
   };
   // CORSモードでレスポンスを読み、サーバー発番のサロンIDを受け取る（複数営業の同時登録でも衝突しない）
@@ -3529,6 +3689,36 @@ function retrySyncQueue() {
 // ── Data ──────────────────────────────────────────
 // ── 固定代理店リスト ───────────────────────────────
 const AGENT_NAMES = ['ミツイ','フジシン','キクヤ','カトレア','アイビックス','かすが','ピュア商会','菊地','GOROI','リリー','FIT','ガモウ広島'];
+
+// 提案ステージ定義（パイプライン管理）
+const SALES_STAGES = [
+  { id: 'lead',         label: 'リード',       icon: '🆕', color: '#8E8E93', bgColor: 'rgba(142,142,147,.15)' },
+  { id: 'approaching',  label: 'アプローチ中', icon: '📞', color: '#5AC8FA', bgColor: 'rgba(90,200,250,.15)' },
+  { id: 'interested',   label: '興味あり',     icon: '👀', color: '#34C759', bgColor: 'rgba(52,199,89,.15)' },
+  { id: 'considering',  label: '検討中',       icon: '💭', color: '#FFCC00', bgColor: 'rgba(255,204,0,.18)' },
+  { id: 'closing',      label: 'クロージング', icon: '🤝', color: '#FF9500', bgColor: 'rgba(255,149,0,.15)' },
+  { id: 'won',          label: '受注済',       icon: '✅', color: '#007AFF', bgColor: 'rgba(0,122,255,.15)' },
+  { id: 'lost',         label: '失注',         icon: '❌', color: '#FF3B30', bgColor: 'rgba(255,59,48,.15)' },
+];
+function getStage(id) { return SALES_STAGES.find(s => s.id === id) || SALES_STAGES[0]; }
+
+// 失注理由（よくある原因）
+const LOST_REASONS = [
+  '価格（高い）',
+  '既存メーカーとの関係',
+  '効果への懐疑',
+  '商品ラインナップ不足',
+  'タイミングが合わない',
+  '担当者変更/退職',
+  '予算なし',
+  'スタッフの反対',
+  'サロンの方針変更',
+  'その他',
+];
+
+// 切替可能性
+const SWITCH_POTENTIAL = ['高（積極的に切替検討）', '中（条件次第）', '低（既存メーカー固定）'];
+
 // 代理店名の表記ゆれ修正マップ
 const AGENT_NAME_FIX = {'カトレヤ':'カトレア','かとれあ':'カトレア','ｶﾄﾚｱ':'カトレア','ｶﾄﾚﾔ':'カトレア'};
 function normalizeAgentName(name) { return AGENT_NAME_FIX[name] || name; }
@@ -4076,7 +4266,45 @@ function renderBasic(p) {
   const memo = p.memo ? `<div class="card"><div class="card-hdr"><div class="card-title">メモ</div></div><div class="card-body"><div style="font-size:13px;line-height:1.8;white-space:pre-wrap">${esc(p.memo)}</div></div></div>` : '';
 
   if (!isAgent) {
+    const stage = getStage(p.salesStage || 'lead');
+    const stageBadge = `<span class="stage-badge stage-badge-lg" style="background:${stage.bgColor};color:${stage.color}">${stage.icon} ${stage.label}</span>`;
+    // 競合製品情報カード
+    const hasCompetitor = p.compMain || p.compShampoo || p.compStraightener || p.compColor || p.switchPot;
+    const competitorCard = hasCompetitor ? `
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">競合・現使用製品</div></div>
+      <div class="card-body">
+        <div class="competitor-card">
+          ${p.compMain ? `<div class="competitor-row"><label>主要メーカー</label><span>${esc(p.compMain)}</span></div>` : ''}
+          ${p.switchPot ? `<div class="competitor-row"><label>切替可能性</label><span>${esc(p.switchPot)}</span></div>` : ''}
+          ${p.compShampoo ? `<div class="competitor-row"><label>シャンプー</label><span>${esc(p.compShampoo)}</span></div>` : ''}
+          ${p.compStraightener ? `<div class="competitor-row"><label>矯正剤</label><span>${esc(p.compStraightener)}</span></div>` : ''}
+          ${p.compColor ? `<div class="competitor-row"><label>カラー剤</label><span>${esc(p.compColor)}</span></div>` : ''}
+        </div>
+      </div>
+    </div>` : '';
+    // 失注理由カード（失注時のみ表示）
+    const lostCard = p.salesStage === 'lost' && p.lostReason ? `
+    <div class="card" style="border-left: 3px solid var(--danger)">
+      <div class="card-hdr"><div class="card-title" style="color:var(--danger)">❌ 失注理由</div></div>
+      <div class="card-body">
+        <div style="font-size:14px; font-weight:600; margin-bottom:6px">${esc(p.lostReason)}</div>
+        ${p.lostDate ? `<div style="font-size:12px; color:var(--label-secondary)">失注日: ${p.lostDate}</div>` : ''}
+      </div>
+    </div>` : '';
     return `
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">提案ステージ</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+          ${stageBadge}
+          <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')" style="margin-left:auto">変更</button>
+        </div>
+      </div>
+    </div>
+    ${lostCard}
     <div class="card">
       <div class="card-hdr"><div class="card-title">基本情報</div></div>
       <div class="card-body">
@@ -4090,6 +4318,7 @@ function renderBasic(p) {
         </div>
       </div>
     </div>
+    ${competitorCard}
     <div class="card">
       <div class="card-hdr"><div class="card-title">担当情報</div></div>
       <div class="card-body">
@@ -4405,7 +4634,7 @@ function openAddModal() {
   document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
   document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : '美容室〇〇';
   document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
-  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget','pCompMain','pCompShampoo','pCompStraightener','pCompColor'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pSalonType').value = '';
   document.getElementById('pCompanySelect').value = '';
   document.getElementById('pCompanyNew').value = '';
@@ -4417,10 +4646,57 @@ function openAddModal() {
   resetCheckGroup('pActiveMenus');
   setBoolOpt('pBihatuOkite', false);
   setBoolOpt('pHandlingList', false);
+  // 新規ステージはリードで初期化
+  document.getElementById('pSalesStage').value = 'lead';
+  initStagePicker('lead');
+  initLostReasonOptions();
+  initSwitchPotOptions();
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
   modal.querySelector('.modal').scrollTop = 0;
+}
+
+// ステージピッカーの構築 + 選択状態反映
+function initStagePicker(currentStage) {
+  const picker = document.getElementById('pStagePicker');
+  if (!picker) return;
+  picker.innerHTML = SALES_STAGES.map(s => `
+    <button type="button" class="stage-chip ${s.id === currentStage ? 'active' : ''}"
+            data-stage="${s.id}" onclick="selectStage('${s.id}')"
+            style="${s.id === currentStage ? `background:${s.bgColor};color:${s.color}` : ''}">
+      ${s.icon} ${s.label}
+    </button>
+  `).join('');
+  toggleLostReasonVisibility(currentStage);
+}
+function selectStage(id) {
+  document.getElementById('pSalesStage').value = id;
+  initStagePicker(id);
+}
+function toggleLostReasonVisibility(stage) {
+  const wrap = document.getElementById('pLostReasonWrap');
+  if (wrap) wrap.style.display = stage === 'lost' ? 'block' : 'none';
+}
+function initLostReasonOptions() {
+  const sel = document.getElementById('pLostReason');
+  if (!sel) return;
+  if (sel.children.length > 1) return;
+  LOST_REASONS.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    sel.appendChild(o);
+  });
+}
+function initSwitchPotOptions() {
+  const sel = document.getElementById('pSwitchPot');
+  if (!sel) return;
+  if (sel.children.length > 1) return;
+  SWITCH_POTENTIAL.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p;
+    sel.appendChild(o);
+  });
 }
 
 function openEditModal(id) {
@@ -4461,6 +4737,19 @@ function openEditModal(id) {
   document.getElementById('pGroupStores').value = p.groupStores || '';
   document.getElementById('pAnnualTarget').value = p.annualTarget || '';
   document.getElementById('pCreatedDate').value = p.createdDate || '';
+  // 提案ステージ + 失注理由 + 切替可能性 のセットアップ
+  const stage = p.salesStage || 'lead';
+  document.getElementById('pSalesStage').value = stage;
+  initStagePicker(stage);
+  initLostReasonOptions();
+  initSwitchPotOptions();
+  document.getElementById('pLostReason').value = p.lostReason || '';
+  // 競合・現使用製品
+  document.getElementById('pCompMain').value = p.compMain || '';
+  document.getElementById('pSwitchPot').value = p.switchPot || '';
+  document.getElementById('pCompShampoo').value = p.compShampoo || '';
+  document.getElementById('pCompStraightener').value = p.compStraightener || '';
+  document.getElementById('pCompColor').value = p.compColor || '';
   setCheckGroup('pActiveMenus', p.activeMenus || []);
   setBoolOpt('pBihatuOkite', p.bihatuOkite || false);
   setBoolOpt('pHandlingList', p.inHandlingList || false);
@@ -4523,6 +4812,15 @@ function savePerson() {
     activeMenus: [...document.querySelectorAll('#pActiveMenus input:checked')].map(c => c.value),
     bihatuOkite: document.getElementById('pBihatuOkite').checked,
     inHandlingList: document.getElementById('pHandlingList').checked,
+    // 提案ステージ + 失注 + 競合
+    salesStage: document.getElementById('pSalesStage')?.value || 'lead',
+    lostReason: document.getElementById('pLostReason')?.value || '',
+    lostDate: (document.getElementById('pSalesStage')?.value === 'lost') ? toDay() : '',
+    compMain:        document.getElementById('pCompMain')?.value.trim() || '',
+    switchPot:       document.getElementById('pSwitchPot')?.value || '',
+    compShampoo:     document.getElementById('pCompShampoo')?.value.trim() || '',
+    compStraightener:document.getElementById('pCompStraightener')?.value.trim() || '',
+    compColor:       document.getElementById('pCompColor')?.value.trim() || '',
   };
 
   const pArr = getPeople();
@@ -5365,7 +5663,9 @@ function renderSearchView() {
     const matchArea = (!_svRegion || region === _svRegion) &&
                       (!_svPref   || pref   === _svPref)   &&
                       (!_svCity   || city   === _svCity);
-    return matchQ && matchAgent && matchType && matchRep && matchArea;
+    // 提案ステージフィルタ（ホームから遷移した場合）
+    const matchStage = !_svStageFilter || (p.salesStage || 'lead') === _svStageFilter;
+    return matchQ && matchAgent && matchType && matchRep && matchArea && matchStage;
   };
 
   const baseResults = salonPeople.filter(baseFilter);
@@ -6066,6 +6366,52 @@ function renderDashboard() {
       </div>
     </div>`;
 
+  // パイプライン（提案ステージ別件数）
+  // 自分が担当しているサロンのみ集計
+  const mySalons = myName
+    ? salonPeople.filter(p => p.salesRep === myName)
+    : salonPeople;
+  if (mySalons.length > 0) {
+    const stageCounts = {};
+    SALES_STAGES.forEach(s => stageCounts[s.id] = 0);
+    mySalons.forEach(p => {
+      const s = p.salesStage || 'lead';
+      if (stageCounts[s] !== undefined) stageCounts[s]++;
+    });
+    // 進行中（クロージングまで）のサロンの見込み合計
+    const pipelineSalons = mySalons.filter(p => {
+      const s = p.salesStage || 'lead';
+      return s !== 'won' && s !== 'lost';
+    });
+    const totalPotential = mySalons
+      .flatMap(p => p.activities || [])
+      .reduce((sum, a) => sum + (parseFloat(a.potential) || 0), 0);
+
+    html += `<div class="dash-section">
+      <div class="dash-section-title">📊 ${myName ? '私の' : ''}パイプライン</div>
+      <div class="pipeline-grid">
+        ${SALES_STAGES.filter(s => s.id !== 'lost').map(s => `
+          <button class="pipeline-tile" onclick="openSalonsByStage('${s.id}')"
+                  style="background:${s.bgColor}; border-color:${s.color}33">
+            <div class="pipeline-icon">${s.icon}</div>
+            <div class="pipeline-num" style="color:${s.color}">${stageCounts[s.id]}</div>
+            <div class="pipeline-lbl">${s.label}</div>
+          </button>
+        `).join('')}
+      </div>
+      ${totalPotential > 0 ? `
+      <div class="pipeline-total">
+        <div class="pipeline-total-lbl">パイプライン合計（見込み金額）</div>
+        <div class="pipeline-total-num">¥${totalPotential.toLocaleString()}<span style="font-size:14px;font-weight:500;margin-left:4px">万円</span></div>
+      </div>` : ''}
+      ${stageCounts.lost > 0 ? `
+      <button class="pipeline-lost-btn" onclick="openSalonsByStage('lost')">
+        <span>❌ 失注 ${stageCounts.lost} 件を分析する</span>
+        <svg class="icon"><use href="#i-chevron-right"/></svg>
+      </button>` : ''}
+    </div>`;
+  }
+
   // 期限超過
   if (overdueFUs.length) {
     html += `<div class="dash-section">
@@ -6226,6 +6572,18 @@ function saveMyIdentity() {
   if (currentMode === 'home' || document.body.classList.contains('mode-home')) {
     renderDashboard();
   }
+}
+
+// ステージ別にサロン一覧を開く（インライン検索でフィルタ）
+let _svStageFilter = '';
+function openSalonsByStage(stageId) {
+  _svStageFilter = stageId;
+  switchMode('search');
+  setTimeout(() => {
+    if (typeof renderSearchView === 'function') renderSearchView();
+    const stageObj = getStage(stageId);
+    showToast(`${stageObj.icon} ${stageObj.label}でフィルタ中`, 'info', { label: '解除', fn: () => { _svStageFilter = ''; renderSearchView(); } }, 5000);
+  }, 100);
 }
 
 function rememberRecentSalon(id) {
