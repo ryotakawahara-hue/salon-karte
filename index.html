@@ -7124,32 +7124,6 @@ function renderDashboard() {
       </button>` : ''}
     </div>`;
 
-    // 戦略タスク達成率（自分の担当サロン全体での達成率）
-    if (mySalons.length > 0) {
-      html += `<div class="dash-section">
-        <div class="dash-section-title">🎯 ${myName ? '私の' : ''}戦略タスク達成率</div>
-        <div class="strategy-kpi">
-          ${STRATEGY_TASKS.map(task => {
-            const doneCount = mySalons.filter(p => getStrategyTaskStatus(p, task.id)).length;
-            const pct = mySalons.length > 0 ? Math.round(doneCount / mySalons.length * 100) : 0;
-            return `
-            <div class="strategy-kpi-row">
-              <div class="strategy-kpi-icon" style="background:${task.color}22;color:${task.color}">${task.icon}</div>
-              <div class="strategy-kpi-body">
-                <div class="strategy-kpi-label">${task.label}</div>
-                <div class="strategy-kpi-bar">
-                  <div class="strategy-kpi-bar-fill" style="width:${pct}%; background:${task.color}"></div>
-                </div>
-              </div>
-              <div class="strategy-kpi-num" style="color:${task.color}">
-                ${doneCount}<span style="font-size:12px;font-weight:500;color:var(--label-secondary)">/${mySalons.length}</span>
-              </div>
-            </div>
-            `;
-          }).join('')}
-        </div>
-      </div>`;
-    }
 
     // 全社の動き（全営業・全講師の今週の動き）
     const allActsWeek = allActs.filter(a => a.date >= weekStartStr);
