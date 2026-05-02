@@ -1569,7 +1569,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       <!-- 1. 担当営業（自社の入力者） -->
       <div class="fg salon-only">
         <label class="flbl">担当営業（自社） *</label>
-        <input class="finput" id="pSalesRep" placeholder="例: 川原 太郎">
+        <input class="finput" id="pSalesRep" placeholder="例: 髪ドラ太郎">
       </div>
 
       <!-- 代理店モード時の代理店名 -->
@@ -1635,8 +1635,8 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       <!-- 住所（郵便番号＋エリア＋住所） -->
       <div class="frow">
         <div class="fg" style="flex:0 0 160px">
-          <label class="flbl">郵便番号</label>
-          <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
+          <label class="flbl">郵便番号 *</label>
+          <input class="finput salon-only" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
         </div>
         <div class="fg">
           <label class="flbl">エリア</label>
@@ -3585,6 +3585,15 @@ function savePerson() {
     company = document.getElementById('pCompany').value.trim();
   }
   if (!company) { alert(currentMode === 'agent' ? '代理店名は必須です' : 'サロン名は必須です'); return; }
+  // サロン登録時は郵便番号必須
+  if (currentMode !== 'agent') {
+    const postal = document.getElementById('pPostalCode').value.trim();
+    if (!postal || postal.replace(/[^\d]/g, '').length !== 7) {
+      alert('郵便番号は7桁で入力してください（例: 150-0001）');
+      document.getElementById('pPostalCode').focus();
+      return;
+    }
+  }
 
   const data = {
     name, company,
