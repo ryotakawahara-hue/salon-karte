@@ -1851,7 +1851,7 @@ async function fetchWithTimeout(url, timeout = 20000) {
 
 // ── GASフェッチキャッシュ管理（クォータ節約） ────────
 const CACHE_TTL   = 3 * 60 * 1000; // 3分（複数営業の同時利用を考慮し、他人の登録が早く反映されるよう短く）
-const CACHE_TS_KEY = 'karte_gas_fetch_ts';
+const CACHE_TS_KEY = 'karte_gas_fetch_ts_v2'; // v2: 営業登録サロンのみ参照する形式へ移行
 const QUOTA_HIT_KEY = 'karte_gas_quota_hit';
 
 function isCacheFresh() {
@@ -2032,22 +2032,48 @@ async function autoLoadFromSheet(isRetry = false) {
     const jsons = await Promise.all(responses.map(r => r.json()));
     const [aJson, srJson] = jsons;
 
-    // サロン: 既存ローカル（活動ログ等の保持）+ 営業登録サロンの最新を反映
-    let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-    if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
-      const loaded = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const idMap = new Map(existing.map(p => [p.salonId, p]));
-      loaded.forEach(p => {
-        if (p.salonId && idMap.has(p.salonId)) {
-          // 既存の活動ログ等は保持しつつ、シート側の値で上書き
-          Object.assign(idMap.get(p.salonId), p);
-        } else {
-          existing.push({ ...p, _salesRegistered: true });
-        }
-      });
+    // サロン: 「営業登録サロン」タブを真実のソースとする
+    // → スプシにあるサロンだけを表示。スプシにない既存ローカルデータ（旧マスター由来）は破棄
+    // ただし、salonIdが一致するものはローカルの活動ログ・タグ等を引き継ぐ
+    const localSalons = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+    const localById = new Map(localSalons.filter(p => p.salonId).map(p => [p.salonId, p]));
+    let result = [];
+    if (srJson && srJson.ok && srJson.data) {
+      result = srJson.data.map(parseSalonRow)
+        .filter(p => p.company || p.salonId)
+        .map(p => {
+          const local = p.salonId ? localById.get(p.salonId) : null;
+          if (local) {
+            // ローカルの活動ログ等を保持しつつ、スプシの最新フィールドで上書き
+            return {
+              ...p,
+              id: local.id,
+              activities: local.activities || [],
+              sales: local.sales || [],
+              tags: local.tags || [],
+              status: local.status || p.status || 'active',
+              targetSistri: local.targetSistri || 0,
+              targetSales: local.targetSales || 0,
+              createdDate: local.createdDate || '',
+              activeMenus: local.activeMenus || [],
+              bihatuOkite: local.bihatuOkite || false,
+              inHandlingList: local.inHandlingList || false,
+              _salesRegistered: true,
+            };
+          }
+          return { ...p, _salesRegistered: true };
+        });
     }
-    localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
-    salonPeople = existing;
+    // ローカル限定の未同期サロン（POST失敗等で再送キューに残っているもの）は維持
+    const queuedIds = new Set(JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]')
+      .map(q => (q.salon && q.salon['サロンID']) || '').filter(Boolean));
+    const unsyncedLocal = localSalons.filter(p =>
+      p.salonId && !srJson?.data?.some(r => String(r['サロンID']) === p.salonId) && queuedIds.has(p.salonId)
+    );
+    result = [...result, ...unsyncedLocal];
+
+    localStorage.setItem('karte_salon_v1', JSON.stringify(result));
+    salonPeople = result;
 
     if (aJson.ok && aJson.data && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
@@ -2104,22 +2130,44 @@ async function loadFromSheet() {
     const [aJson, srJson] = jsons;
 
     let sAdded = 0, aAdded = 0;
-    let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-    // 営業登録サロンを反映
-    if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
-      const loaded = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const idMap = new Map(existing.map(p => [p.salonId, p]));
-      loaded.forEach(p => {
-        if (p.salonId && idMap.has(p.salonId)) {
-          Object.assign(idMap.get(p.salonId), p);
-        } else {
-          existing.push({ ...p, _salesRegistered: true });
+    // 営業登録サロンを真実のソースとする（旧マスターは破棄）
+    const localSalons = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
+    const localById = new Map(localSalons.filter(p => p.salonId).map(p => [p.salonId, p]));
+    let result = [];
+    if (srJson && srJson.ok && srJson.data) {
+      result = srJson.data.map(parseSalonRow)
+        .filter(p => p.company || p.salonId)
+        .map(p => {
+          const local = p.salonId ? localById.get(p.salonId) : null;
+          if (local) {
+            return {
+              ...p,
+              id: local.id,
+              activities: local.activities || [],
+              sales: local.sales || [],
+              tags: local.tags || [],
+              status: local.status || p.status || 'active',
+              targetSistri: local.targetSistri || 0,
+              targetSales: local.targetSales || 0,
+              createdDate: local.createdDate || '',
+              activeMenus: local.activeMenus || [],
+              bihatuOkite: local.bihatuOkite || false,
+              inHandlingList: local.inHandlingList || false,
+              _salesRegistered: true,
+            };
+          }
           sAdded++;
-        }
-      });
+          return { ...p, _salesRegistered: true };
+        });
     }
-    localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
-    salonPeople = existing;
+    const queuedIds = new Set(JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]')
+      .map(q => (q.salon && q.salon['サロンID']) || '').filter(Boolean));
+    const unsyncedLocal = localSalons.filter(p =>
+      p.salonId && !srJson?.data?.some(r => String(r['サロンID']) === p.salonId) && queuedIds.has(p.salonId)
+    );
+    result = [...result, ...unsyncedLocal];
+    localStorage.setItem('karte_salon_v1', JSON.stringify(result));
+    salonPeople = result;
 
     if (aJson.ok && aJson.data && aJson.data.length > 0) {
       const loaded = aJson.data.map(parseAgentRow).filter(p => p.company);
