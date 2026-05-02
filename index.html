@@ -900,12 +900,6 @@ body:not(.mode-search) .search-view { display: none; }
 .report-view {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
   background: var(--bg);
-  /* モバイル時、下部タブバーに被らないように余白を確保 */
-  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
-  box-sizing: border-box;
-}
-@media (min-width: 768px) {
-  .report-view { padding-bottom: 0; }
 }
 body.mode-report .layout { display: none; }
 body.mode-report .search-view { display: none; }
@@ -1030,9 +1024,29 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .rp-memo:focus { border-color: var(--primary); }
 
 .rp-action-bar {
-  display: flex; gap: 8px; padding: 10px 14px 20px;
+  display: flex; gap: 10px; padding: 12px 14px;
   background: white; border-top: 1px solid var(--border);
   flex-shrink: 0;
+  /* モバイル時、下部タブバーの上に固定表示 */
+  padding-bottom: calc(12px + var(--safe-bottom));
+}
+.rp-action-bar .btn {
+  min-height: 48px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .rp-action-bar {
+    position: fixed;
+    bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
+    left: 0; right: 0;
+    z-index: 50;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+    padding-bottom: 12px;
+  }
+  .rp-body {
+    padding-bottom: 90px !important;
+  }
 }
 
 /* Desktop: report view also usable */
@@ -1382,6 +1396,49 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .ranking-name { flex: 1; font-weight: 500; }
 .ranking-num {
   font-size: 13px; font-weight: 600; color: var(--primary);
+}
+
+/* === Sample Tracking (サンプル後追い) === */
+.sample-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px; margin-bottom: 8px;
+  background: var(--fill-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.sample-row:hover { background: var(--fill-secondary); }
+.sample-row:active { transform: scale(.98); }
+.sample-status {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.sample-body { flex: 1; min-width: 0; }
+.sample-product {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -.01em; line-height: 1.3;
+  margin-bottom: 2px;
+}
+.sample-meta {
+  font-size: 12px; color: var(--label-secondary);
+  letter-spacing: -.005em;
+}
+.sample-memo {
+  font-size: 12px; color: var(--label-secondary);
+  margin-top: 4px; line-height: 1.4;
+}
+.sample-reject {
+  font-size: 12px; color: var(--danger);
+  background: var(--danger-bg); padding: 4px 8px;
+  border-radius: 6px; margin-top: 4px;
+  font-weight: 500;
+}
+.sample-badge {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 9999px;
+  letter-spacing: -.005em; flex-shrink: 0;
+  align-self: flex-start;
 }
 
 /* === Strategy Task Checklist === */
@@ -3203,6 +3260,83 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   </div>
 </div>
 
+<!-- ── Sample Tracking Modal （サンプル配布記録） ── -->
+<div class="overlay" id="sampleModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title">📦 サンプル配布を記録</div>
+      <button class="modal-close" onclick="closeSampleModal()"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="smpEditId" value="">
+
+      <div class="frow">
+        <div class="fg">
+          <label class="flbl">配布日 *</label>
+          <input class="finput" id="smpDate" type="date">
+        </div>
+        <div class="fg">
+          <label class="flbl">数量</label>
+          <input class="finput" id="smpQty" type="text" placeholder="例: 3本 / 1セット">
+        </div>
+      </div>
+
+      <!-- 商品（業務品/ホームケア で分類） -->
+      <div class="fg">
+        <label class="flbl">商品 *</label>
+        <select class="finput" id="smpProduct">
+          <option value="">選択してください</option>
+          <optgroup label="💼 業務品">
+            <option value="シストリ">シストリ</option>
+            <option value="つるりんちょの素">つるりんちょの素</option>
+            <option value="つるりんちょZERO">つるりんちょZERO</option>
+            <option value="矯正剤">矯正剤</option>
+            <option value="カラー剤">カラー剤</option>
+            <option value="美髪の掟">美髪の掟</option>
+            <option value="髪質改善カラー">髪質改善カラー</option>
+            <option value="システムトリートメント">システムトリートメント</option>
+          </optgroup>
+          <optgroup label="🏠 ホームケア">
+            <option value="つるりんちょシャンプー">つるりんちょシャンプー</option>
+            <option value="つるりんちょトリートメント">つるりんちょトリートメント</option>
+            <option value="いるかのせなか">いるかのせなか</option>
+            <option value="ヘアオイル">ヘアオイル</option>
+            <option value="スカルプケア">スカルプケア</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- ステータス -->
+      <div class="fg">
+        <label class="flbl">現在のステータス</label>
+        <div class="stage-picker" id="smpStatusPicker"></div>
+        <input type="hidden" id="smpStatus" value="distributed">
+      </div>
+
+      <!-- 結果（導入時 or 不採用時のみ表示） -->
+      <div class="fg" id="smpAdoptedDateWrap" style="display:none">
+        <label class="flbl">導入日</label>
+        <input class="finput" id="smpAdoptedDate" type="date">
+      </div>
+      <div class="fg" id="smpRejectReasonWrap" style="display:none">
+        <label class="flbl">不採用理由</label>
+        <select class="finput" id="smpRejectReason">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <label class="flbl">フィードバック・メモ</label>
+        <textarea class="finput" id="smpMemo" placeholder="サロン側の反応、試用結果、検討中の内容など" style="min-height:70px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="gap:10px">
+      <button class="btn btn-outline" onclick="closeSampleModal()" style="flex:0 0 auto">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveSample()" style="flex:1; background:#5AC8FA"><svg class="icon icon-sm" style="margin-right:4px"><use href="#i-check"/></svg> 保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="trainModal">
   <div class="modal">
     <div class="modal-hdr">
@@ -4165,6 +4299,28 @@ const LOST_REASONS = [
 // 切替可能性
 const SWITCH_POTENTIAL = ['高（積極的に切替検討）', '中（条件次第）', '低（既存メーカー固定）'];
 
+// === サンプル配布→導入トラッキング ===
+const SAMPLE_STATUSES = [
+  { id: 'distributed', label: '配布済', icon: '📦', color: '#5AC8FA', bgColor: 'rgba(90,200,250,.15)' },
+  { id: 'tested',      label: '試用中',  icon: '🧪', color: '#FF9500', bgColor: 'rgba(255,149,0,.15)' },
+  { id: 'positive',    label: '好感触',  icon: '👍', color: '#34C759', bgColor: 'rgba(52,199,89,.15)' },
+  { id: 'adopted',     label: '導入決定', icon: '✅', color: '#007AFF', bgColor: 'rgba(0,122,255,.18)' },
+  { id: 'rejected',    label: '不採用',  icon: '❌', color: '#FF3B30', bgColor: 'rgba(255,59,48,.15)' },
+];
+function getSampleStatus(id) { return SAMPLE_STATUSES.find(s => s.id === id) || SAMPLE_STATUSES[0]; }
+
+// サンプル不採用理由
+const SAMPLE_REJECT_REASONS = [
+  '効果を感じられなかった',
+  '操作性が合わない',
+  '既存品で十分',
+  '価格が合わない',
+  'お客様反応が薄い',
+  'タイミングが合わない',
+  'スタッフの理解不足',
+  'その他',
+];
+
 // === 髪質改善カラー（B層A化）ステータス ===
 const HQC_STATUSES = [
   { id: '',          label: '未提案',         icon: '⚪', color: '#8E8E93', bgColor: 'rgba(142,142,147,.12)' },
@@ -4923,8 +5079,41 @@ function renderTimeline(p) {
     </div>
   `;
 
+  // サンプル後追いカード
+  const samples = [...(p.samples || [])].sort((a, b) => (b.date||'').localeCompare(a.date||''));
+  const adoptedCount = samples.filter(s => s.status === 'adopted').length;
+  const inProgressCount = samples.filter(s => s.status === 'distributed' || s.status === 'tested' || s.status === 'positive').length;
+  const sampleListHtml = samples.length ? samples.map(s => {
+    const status = getSampleStatus(s.status);
+    return `
+    <div class="sample-row" onclick="openSampleModal('${s.id}')">
+      <div class="sample-status" style="background:${status.bgColor}; color:${status.color}">${status.icon}</div>
+      <div class="sample-body">
+        <div class="sample-product">${esc(s.product)}${s.qty ? ` <span style="color:var(--label-secondary); font-weight:400; font-size:12px">(${esc(s.qty)})</span>` : ''}</div>
+        <div class="sample-meta">配布: ${s.date}${s.adoptedDate ? ` → 導入: ${s.adoptedDate}` : ''}</div>
+        ${s.memo ? `<div class="sample-memo">${esc(s.memo.slice(0, 60))}${s.memo.length > 60 ? '…' : ''}</div>` : ''}
+        ${s.status === 'rejected' && s.rejectReason ? `<div class="sample-reject">❌ ${esc(s.rejectReason)}</div>` : ''}
+      </div>
+      <span class="sample-badge" style="background:${status.bgColor}; color:${status.color}">${status.label}</span>
+    </div>
+    `;
+  }).join('') : `
+    <div style="text-align:center; padding:20px; color:var(--label-secondary); font-size:13px">
+      まだサンプル配布記録がありません
+    </div>
+  `;
+
   return `
     ${strategyCard}
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">📦 サンプル後追い ${samples.length ? `<span style="color:var(--label-secondary); font-weight:400">— 配布${samples.length} / 進行${inProgressCount} / 導入${adoptedCount}</span>` : ''}</div>
+        <button class="btn btn-sm" onclick="openSampleModal()" style="background:#5AC8FA; color:white; font-size:12px; padding:6px 12px">＋ サンプル配布</button>
+      </div>
+      <div class="card-body" style="padding:8px 18px 18px">
+        ${sampleListHtml}
+      </div>
+    </div>
     <div class="card">
       <div class="card-hdr">
         <div class="card-title">タイムライン（営業 + 講師の動き）</div>
@@ -6279,6 +6468,116 @@ function saveTraining() {
   renderSidebar();
   if (isMobile() && currentId) selectPerson(currentId);
   showToast('📚 講習ログを記録しました', 'success', null, 2500);
+}
+
+// === サンプル配布→導入 トラッキング ===
+function openSampleModal(sampleId) {
+  const p = getPerson(currentId);
+  if (!p) return;
+  document.getElementById('smpEditId').value = sampleId || '';
+  // 不採用理由のオプション初期化
+  const rejSel = document.getElementById('smpRejectReason');
+  if (rejSel.children.length <= 1) {
+    SAMPLE_REJECT_REASONS.forEach(r => {
+      const o = document.createElement('option');
+      o.value = r; o.textContent = r;
+      rejSel.appendChild(o);
+    });
+  }
+  if (sampleId) {
+    // 既存編集
+    const s = (p.samples || []).find(x => x.id === sampleId);
+    if (!s) return;
+    document.getElementById('smpDate').value = s.date || toDay();
+    document.getElementById('smpQty').value = s.qty || '';
+    document.getElementById('smpProduct').value = s.product || '';
+    document.getElementById('smpStatus').value = s.status || 'distributed';
+    document.getElementById('smpAdoptedDate').value = s.adoptedDate || '';
+    document.getElementById('smpRejectReason').value = s.rejectReason || '';
+    document.getElementById('smpMemo').value = s.memo || '';
+    initSampleStatusPicker(s.status || 'distributed');
+  } else {
+    // 新規
+    document.getElementById('smpDate').value = toDay();
+    document.getElementById('smpQty').value = '';
+    document.getElementById('smpProduct').value = '';
+    document.getElementById('smpStatus').value = 'distributed';
+    document.getElementById('smpAdoptedDate').value = '';
+    document.getElementById('smpRejectReason').value = '';
+    document.getElementById('smpMemo').value = '';
+    initSampleStatusPicker('distributed');
+  }
+  document.getElementById('sampleModal').classList.add('open');
+}
+function closeSampleModal() {
+  document.getElementById('sampleModal').classList.remove('open');
+}
+function initSampleStatusPicker(currentStatus) {
+  const picker = document.getElementById('smpStatusPicker');
+  if (!picker) return;
+  picker.innerHTML = SAMPLE_STATUSES.map(s => `
+    <button type="button" class="stage-chip ${s.id === currentStatus ? 'active' : ''}"
+            data-smp="${s.id}" onclick="selectSampleStatus('${s.id}')"
+            style="${s.id === currentStatus ? `background:${s.bgColor};color:${s.color}` : ''}">
+      ${s.icon} ${s.label}
+    </button>
+  `).join('');
+  toggleSampleResultVisibility(currentStatus);
+}
+function selectSampleStatus(id) {
+  document.getElementById('smpStatus').value = id;
+  initSampleStatusPicker(id);
+  // 自動で日付を入れる
+  if (id === 'adopted' && !document.getElementById('smpAdoptedDate').value) {
+    document.getElementById('smpAdoptedDate').value = toDay();
+  }
+}
+function toggleSampleResultVisibility(status) {
+  document.getElementById('smpAdoptedDateWrap').style.display = status === 'adopted' ? 'block' : 'none';
+  document.getElementById('smpRejectReasonWrap').style.display = status === 'rejected' ? 'block' : 'none';
+}
+function saveSample() {
+  const date = document.getElementById('smpDate').value;
+  const product = document.getElementById('smpProduct').value;
+  if (!date) { alert('配布日を入れてください'); return; }
+  if (!product) { alert('商品を選択してください'); return; }
+
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.samples = p.samples || [];
+
+  const editId = document.getElementById('smpEditId').value;
+  const data = {
+    id: editId || uid(),
+    date,
+    product,
+    qty: document.getElementById('smpQty').value.trim(),
+    status: document.getElementById('smpStatus').value,
+    adoptedDate: document.getElementById('smpAdoptedDate').value,
+    rejectReason: document.getElementById('smpRejectReason').value,
+    memo: document.getElementById('smpMemo').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (editId) {
+    const idx = p.samples.findIndex(s => s.id === editId);
+    if (idx >= 0) p.samples[idx] = { ...p.samples[idx], ...data };
+  } else {
+    p.samples.push(data);
+  }
+  save();
+  closeSampleModal();
+  renderMain();
+  if (isMobile() && currentId) selectPerson(currentId);
+  showToast('📦 サンプルを記録しました', 'success', null, 2000);
+}
+function deleteSample(sampleId) {
+  if (!confirm('このサンプル記録を削除しますか？')) return;
+  const p = getPerson(currentId);
+  if (!p) return;
+  p.samples = (p.samples || []).filter(s => s.id !== sampleId);
+  save();
+  renderMain();
+  if (isMobile() && currentId) selectPerson(currentId);
 }
 
 function deleteTraining(trainId) {
