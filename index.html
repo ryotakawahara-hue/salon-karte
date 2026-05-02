@@ -97,12 +97,14 @@
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
-  /* === iOS-style ambient gradient background === */
+  /* === iOS 18+ Liquid Glass: 強い色味の壁紙感 === */
   background:
-    radial-gradient(circle at 0% 0%, rgba(0,122,255,.10) 0%, transparent 35%),
-    radial-gradient(circle at 100% 100%, rgba(175,82,222,.08) 0%, transparent 35%),
-    radial-gradient(circle at 100% 0%, rgba(255,149,0,.05) 0%, transparent 30%),
-    #F2F2F7;
+    radial-gradient(circle at 15% 10%, rgba(0,122,255,.20) 0%, transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(175,82,222,.18) 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(255,149,0,.12) 0%, transparent 35%),
+    radial-gradient(circle at 15% 85%, rgba(52,199,89,.10) 0%, transparent 35%),
+    radial-gradient(circle at 50% 50%, rgba(255,45,85,.06) 0%, transparent 50%),
+    #EBEBF0;
   background-attachment: fixed;
   color: var(--text);
   height: 100vh; display: flex; flex-direction: column; overflow: hidden;
@@ -112,26 +114,43 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* === iOS Material System (Liquid Glass) === */
+/* 動くオーラ（壁紙が動いている感を演出） */
+body::before {
+  content: '';
+  position: fixed; inset: -10%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(0,122,255,.08) 0%, transparent 30%),
+    radial-gradient(circle at 70% 70%, rgba(175,82,222,.06) 0%, transparent 30%);
+  z-index: -1;
+  pointer-events: none;
+  animation: aura-float 24s ease-in-out infinite alternate;
+}
+@keyframes aura-float {
+  0%   { transform: translate(0, 0) scale(1); opacity: .8; }
+  50%  { transform: translate(2%, -2%) scale(1.05); opacity: 1; }
+  100% { transform: translate(-2%, 2%) scale(.95); opacity: .8; }
+}
+
+/* === iOS 18 Liquid Glass Material System (より透け感を強化) === */
 .material-thin {
-  background: rgba(255,255,255,.55);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,.40);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
 }
 .material-regular {
-  background: rgba(255,255,255,.72);
-  backdrop-filter: saturate(180%) blur(28px);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(36px);
+  -webkit-backdrop-filter: saturate(220%) blur(36px);
 }
 .material-thick {
-  background: rgba(255,255,255,.88);
-  backdrop-filter: saturate(200%) blur(36px);
-  -webkit-backdrop-filter: saturate(200%) blur(36px);
+  background: rgba(255,255,255,.72);
+  backdrop-filter: saturate(240%) blur(48px);
+  -webkit-backdrop-filter: saturate(240%) blur(48px);
 }
 .material-chrome {
-  background: rgba(247,247,250,.78);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(250,250,252,.62);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
 }
 
 /* === Cascading reveal (stagger) === */
@@ -239,15 +258,15 @@ body.mode-search .agent-only { display: none !important; }
 .icon-fill { fill: currentColor; stroke: none; }
 
 /* ── Header ── */
-/* === Apple iOS Header (Liquid Glass) === */
+/* === iOS 18 Liquid Glass Header === */
 .hdr {
-  background: rgba(247,247,250,.72);
-  backdrop-filter: saturate(180%) blur(28px);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  background: rgba(255,255,255,.50);
+  backdrop-filter: saturate(220%) blur(32px);
+  -webkit-backdrop-filter: saturate(220%) blur(32px);
   color: var(--text);
   height: var(--header-h); padding: 0 16px;
   display: flex; align-items: center; gap: 8px;
-  border-bottom: .5px solid var(--separator);
+  border-bottom: .5px solid rgba(255,255,255,.4);
   z-index: 100; flex-shrink: 0;
   position: relative;
 }
@@ -348,21 +367,26 @@ body.mode-search .agent-only { display: none !important; }
 .empty-title { font-size: 17px; font-weight: 600; }
 
 /* ── Card ── */
-/* === Apple Liquid Glass Card === */
+/* === iOS 18 Liquid Glass Card === */
 .card {
-  background: rgba(255,255,255,.75);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(32px);
+  -webkit-backdrop-filter: saturate(220%) blur(32px);
   border-radius: var(--radius-lg);
   margin-bottom: 16px; overflow: hidden;
-  box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 8px 32px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.85) inset,
+    0 -1px 0 rgba(0,0,0,.04) inset,
+    0 1px 3px rgba(0,0,0,.04),
+    0 12px 40px rgba(0,0,0,.06);
   animation: ios-cascade var(--duration-slow) var(--ease-emphasized);
   position: relative;
+  border: .5px solid rgba(255,255,255,.4);
 }
 .card::before {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,.3) 0%, transparent 40%);
+  background: linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 35%);
   pointer-events: none;
   border-radius: inherit;
 }
@@ -380,9 +404,9 @@ body.mode-search .agent-only { display: none !important; }
 
 /* === Apple Profile Card (Glass) === */
 .profile {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(32px);
+  -webkit-backdrop-filter: saturate(220%) blur(32px);
   border-radius: var(--radius-lg);
   padding: 20px;
   margin-bottom: 16px; display: flex; align-items: flex-start; gap: 14px;
@@ -577,24 +601,28 @@ body.mode-search .agent-only { display: none !important; }
   animation: ios-fade-in var(--duration-base) var(--ease-standard);
 }
 .modal {
-  background: rgba(255,255,255,.95);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(220%) blur(40px);
+  -webkit-backdrop-filter: saturate(220%) blur(40px);
   border-radius: var(--radius-xl);
   width: 92%; max-width: 560px; max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.9) inset;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.95) inset,
+    0 24px 80px rgba(0,0,0,.20),
+    0 1px 4px rgba(0,0,0,.06);
   animation: ios-pop-in var(--duration-base) var(--ease-emphasized);
   -webkit-overflow-scrolling: touch;
+  border: .5px solid rgba(255,255,255,.5);
 }
 .modal-hdr {
   padding: 16px 20px;
   display: flex; justify-content: space-between; align-items: center;
   position: sticky; top: 0;
-  background: rgba(255,255,255,.85);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: .5px solid var(--separator);
+  background: rgba(255,255,255,.65);
+  backdrop-filter: saturate(220%) blur(32px);
+  -webkit-backdrop-filter: saturate(220%) blur(32px);
+  border-bottom: .5px solid rgba(255,255,255,.4);
   z-index: 1; gap: 8px;
 }
 .modal-title {
@@ -651,21 +679,23 @@ body.mode-search .agent-only { display: none !important; }
 }
 .finput {
   width: 100%; padding: 12px 14px;
-  border: none;
-  background: var(--fill-tertiary);
+  border: .5px solid rgba(255,255,255,.4);
+  background: rgba(255,255,255,.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-md);
   font-size: 16px; color: var(--text);
   outline: none; font-family: inherit;
   min-height: 44px;
-  transition: background var(--duration-fast) var(--ease-standard),
-              box-shadow var(--duration-fast) var(--ease-standard);
+  transition: all var(--duration-fast) var(--ease-standard);
   letter-spacing: -.01em;
   -webkit-appearance: none;
   appearance: none;
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset;
 }
 .finput:focus {
-  background: var(--card);
-  box-shadow: 0 0 0 2px var(--primary);
+  background: rgba(255,255,255,.85);
+  box-shadow: 0 0 0 3px rgba(0,122,255,.25), 0 1px 0 rgba(255,255,255,.5) inset;
 }
 .finput::placeholder { color: var(--label-tertiary); }
 textarea.finput { resize: vertical; min-height: 88px; line-height: 1.4; }
@@ -1287,9 +1317,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 
 /* === Strategy KPI (ホーム画面の達成率バー) === */
 .strategy-kpi {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 16px rgba(0,0,0,.04);
@@ -1329,9 +1359,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   gap: 10px; margin-bottom: 10px;
 }
 .company-stat {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border-radius: var(--radius-md);
   padding: 12px; text-align: center;
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 12px rgba(0,0,0,.04);
@@ -1345,9 +1375,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   color: var(--primary); letter-spacing: -.022em;
 }
 .ranking-card {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border-radius: var(--radius-md);
   padding: 10px 14px;
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 12px rgba(0,0,0,.04);
@@ -1606,9 +1636,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .competitor-row span { flex: 1; color: var(--text); font-weight: 500; }
 .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 .dash-stat {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border-radius: var(--radius-md); padding: 13px;
   box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 4px 16px rgba(0,0,0,.04);
   cursor: pointer;
@@ -1650,9 +1680,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dash-section-title .icon { width: 14px; height: 14px; color: var(--label-tertiary); }
 .dash-fu-item {
   display: flex; align-items: center; gap: 12px; padding: 14px;
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border-radius: var(--radius-md);
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 2px 8px rgba(0,0,0,.04);
   margin-bottom: 8px; cursor: pointer;
@@ -1728,9 +1758,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   margin-bottom: 12px;
 }
 .dash-search-results:not(:empty) {
-  background: rgba(255,255,255,.85);
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  background: rgba(255,255,255,.62);
+  backdrop-filter: saturate(220%) blur(36px);
+  -webkit-backdrop-filter: saturate(220%) blur(36px);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 8px 32px rgba(0,0,0,.10);
@@ -1825,9 +1855,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dash-recent-row::-webkit-scrollbar { display: none; }
 .dash-recent-card {
   flex: 0 0 110px; padding: 16px 10px;
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(28px);
+  -webkit-backdrop-filter: saturate(220%) blur(28px);
   border: none; border-radius: var(--radius-md);
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 16px rgba(0,0,0,.05);
   cursor: pointer; font-family: inherit;
@@ -1858,9 +1888,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 
 /* 最近の活動リスト */
 .dash-act-list {
-  background: rgba(255,255,255,.78);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: saturate(220%) blur(32px);
+  -webkit-backdrop-filter: saturate(220%) blur(32px);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 16px rgba(0,0,0,.05);
@@ -1993,17 +2023,18 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .fab-extended:active { transform: scale(.96); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,122,255,.3); }
 
 /* ── Bottom Navigation ── */
-/* === Apple iOS Tab Bar (Liquid Glass / Dock-style) === */
+/* === iOS 18 Liquid Glass Tab Bar === */
 .bottom-nav {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
   height: calc(var(--bottom-nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(247,247,250,.70);
-  backdrop-filter: saturate(180%) blur(32px);
-  -webkit-backdrop-filter: saturate(180%) blur(32px);
-  border-top: .5px solid rgba(60,60,67,.18);
+  background: rgba(255,255,255,.45);
+  backdrop-filter: saturate(240%) blur(40px);
+  -webkit-backdrop-filter: saturate(240%) blur(40px);
+  border-top: .5px solid rgba(255,255,255,.35);
   z-index: 150; flex-direction: row;
+  box-shadow: 0 -8px 32px rgba(0,0,0,.06);
 }
 .bottom-nav::before {
   content: '';
