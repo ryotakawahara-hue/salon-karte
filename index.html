@@ -1228,6 +1228,38 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .stage-badge-lg {
   padding: 6px 14px; font-size: 14px;
 }
+/* === Adoption Level Summary (導入レベル別サマリー) === */
+.adoption-picker {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.adoption-summary {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(180%) blur(16px);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 16px rgba(0,0,0,.04);
+}
+.adoption-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: none; background: transparent;
+  cursor: pointer; font-family: inherit;
+  width: 100%;
+  border-bottom: .5px solid var(--separator);
+  transition: background var(--duration-fast);
+  letter-spacing: -.005em;
+}
+.adoption-row:last-child { border-bottom: none; }
+.adoption-row:hover { background: var(--fill-tertiary); }
+.adoption-row:active { background: var(--fill-secondary); }
+.adoption-icon { font-size: 20px; }
+.adoption-label { flex: 1; text-align: left; font-size: 14px; font-weight: 500; }
+.adoption-count {
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -.022em;
+  min-width: 28px; text-align: right;
+}
+
 /* === Pipeline (パイプライン管理) === */
 .pipeline-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -2428,6 +2460,12 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           <option value="">選択してください</option>
         </select>
       </div>
+      <!-- 導入レベル (受注済 のときに表示・業務品→講習→ホームケアの進化段階) -->
+      <div class="fg salon-only" id="pAdoptionWrap" style="display:none">
+        <label class="flbl">導入レベル <span style="font-weight:400;font-size:11px;color:var(--label-secondary)">（業務品→講習→ホームケアの進捗）</span></label>
+        <div class="adoption-picker" id="pAdoptionPicker"></div>
+        <input type="hidden" id="pAdoptionLevel" value="">
+      </div>
 
       <!-- 競合製品情報 -->
       <div class="fsec salon-only">競合・現使用製品</div>
@@ -2607,19 +2645,32 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
-      <!-- ⑤ 提案商品 -->
+      <!-- ⑤ 提案商品 (業務品 / ホームケア で分類) -->
       <div class="act-section">
         <div class="act-section-lbl">提案商品 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
-        <div class="act-topic-row" id="aProductChips">
-          <button type="button" class="act-topic-chip" data-val="シストリ"           onclick="toggleActChipMulti(this,'aProducts')">シストリ</button>
-          <button type="button" class="act-topic-chip" data-val="つるりんちょ"       onclick="toggleActChipMulti(this,'aProducts')">つるりんちょ</button>
-          <button type="button" class="act-topic-chip" data-val="つるりんちょZERO"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょZERO</button>
-          <button type="button" class="act-topic-chip" data-val="つるりんちょの素"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょの素</button>
-          <button type="button" class="act-topic-chip" data-val="いるかのせなか"     onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
-          <button type="button" class="act-topic-chip" data-val="ホームケア"         onclick="toggleActChipMulti(this,'aProducts')">ホームケア</button>
-          <button type="button" class="act-topic-chip" data-val="矯正剤"             onclick="toggleActChipMulti(this,'aProducts')">矯正剤</button>
-          <button type="button" class="act-topic-chip" data-val="カラー剤"           onclick="toggleActChipMulti(this,'aProducts')">カラー剤</button>
-          <button type="button" class="act-topic-chip" data-val="美髪の掟"           onclick="toggleActChipMulti(this,'aProducts')">美髪の掟</button>
+        <!-- 業務品 -->
+        <div style="background:rgba(0,122,255,.08); border-radius:10px; padding:10px 12px; margin-bottom:8px">
+          <div style="font-size:12px; font-weight:600; color:#007AFF; margin-bottom:8px; letter-spacing:-.005em">💼 業務品（プロ用）</div>
+          <div class="act-topic-row" id="aProductProChips">
+            <button type="button" class="act-topic-chip" data-val="シストリ"           onclick="toggleActChipMulti(this,'aProducts')">シストリ</button>
+            <button type="button" class="act-topic-chip" data-val="つるりんちょの素"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょの素</button>
+            <button type="button" class="act-topic-chip" data-val="つるりんちょZERO"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょZERO</button>
+            <button type="button" class="act-topic-chip" data-val="矯正剤"             onclick="toggleActChipMulti(this,'aProducts')">矯正剤</button>
+            <button type="button" class="act-topic-chip" data-val="カラー剤"           onclick="toggleActChipMulti(this,'aProducts')">カラー剤</button>
+            <button type="button" class="act-topic-chip" data-val="美髪の掟"           onclick="toggleActChipMulti(this,'aProducts')">美髪の掟</button>
+            <button type="button" class="act-topic-chip" data-val="いるかのせなか（業務品）" onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
+          </div>
+        </div>
+        <!-- ホームケア -->
+        <div style="background:rgba(52,199,89,.08); border-radius:10px; padding:10px 12px">
+          <div style="font-size:12px; font-weight:600; color:#34C759; margin-bottom:8px; letter-spacing:-.005em">🏠 ホームケア（お客様用）</div>
+          <div class="act-topic-row" id="aProductHomeChips">
+            <button type="button" class="act-topic-chip" data-val="つるりんちょシャンプー"     onclick="toggleActChipMulti(this,'aProducts')">つるりんちょシャンプー</button>
+            <button type="button" class="act-topic-chip" data-val="つるりんちょトリートメント" onclick="toggleActChipMulti(this,'aProducts')">トリートメント</button>
+            <button type="button" class="act-topic-chip" data-val="いるかのせなか（ホームケア）"   onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
+            <button type="button" class="act-topic-chip" data-val="ヘアオイル"               onclick="toggleActChipMulti(this,'aProducts')">ヘアオイル</button>
+            <button type="button" class="act-topic-chip" data-val="スカルプケア"             onclick="toggleActChipMulti(this,'aProducts')">スカルプケア</button>
+          </div>
         </div>
         <input type="hidden" id="aProducts" value="">
       </div>
@@ -2701,9 +2752,27 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
             <input class="finput" id="aRepName" list="repNameList" placeholder="担当者名" autocomplete="off">
           </div>
         </div>
+        <!-- 代理店同行 -->
         <div class="fg">
-          <label class="flbl">同行者</label>
-          <input class="finput" id="aAccompany" placeholder="例: 田中課長 / 山田講師 / 代理店ミツイ様">
+          <label class="flbl">代理店同行</label>
+          <select class="finput" id="aAgentAccompany">
+            <option value="">代理店同行なし</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">代理店担当者（同行者名）</label>
+          <input class="finput" id="aAgentPerson" placeholder="例: 田中様（ミツイ）">
+        </div>
+        <!-- 講師同行 -->
+        <div class="fg">
+          <label class="flbl">講師同行</label>
+          <select class="finput" id="aLecturerAccompany">
+            <option value="">講師同行なし</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="flbl">その他の同行者</label>
+          <input class="finput" id="aAccompany" placeholder="例: 上司・本社スタッフなど（自由記入）">
         </div>
         <!-- 講師選択時のみ表示 -->
         <div class="fg" id="aLecturerWrap" style="display:none">
@@ -2790,7 +2859,10 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
         <div class="fg">
           <label class="flbl">講師名 *</label>
-          <input class="finput" id="tLecturer" placeholder="例: 山田先生">
+          <select class="finput" id="tLecturer">
+            <option value="">選択してください</option>
+            <option value="__new__">＋ 新しい講師を追加…</option>
+          </select>
         </div>
       </div>
 
@@ -3043,6 +3115,7 @@ function parseSalonRow(row) {
     salesStage:   String(row['提案ステージ']         || 'lead'),
     lostReason:   String(row['失注理由']             || ''),
     lostDate:     String(row['失注日']               || ''),
+    adoptionLevel: String(row['導入レベル']          || ''),
     // 競合製品情報
     compShampoo:    cleanStr(String(row['競合シャンプー']   || '')),
     compStraightener: cleanStr(String(row['競合矯正剤']     || '')),
@@ -3505,10 +3578,11 @@ function syncSalonToSalesRegSheet(data, isNew) {
     'スタッフ数':       data.staffCount  || '',
     'グループ店舗数':   data.groupStores || '',
     '年間取引額目安':   data.annualTarget|| '',
-    // 提案ステージ管理
+    // 提案ステージ管理 + 導入レベル
     '提案ステージ':     data.salesStage  || 'lead',
     '失注理由':         data.lostReason  || '',
     '失注日':           data.lostDate    || '',
+    '導入レベル':       data.adoptionLevel || '',
     // 競合情報
     '主要取引メーカー': data.compMain    || '',
     '切替可能性':       data.switchPot   || '',
@@ -3718,6 +3792,72 @@ const LOST_REASONS = [
 
 // 切替可能性
 const SWITCH_POTENTIAL = ['高（積極的に切替検討）', '中（条件次第）', '低（既存メーカー固定）'];
+
+// === 商品マスター（業務品 / ホームケア の2分類）===
+const PRODUCT_MASTER = {
+  professional: {
+    label: '業務品（プロ用）',
+    desc: '美容室の施術で使う業務用商品',
+    icon: '💼',
+    color: '#007AFF',
+    bgColor: 'rgba(0,122,255,.10)',
+    products: [
+      'シストリ',
+      'つるりんちょの素',
+      'つるりんちょZERO',
+      '矯正剤',
+      'カラー剤',
+      '美髪の掟',
+      'いるかのせなか（業務品）',
+    ],
+  },
+  homecare: {
+    label: 'ホームケア（お客様用）',
+    desc: 'サロン来店者向けの店販品',
+    icon: '🏠',
+    color: '#34C759',
+    bgColor: 'rgba(52,199,89,.10)',
+    products: [
+      'つるりんちょシャンプー',
+      'つるりんちょトリートメント',
+      'いるかのせなか（ホームケア）',
+      'ヘアオイル',
+      'スカルプケア',
+    ],
+  },
+};
+
+// === 導入レベル定義（業務品→講習→ホームケア展開のステップ） ===
+// 「受注済」サロンの中での進化状態を細分化
+const ADOPTION_LEVELS = [
+  { id: 'pro_intro',     label: '業務品 導入',       icon: '💼', color: '#007AFF' },
+  { id: 'pro_training',  label: '業務品 + 講習済',   icon: '📚', color: '#5856D6' },
+  { id: 'pro_proficient',label: '使いこなしレベル↑', icon: '⭐', color: '#FF9500' },
+  { id: 'homecare_started', label: 'ホームケア展開中', icon: '🌟', color: '#34C759' },
+  { id: 'full_rollout',  label: '業務品 + ホームケア', icon: '🏆', color: '#AF52DE' },
+];
+function getAdoption(id) { return ADOPTION_LEVELS.find(a => a.id === id) || null; }
+
+// === 講師マスター（localStorage に保存。初回は既存の講習ログから自動抽出）===
+const DEFAULT_LECTURERS = [
+  // ここに実際の講師30人を設定。あとで管理者が編集可能
+];
+function getLecturers() {
+  const saved = JSON.parse(localStorage.getItem('karte_lecturers') || '[]');
+  if (saved.length) return saved;
+  // 既存講習ログから自動抽出
+  const fromLogs = [...new Set(salonPeople.flatMap(p => (p.trainings || []).map(t => t.lecturer).filter(Boolean)))];
+  return [...DEFAULT_LECTURERS, ...fromLogs];
+}
+function addLecturer(name) {
+  if (!name || !name.trim()) return;
+  const list = getLecturers();
+  if (!list.includes(name.trim())) {
+    const saved = JSON.parse(localStorage.getItem('karte_lecturers') || '[]');
+    saved.push(name.trim());
+    localStorage.setItem('karte_lecturers', JSON.stringify(saved));
+  }
+}
 
 // 代理店名の表記ゆれ修正マップ
 const AGENT_NAME_FIX = {'カトレヤ':'カトレア','かとれあ':'カトレア','ｶﾄﾚｱ':'カトレア','ｶﾄﾚﾔ':'カトレア'};
@@ -4292,14 +4432,22 @@ function renderBasic(p) {
         ${p.lostDate ? `<div style="font-size:12px; color:var(--label-secondary)">失注日: ${p.lostDate}</div>` : ''}
       </div>
     </div>` : '';
+    // 導入レベルバッジ（受注済の場合のみ）
+    const adoption = getAdoption(p.adoptionLevel);
+    const adoptionBadge = (p.salesStage === 'won' && adoption) ? `
+      <span class="stage-badge stage-badge-lg" style="background:rgba(${parseInt(adoption.color.slice(1,3),16)},${parseInt(adoption.color.slice(3,5),16)},${parseInt(adoption.color.slice(5,7),16)},.15); color:${adoption.color}">
+        ${adoption.icon} ${adoption.label}
+      </span>
+    ` : '';
     return `
     <div class="card">
       <div class="card-hdr">
-        <div class="card-title">提案ステージ</div>
+        <div class="card-title">提案ステージ ${p.salesStage === 'won' ? '・導入レベル' : ''}</div>
       </div>
       <div class="card-body">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
           ${stageBadge}
+          ${adoptionBadge}
           <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')" style="margin-left:auto">変更</button>
         </div>
       </div>
@@ -4651,6 +4799,10 @@ function openAddModal() {
   initStagePicker('lead');
   initLostReasonOptions();
   initSwitchPotOptions();
+  if (document.getElementById('pAdoptionLevel')) {
+    document.getElementById('pAdoptionLevel').value = '';
+    initAdoptionPicker('');
+  }
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
@@ -4677,6 +4829,27 @@ function selectStage(id) {
 function toggleLostReasonVisibility(stage) {
   const wrap = document.getElementById('pLostReasonWrap');
   if (wrap) wrap.style.display = stage === 'lost' ? 'block' : 'none';
+  // 受注済のときは「導入レベル」セクション表示
+  const adoptionWrap = document.getElementById('pAdoptionWrap');
+  if (adoptionWrap) adoptionWrap.style.display = stage === 'won' ? 'block' : 'none';
+}
+
+// 導入レベルピッカー初期化
+function initAdoptionPicker(currentLevel) {
+  const picker = document.getElementById('pAdoptionPicker');
+  if (!picker) return;
+  picker.innerHTML = ADOPTION_LEVELS.map(a => `
+    <button type="button" class="stage-chip ${a.id === currentLevel ? 'active' : ''}"
+            data-adoption="${a.id}" onclick="selectAdoption('${a.id}')"
+            style="${a.id === currentLevel ? `background:rgba(${parseInt(a.color.slice(1,3),16)},${parseInt(a.color.slice(3,5),16)},${parseInt(a.color.slice(5,7),16)},.15);color:${a.color}` : ''}">
+      ${a.icon} ${a.label}
+    </button>
+  `).join('');
+}
+function selectAdoption(id) {
+  const cur = document.getElementById('pAdoptionLevel').value;
+  document.getElementById('pAdoptionLevel').value = (cur === id) ? '' : id;
+  initAdoptionPicker(document.getElementById('pAdoptionLevel').value);
 }
 function initLostReasonOptions() {
   const sel = document.getElementById('pLostReason');
@@ -4737,13 +4910,17 @@ function openEditModal(id) {
   document.getElementById('pGroupStores').value = p.groupStores || '';
   document.getElementById('pAnnualTarget').value = p.annualTarget || '';
   document.getElementById('pCreatedDate').value = p.createdDate || '';
-  // 提案ステージ + 失注理由 + 切替可能性 のセットアップ
+  // 提案ステージ + 失注理由 + 切替可能性 + 導入レベル のセットアップ
   const stage = p.salesStage || 'lead';
   document.getElementById('pSalesStage').value = stage;
   initStagePicker(stage);
   initLostReasonOptions();
   initSwitchPotOptions();
   document.getElementById('pLostReason').value = p.lostReason || '';
+  if (document.getElementById('pAdoptionLevel')) {
+    document.getElementById('pAdoptionLevel').value = p.adoptionLevel || '';
+    initAdoptionPicker(p.adoptionLevel || '');
+  }
   // 競合・現使用製品
   document.getElementById('pCompMain').value = p.compMain || '';
   document.getElementById('pSwitchPot').value = p.switchPot || '';
@@ -4816,6 +4993,7 @@ function savePerson() {
     salesStage: document.getElementById('pSalesStage')?.value || 'lead',
     lostReason: document.getElementById('pLostReason')?.value || '',
     lostDate: (document.getElementById('pSalesStage')?.value === 'lost') ? toDay() : '',
+    adoptionLevel: document.getElementById('pAdoptionLevel')?.value || '',
     compMain:        document.getElementById('pCompMain')?.value.trim() || '',
     switchPot:       document.getElementById('pSwitchPot')?.value || '',
     compShampoo:     document.getElementById('pCompShampoo')?.value.trim() || '',
@@ -5089,7 +5267,49 @@ function openActModal() {
     document.getElementById('aLecturerWrap').style.display = 'none';
 
   refreshRepNameList();
+  // 代理店同行・講師同行 ドロップダウン初期化
+  initAccompanySelects();
   document.getElementById('actModal').classList.add('open');
+}
+
+// 代理店ドロップダウン + 講師ドロップダウン を活動ログモーダルにセット
+function initAccompanySelects() {
+  // 現在のサロンのデフォルト担当代理店を初期選択
+  const p = currentId ? getPerson(currentId) : null;
+  const defaultAgent = p?.agentName || '';
+  const defaultAgentPerson = p?.agentContact || '';
+
+  const agentSel = document.getElementById('aAgentAccompany');
+  if (agentSel) {
+    agentSel.innerHTML = '<option value="">代理店同行なし</option>' +
+      AGENT_NAMES.map(n => `<option value="${esc(n)}" ${n === defaultAgent ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  }
+  // 代理店担当者の自動入力
+  const agentPersonInp = document.getElementById('aAgentPerson');
+  if (agentPersonInp && !agentPersonInp.value) {
+    agentPersonInp.value = defaultAgentPerson;
+  }
+
+  // 講師ドロップダウン
+  const lectSel = document.getElementById('aLecturerAccompany');
+  if (lectSel) {
+    const lecturers = getLecturers();
+    lectSel.innerHTML = '<option value="">講師同行なし</option>' +
+      lecturers.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('') +
+      '<option value="__new__">＋ 新しい講師を追加…</option>';
+    lectSel.onchange = function() {
+      if (this.value === '__new__') {
+        const name = prompt('追加する講師名を入力してください');
+        if (name && name.trim()) {
+          addLecturer(name.trim());
+          initAccompanySelects();
+          this.value = name.trim();
+        } else {
+          this.value = '';
+        }
+      }
+    };
+  }
 }
 
 function toggleActDetails() {
@@ -5161,6 +5381,9 @@ function saveAct() {
     potential:  parseFloat(document.getElementById('aPotential')?.value) || 0,
     duration:   parseInt(document.getElementById('aDuration')?.value) || 0,
     accompany:  document.getElementById('aAccompany')?.value.trim() || '',
+    agentAccompany:  document.getElementById('aAgentAccompany')?.value || '',
+    agentPerson:     document.getElementById('aAgentPerson')?.value.trim() || '',
+    lecturerAccompany: document.getElementById('aLecturerAccompany')?.value || '',
     next:       document.getElementById('aNext').value.trim(),
     fuDate:     document.getElementById('aFuDate').value,
     fuStatus:   document.getElementById('aFuStatus').value,
@@ -5210,7 +5433,27 @@ function deleteAct(actId) {
 // ── Training Modal （講習ログ） ─────────────────────
 function openTrainingModal() {
   document.getElementById('tDate').value = toDay();
-  document.getElementById('tLecturer').value = localStorage.getItem('karte_last_lecturer') || '';
+  // 講師リストを投入
+  const lectSel = document.getElementById('tLecturer');
+  if (lectSel && lectSel.tagName === 'SELECT') {
+    const lecturers = getLecturers();
+    const lastLecturer = localStorage.getItem('karte_last_lecturer') || '';
+    lectSel.innerHTML = '<option value="">選択してください</option>' +
+      lecturers.map(n => `<option value="${esc(n)}" ${n === lastLecturer ? 'selected' : ''}>${esc(n)}</option>`).join('') +
+      '<option value="__new__">＋ 新しい講師を追加…</option>';
+    lectSel.onchange = function() {
+      if (this.value === '__new__') {
+        const name = prompt('追加する講師名を入力してください');
+        if (name && name.trim()) {
+          addLecturer(name.trim());
+          openTrainingModal(); // 再描画
+          this.value = name.trim();
+        } else {
+          this.value = '';
+        }
+      }
+    };
+  }
   ['tContent', 'tIssues', 'tNextProposal', 'tMemo', 'tAttendeeCount', 'tDuration'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -5242,7 +5485,10 @@ function saveTraining() {
   const p = getPerson(currentId);
   if (!p) return;
   p.trainings = p.trainings || [];
-  if (lecturer) localStorage.setItem('karte_last_lecturer', lecturer);
+  if (lecturer) {
+    localStorage.setItem('karte_last_lecturer', lecturer);
+    addLecturer(lecturer); // 講師マスターにも追加
+  }
 
   const newTrain = {
     id: uid(),
@@ -5665,7 +5911,8 @@ function renderSearchView() {
                       (!_svCity   || city   === _svCity);
     // 提案ステージフィルタ（ホームから遷移した場合）
     const matchStage = !_svStageFilter || (p.salesStage || 'lead') === _svStageFilter;
-    return matchQ && matchAgent && matchType && matchRep && matchArea && matchStage;
+    const matchAdoption = !_svAdoptionFilter || p.adoptionLevel === _svAdoptionFilter;
+    return matchQ && matchAgent && matchType && matchRep && matchArea && matchStage && matchAdoption;
   };
 
   const baseResults = salonPeople.filter(baseFilter);
@@ -6410,6 +6657,40 @@ function renderDashboard() {
         <svg class="icon"><use href="#i-chevron-right"/></svg>
       </button>` : ''}
     </div>`;
+
+    // 導入レベル別サマリー（受注済サロンのみ。業務品 → ホームケア展開の進化を見える化）
+    const wonSalons = mySalons.filter(p => (p.salesStage || '') === 'won');
+    if (wonSalons.length > 0) {
+      const adoptionCounts = {};
+      ADOPTION_LEVELS.forEach(a => adoptionCounts[a.id] = 0);
+      let unsetCount = 0;
+      wonSalons.forEach(p => {
+        if (p.adoptionLevel && adoptionCounts[p.adoptionLevel] !== undefined) {
+          adoptionCounts[p.adoptionLevel]++;
+        } else {
+          unsetCount++;
+        }
+      });
+      html += `<div class="dash-section">
+        <div class="dash-section-title">🎯 ${myName ? '私の' : ''}導入レベル（受注済 ${wonSalons.length} 件）</div>
+        <div class="adoption-summary">
+          ${ADOPTION_LEVELS.map(a => `
+            <button class="adoption-row" onclick="openSalonsByAdoption('${a.id}')" style="border-left: 3px solid ${a.color}">
+              <span class="adoption-icon">${a.icon}</span>
+              <span class="adoption-label">${a.label}</span>
+              <span class="adoption-count" style="color:${a.color}">${adoptionCounts[a.id]}</span>
+            </button>
+          `).join('')}
+          ${unsetCount > 0 ? `
+            <div class="adoption-row" style="border-left: 3px solid var(--label-tertiary); cursor: default">
+              <span class="adoption-icon">📝</span>
+              <span class="adoption-label" style="color:var(--label-secondary)">未設定</span>
+              <span class="adoption-count" style="color:var(--label-secondary)">${unsetCount}</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>`;
+    }
   }
 
   // 期限超過
@@ -6576,13 +6857,25 @@ function saveMyIdentity() {
 
 // ステージ別にサロン一覧を開く（インライン検索でフィルタ）
 let _svStageFilter = '';
+let _svAdoptionFilter = '';
 function openSalonsByStage(stageId) {
   _svStageFilter = stageId;
+  _svAdoptionFilter = '';
   switchMode('search');
   setTimeout(() => {
     if (typeof renderSearchView === 'function') renderSearchView();
     const stageObj = getStage(stageId);
     showToast(`${stageObj.icon} ${stageObj.label}でフィルタ中`, 'info', { label: '解除', fn: () => { _svStageFilter = ''; renderSearchView(); } }, 5000);
+  }, 100);
+}
+function openSalonsByAdoption(adoptionId) {
+  _svStageFilter = 'won';
+  _svAdoptionFilter = adoptionId;
+  switchMode('search');
+  setTimeout(() => {
+    if (typeof renderSearchView === 'function') renderSearchView();
+    const a = getAdoption(adoptionId);
+    if (a) showToast(`${a.icon} ${a.label}でフィルタ中`, 'info', { label: '解除', fn: () => { _svStageFilter = ''; _svAdoptionFilter = ''; renderSearchView(); } }, 5000);
   }, 100);
 }
 
