@@ -1228,6 +1228,197 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .stage-badge-lg {
   padding: 6px 14px; font-size: 14px;
 }
+/* === Strategy KPI (ホーム画面の達成率バー) === */
+.strategy-kpi {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 16px rgba(0,0,0,.04);
+}
+.strategy-kpi-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  border-bottom: .5px solid var(--separator);
+}
+.strategy-kpi-row:last-child { border-bottom: none; }
+.strategy-kpi-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.strategy-kpi-body { flex: 1; min-width: 0; }
+.strategy-kpi-label {
+  font-size: 13px; font-weight: 500;
+  margin-bottom: 5px; letter-spacing: -.01em;
+}
+.strategy-kpi-bar {
+  height: 6px; background: var(--fill-secondary);
+  border-radius: 3px; overflow: hidden;
+}
+.strategy-kpi-bar-fill {
+  height: 100%; border-radius: 3px;
+  transition: width var(--duration-slow) var(--ease-emphasized);
+}
+.strategy-kpi-num {
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -.022em; min-width: 50px; text-align: right;
+}
+
+/* === Company Stats (全社の動き) === */
+.company-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 10px;
+}
+.company-stat {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-radius: var(--radius-md);
+  padding: 12px; text-align: center;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 12px rgba(0,0,0,.04);
+}
+.company-stat-label {
+  font-size: 11px; color: var(--label-secondary);
+  margin-bottom: 4px; letter-spacing: -.005em;
+}
+.company-stat-num {
+  font-size: 24px; font-weight: 700;
+  color: var(--primary); letter-spacing: -.022em;
+}
+.ranking-card {
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 4px 12px rgba(0,0,0,.04);
+}
+.ranking-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--primary); margin-bottom: 6px;
+  letter-spacing: -.01em;
+}
+.ranking-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.ranking-pos {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--fill-secondary); color: var(--label-secondary);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.ranking-name { flex: 1; font-weight: 500; }
+.ranking-num {
+  font-size: 13px; font-weight: 600; color: var(--primary);
+}
+
+/* === Strategy Task Checklist === */
+.strategy-task-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px;
+  border-bottom: .5px solid var(--separator);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.strategy-task-row[data-auto] { cursor: default; opacity: .92; }
+.strategy-task-row:not([data-auto]):hover { background: var(--fill-tertiary); }
+.strategy-task-row:not([data-auto]):active { background: var(--fill-secondary); }
+.strategy-task-row:last-child { border-bottom: none; }
+.strategy-task-check {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--label-tertiary);
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+.strategy-task-check.done { border-color: transparent; }
+.strategy-task-check.done .icon {
+  width: 14px; height: 14px; color: white; stroke-width: 3;
+}
+.strategy-task-icon { font-size: 18px; flex-shrink: 0; }
+.strategy-task-body { flex: 1; min-width: 0; }
+.strategy-task-label {
+  font-size: 14px; font-weight: 500;
+  letter-spacing: -.01em;
+}
+.strategy-task-meta {
+  font-size: 11px; color: var(--label-tertiary);
+  margin-top: 2px;
+}
+
+/* === Timeline === */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 11px; top: 16px; bottom: 16px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--separator), transparent);
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 14px;
+  padding-left: 28px;
+}
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-marker {
+  position: absolute; left: -10px; top: 4px;
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15), 0 0 0 3px var(--card);
+  z-index: 1;
+}
+.timeline-card {
+  background: var(--fill-tertiary);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.timeline-item.fu-pending .timeline-card {
+  background: var(--warning-bg);
+  border-left: 3px solid var(--warning);
+}
+.timeline-meta {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 6px; flex-wrap: wrap;
+}
+.timeline-role-badge {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 9999px;
+  letter-spacing: .04em;
+}
+.timeline-mini-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 6px;
+  background: rgba(0,122,255,.10); color: var(--primary);
+}
+.timeline-title {
+  font-size: 14px; font-weight: 600;
+  margin-bottom: 4px; letter-spacing: -.01em;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.timeline-content {
+  font-size: 13px; color: var(--label-secondary);
+  line-height: 1.5; letter-spacing: -.005em;
+  margin-bottom: 4px;
+}
+.timeline-issues {
+  font-size: 12px; color: var(--warning);
+  background: rgba(255,149,0,.10);
+  padding: 4px 8px; border-radius: 6px;
+  margin-top: 4px;
+}
+.timeline-next {
+  font-size: 13px; color: var(--primary);
+  background: rgba(0,122,255,.10);
+  padding: 6px 10px; border-radius: 8px;
+  margin-top: 6px; font-weight: 500;
+  letter-spacing: -.005em;
+}
+
 /* === Contact Summary (最終接点・次回予定サマリーカード) === */
 .contact-summary-card {
   background: linear-gradient(135deg, rgba(0,122,255,.06), rgba(0,122,255,.02)) !important;
@@ -3855,6 +4046,45 @@ const LOST_REASONS = [
 // 切替可能性
 const SWITCH_POTENTIAL = ['高（積極的に切替検討）', '中（条件次第）', '低（既存メーカー固定）'];
 
+// === 戦略タスク（メーカーとしてサロンに対してやるべきこと） ===
+const STRATEGY_TASKS = [
+  { id: 'pro_sample',    icon: '💼', label: '業務品 試用サンプル提供', color: '#007AFF' },
+  { id: 'pro_training',  icon: '📚', label: '業務品 講習実施',          color: '#5856D6', auto: true }, // 講習ログがあれば自動
+  { id: 'pro_feedback',  icon: '⭐', label: '業務品 使いこなしFB収集',  color: '#FF9500' },
+  { id: 'home_proposal', icon: '🏠', label: 'ホームケア 提案',           color: '#34C759' },
+  { id: 'home_adoption', icon: '🛒', label: 'ホームケア 導入',           color: '#AF52DE' },
+  { id: 'monthly_touch', icon: '📅', label: '月1回以上の接点維持',       color: '#FF3B30', auto: true }, // 30日以内自動判定
+];
+
+function getStrategyTaskStatus(p, taskId) {
+  // 自動判定タスク
+  if (taskId === 'pro_training') {
+    return (p.trainings || []).length > 0;
+  }
+  if (taskId === 'monthly_touch') {
+    const lastDate = (p.activities || []).reduce((m, a) => a.date > m ? a.date : m, '');
+    if (!lastDate) return false;
+    const days = Math.floor((new Date() - new Date(lastDate)) / 86400000);
+    return days <= 30;
+  }
+  // 手動タスク
+  return !!(p.strategyTasks && p.strategyTasks[taskId]);
+}
+
+function toggleStrategyTask(salonId, taskId) {
+  const p = getPerson(salonId);
+  if (!p) return;
+  p.strategyTasks = p.strategyTasks || {};
+  p.strategyTasks[taskId] = !p.strategyTasks[taskId];
+  if (p.strategyTasks[taskId]) {
+    p.strategyTaskDates = p.strategyTaskDates || {};
+    p.strategyTaskDates[taskId] = toDay();
+  }
+  save();
+  renderMain();
+  showToast(p.strategyTasks[taskId] ? '✓ 達成しました' : '未達成に戻しました', 'success', null, 1800);
+}
+
 // === 商品マスター（業務品 / ホームケア の2分類）===
 const PRODUCT_MASTER = {
   professional: {
@@ -4448,18 +4678,126 @@ function renderMain() {
     </div>
 
     <div class="tabs">
+      <div class="tab active" onclick="switchTab(this,'tb-act')">タイムライン（${((p.activities||[]).length + (p.trainings||[]).length)}）</div>
       <div class="tab" onclick="switchTab(this,'tb-basic')">基本情報</div>
-      <div class="tab active" onclick="switchTab(this,'tb-act')">活動ログ（${(p.activities||[]).length}）</div>
-      ${!isAgent ? `<div class="tab" onclick="switchTab(this,'tb-train')">講習ログ（${(p.trainings||[]).length}）</div>` : ''}
-      <div class="tab" onclick="switchTab(this,'tb-sales')">販売実績</div>
-      ${!isAgent ? `<div class="tab" onclick="switchTab(this,'tb-hdra');loadHDRASales('${p.id}')">髪ドラ売上</div>` : ''}
     </div>
 
     <div class="tab-content" id="tb-basic">${renderBasic(p)}</div>
-    <div class="tab-content active" id="tb-act">${renderAct(p)}</div>
-    ${!isAgent ? `<div class="tab-content" id="tb-train">${renderTraining(p)}</div>` : ''}
-    <div class="tab-content" id="tb-sales">${renderSales(p)}</div>
-    ${!isAgent ? `<div class="tab-content" id="tb-hdra"><div id="hdra-sales-wrap" style="padding:8px 0"><div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">「髪ドラ売上」タブをクリックして読み込む</div></div></div>` : ''}
+    <div class="tab-content active" id="tb-act">${renderTimeline(p)}</div>
+  `;
+}
+
+// 統合タイムライン（活動ログ + 講習ログを時系列で）
+function renderTimeline(p) {
+  // 戦略タスクチェックリストを最上部に
+  const strategyCard = `
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🎯 戦略タスク</div>
+        <div style="font-size:11px;color:var(--label-secondary)">メーカーとしてやるべきこと</div>
+      </div>
+      <div class="card-body" style="padding:0">
+        ${STRATEGY_TASKS.map(task => {
+          const done = getStrategyTaskStatus(p, task.id);
+          const completedDate = (p.strategyTaskDates && p.strategyTaskDates[task.id]) || '';
+          return `
+          <div class="strategy-task-row" ${task.auto ? 'data-auto="1"' : `onclick="toggleStrategyTask('${p.id}','${task.id}')"`}>
+            <div class="strategy-task-check ${done ? 'done' : ''}" style="${done ? `background:${task.color};border-color:${task.color}` : ''}">
+              ${done ? '<svg class="icon"><use href="#i-check"/></svg>' : ''}
+            </div>
+            <div class="strategy-task-icon">${task.icon}</div>
+            <div class="strategy-task-body">
+              <div class="strategy-task-label">${task.label}</div>
+              ${task.auto ? `<div class="strategy-task-meta">自動判定</div>` : completedDate ? `<div class="strategy-task-meta">${completedDate}</div>` : ''}
+            </div>
+          </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // 活動ログと講習ログを統合してソート
+  const allEvents = [
+    ...(p.activities || []).map(a => ({ ...a, _type: 'activity' })),
+    ...(p.trainings || []).map(t => ({ ...t, _type: 'training' })),
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  // タイムラインアイテムHTML
+  const timelineHtml = allEvents.length ? allEvents.map(e => {
+    if (e._type === 'training') {
+      // 講師の活動
+      return `
+      <div class="timeline-item timeline-lecturer">
+        <div class="timeline-marker" style="background:#AF52DE">
+          <span style="font-size:14px">📚</span>
+        </div>
+        <div class="timeline-card">
+          <div class="timeline-meta">
+            <span class="timeline-role-badge" style="background:rgba(175,82,222,.15);color:#AF52DE">講師</span>
+            <span style="font-size:12px;color:var(--label-secondary)">${esc(e.lecturer || '')}</span>
+            <span style="font-size:12px;color:var(--label-tertiary);margin-left:auto">${e.date} (${relativeDate(e.date)})</span>
+          </div>
+          <div class="timeline-title">📚 講習: ${(e.subjects || []).join('・')}</div>
+          ${e.content ? `<div class="timeline-content">${esc(e.content.slice(0, 100))}${e.content.length > 100 ? '…' : ''}</div>` : ''}
+          ${e.issues ? `<div class="timeline-issues">⚠️ 課題: ${esc(e.issues.slice(0, 80))}</div>` : ''}
+          ${e.nextProposal ? `<div class="timeline-next">→ 次回: ${esc(e.nextProposal.slice(0, 80))}</div>` : ''}
+          <div style="margin-top:6px">
+            <button class="btn btn-outline btn-sm" onclick="deleteTraining('${e.id}')" style="padding:4px 10px;font-size:11px">削除</button>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      // 営業活動
+      const cls = e.fuStatus === 'pending' ? 'fu-pending' : '';
+      const isMine = e.repName === getMyName();
+      return `
+      <div class="timeline-item timeline-sales ${cls}">
+        <div class="timeline-marker" style="background:${isMine ? '#007AFF' : '#5AC8FA'}">
+          <svg class="icon" style="width:14px;height:14px;color:white"><use href="#i-walk"/></svg>
+        </div>
+        <div class="timeline-card">
+          <div class="timeline-meta">
+            <span class="timeline-role-badge" style="background:rgba(0,122,255,.15);color:#007AFF">営業</span>
+            <span style="font-size:12px;color:var(--label-secondary)">${esc(e.repName || '')}</span>
+            ${e.agentAccompany ? `<span class="timeline-mini-badge">${esc(e.agentAccompany)}同行</span>` : ''}
+            ${e.lecturerAccompany ? `<span class="timeline-mini-badge" style="background:rgba(175,82,222,.10);color:#AF52DE">${esc(e.lecturerAccompany)}講師同行</span>` : ''}
+            <span style="font-size:12px;color:var(--label-tertiary);margin-left:auto">${e.date} (${relativeDate(e.date)})</span>
+          </div>
+          <div class="timeline-title">
+            <span class="act-type">${esc(e.type || '')}</span>
+            ${e.result ? `<span style="font-size:13px">${esc(e.result)}</span>` : ''}
+          </div>
+          ${e.content ? `<div class="timeline-content">${esc(e.content.slice(0, 120))}${e.content.length > 120 ? '…' : ''}</div>` : ''}
+          ${e.next ? `<div class="timeline-next">🎯 ${esc(e.next)}${e.fuDate ? ` <span style="color:var(--label-tertiary);font-size:11px">(${e.fuDate})</span>` : ''}</div>` : ''}
+          <div style="margin-top:6px;display:flex;gap:6px">
+            ${e.fuStatus === 'pending' ? `<button class="btn btn-success btn-sm" onclick="markDone('${e.id}')" style="padding:4px 10px;font-size:11px">✓ 完了</button>` : ''}
+            <button class="btn btn-outline btn-sm" onclick="deleteAct('${e.id}')" style="padding:4px 10px;font-size:11px">削除</button>
+          </div>
+        </div>
+      </div>`;
+    }
+  }).join('') : `
+    <div style="text-align:center;padding:32px;color:var(--label-secondary)">
+      <div style="font-size:30px;margin-bottom:7px">📋</div>
+      <div>まだ接点記録がありません</div>
+    </div>
+  `;
+
+  return `
+    ${strategyCard}
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">タイムライン（営業 + 講師の動き）</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm" onclick="openActModal()">＋ 接点</button>
+          <button class="btn btn-outline btn-sm" onclick="openTrainingModal()" style="background:rgba(175,82,222,.10);color:#AF52DE">＋ 講習</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:8px 18px 18px">
+        <div class="timeline">${timelineHtml}</div>
+      </div>
+    </div>
   `;
 }
 
@@ -6785,6 +7123,99 @@ function renderDashboard() {
         <svg class="icon"><use href="#i-chevron-right"/></svg>
       </button>` : ''}
     </div>`;
+
+    // 戦略タスク達成率（自分の担当サロン全体での達成率）
+    if (mySalons.length > 0) {
+      html += `<div class="dash-section">
+        <div class="dash-section-title">🎯 ${myName ? '私の' : ''}戦略タスク達成率</div>
+        <div class="strategy-kpi">
+          ${STRATEGY_TASKS.map(task => {
+            const doneCount = mySalons.filter(p => getStrategyTaskStatus(p, task.id)).length;
+            const pct = mySalons.length > 0 ? Math.round(doneCount / mySalons.length * 100) : 0;
+            return `
+            <div class="strategy-kpi-row">
+              <div class="strategy-kpi-icon" style="background:${task.color}22;color:${task.color}">${task.icon}</div>
+              <div class="strategy-kpi-body">
+                <div class="strategy-kpi-label">${task.label}</div>
+                <div class="strategy-kpi-bar">
+                  <div class="strategy-kpi-bar-fill" style="width:${pct}%; background:${task.color}"></div>
+                </div>
+              </div>
+              <div class="strategy-kpi-num" style="color:${task.color}">
+                ${doneCount}<span style="font-size:12px;font-weight:500;color:var(--label-secondary)">/${mySalons.length}</span>
+              </div>
+            </div>
+            `;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+
+    // 全社の動き（全営業・全講師の今週の動き）
+    const allActsWeek = allActs.filter(a => a.date >= weekStartStr);
+    const allTrainingsWeek = salonPeople.flatMap(p => (p.trainings || []).map(t => ({ ...t, _person: p })))
+      .filter(t => (t.date || '') >= weekStartStr);
+    if (allActsWeek.length || allTrainingsWeek.length) {
+      // 営業ランキング
+      const salesByPerson = {};
+      allActsWeek.forEach(a => {
+        const name = a.repName || '不明';
+        salesByPerson[name] = (salesByPerson[name] || 0) + 1;
+      });
+      const salesRanking = Object.entries(salesByPerson)
+        .sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+      // 講師ランキング
+      const lectByPerson = {};
+      allTrainingsWeek.forEach(t => {
+        const name = t.lecturer || '不明';
+        lectByPerson[name] = (lectByPerson[name] || 0) + 1;
+      });
+      const lectRanking = Object.entries(lectByPerson)
+        .sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+      html += `<div class="dash-section">
+        <div class="dash-section-title">🏢 全社の動き（今週）</div>
+        <div class="company-stats">
+          <div class="company-stat">
+            <div class="company-stat-label">営業接点</div>
+            <div class="company-stat-num">${allActsWeek.length}<span style="font-size:13px;font-weight:500;color:var(--label-secondary);margin-left:2px">件</span></div>
+          </div>
+          <div class="company-stat">
+            <div class="company-stat-label">講習実施</div>
+            <div class="company-stat-num" style="color:#AF52DE">${allTrainingsWeek.length}<span style="font-size:13px;font-weight:500;color:var(--label-secondary);margin-left:2px">件</span></div>
+          </div>
+          <div class="company-stat">
+            <div class="company-stat-label">対応サロン</div>
+            <div class="company-stat-num" style="color:#34C759">${new Set([...allActsWeek, ...allTrainingsWeek].map(e => e._person?.id || '')).size}</div>
+          </div>
+        </div>
+        ${salesRanking.length ? `
+        <div class="ranking-card">
+          <div class="ranking-title">🏆 営業活動ランキング</div>
+          ${salesRanking.map((r, i) => `
+            <div class="ranking-row">
+              <span class="ranking-pos">${i+1}</span>
+              <span class="ranking-name">${esc(r[0])}</span>
+              <span class="ranking-num">${r[1]}件</span>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+        ${lectRanking.length ? `
+        <div class="ranking-card" style="margin-top:8px">
+          <div class="ranking-title" style="color:#AF52DE">📚 講師活動ランキング</div>
+          ${lectRanking.map((r, i) => `
+            <div class="ranking-row">
+              <span class="ranking-pos">${i+1}</span>
+              <span class="ranking-name">${esc(r[0])}</span>
+              <span class="ranking-num">${r[1]}件</span>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+      </div>`;
+    }
 
     // 導入レベル別サマリー（受注済サロンのみ。業務品 → ホームケア展開の進化を見える化）
     const wonSalons = mySalons.filter(p => (p.salesStage || '') === 'won');
