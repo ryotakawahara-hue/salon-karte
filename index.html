@@ -4169,25 +4169,16 @@ const HQC_REJECT_REASONS = [
 ];
 
 // === 戦略タスク（メーカーとしてサロンに対してやるべきこと） ===
+// 2項目に絞り込み: B層A化（髪質改善カラー導入） + システムトリートメント提案
 const STRATEGY_TASKS = [
-  { id: 'pro_sample',    icon: '💼', label: '業務品 試用サンプル提供', color: '#007AFF' },
-  { id: 'pro_training',  icon: '📚', label: '業務品 講習実施',          color: '#5856D6', auto: true }, // 講習ログがあれば自動
-  { id: 'pro_feedback',  icon: '⭐', label: '業務品 使いこなしFB収集',  color: '#FF9500' },
-  { id: 'home_proposal', icon: '🏠', label: 'ホームケア 提案',           color: '#34C759' },
-  { id: 'home_adoption', icon: '🛒', label: 'ホームケア 導入',           color: '#AF52DE' },
-  { id: 'monthly_touch', icon: '📅', label: '月1回以上の接点維持',       color: '#FF3B30', auto: true }, // 30日以内自動判定
+  { id: 'hqc_adopted',   icon: '🎨', label: 'B層A化（髪質改善カラー導入）', color: '#FF2D55', auto: true }, // hqcStatus='adopted' で自動
+  { id: 'sys_treatment', icon: '💆', label: 'システムトリートメント提案',     color: '#5AC8FA' },
 ];
 
 function getStrategyTaskStatus(p, taskId) {
   // 自動判定タスク
-  if (taskId === 'pro_training') {
-    return (p.trainings || []).length > 0;
-  }
-  if (taskId === 'monthly_touch') {
-    const lastDate = (p.activities || []).reduce((m, a) => a.date > m ? a.date : m, '');
-    if (!lastDate) return false;
-    const days = Math.floor((new Date() - new Date(lastDate)) / 86400000);
-    return days <= 30;
+  if (taskId === 'hqc_adopted') {
+    return p.hqcStatus === 'adopted';
   }
   // 手動タスク
   return !!(p.strategyTasks && p.strategyTasks[taskId]);
