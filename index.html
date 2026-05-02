@@ -4485,7 +4485,7 @@ function renderMobileList() {
   const searchBar = document.querySelector('.mobile-list-search');
   const filterStrip = document.getElementById('mobileFilterStrip');
 
-  // 代理店モードかつ代理店未選択 → 代理店ピッカー表示
+  // 代理店モードかつ代理店未選択 → 代理店プルダウン表示
   if (currentMode === 'agent' && !_mbSelectedAgent) {
     const q = (document.getElementById('mobileSearchInput').value || '').toLowerCase();
     if (!q) {
@@ -4500,23 +4500,25 @@ function renderMobileList() {
           agentCounts[co] = (agentCounts[co] || 0) + 1;
         }
       });
-      const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
       const extra = Object.keys(agentCounts).filter(n => !AGENT_NAMES.includes(n)).sort((a,b) => a.localeCompare(b, 'ja'));
-      const allAgents = [...AGENT_NAMES.filter(n => agentCounts[n]), ...extra];
+      const allAgents = [...AGENT_NAMES, ...extra];
 
-      let html = '<div class="agent-picker" style="padding:16px">';
-      html += '<div class="agent-picker-title"><svg class="icon icon-lg"><use href="#i-users"/></svg> 代理店を選択してください</div>';
-      html += '<div class="agent-picker-grid">';
-      allAgents.forEach(name => {
-        const cnt = agentCounts[name] || 0;
-        const avatar = esc(name.slice(0, 2));
-        html += `<div class="agent-pick-card" onclick="selectMbAgent('${esc(name)}')">
-          <div class="agent-pick-avatar">${avatar}</div>
-          <div class="agent-pick-name">${esc(name)}</div>
-          <div class="agent-pick-count">${cnt}名</div>
-        </div>`;
-      });
-      html += '</div></div>';
+      let html = '<div class="agent-picker" style="padding:20px 16px">';
+      html += '<div class="agent-picker-title"><svg class="icon icon-lg"><use href="#i-users"/></svg> 代理店を選んでください</div>';
+      html += `
+        <div class="fg" style="margin-top:8px">
+          <select class="finput" id="mbAgentSelect" onchange="if(this.value)selectMbAgent(this.value)" style="font-size:16px; min-height:52px">
+            <option value="">— 代理店を選択 —</option>
+            ${allAgents.map(name => {
+              const cnt = agentCounts[name] || 0;
+              return `<option value="${esc(name)}">${esc(name)}${cnt ? ` (${cnt}名)` : ''}</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div style="margin-top:10px; font-size:12px; color:var(--label-secondary); padding:0 4px">
+          代理店を選択すると、その代理店の担当者一覧が表示されます。
+        </div>
+      </div>`;
       wrap.innerHTML = html;
       return;
     }
@@ -7303,51 +7305,11 @@ function renderDashboard() {
       </div>
     </div>`;
 
-  // パイプライン（提案ステージ別件数）
-  // 自分が担当しているサロンのみ集計
+  // 自分が担当しているサロンのみ集計（B層A化や全社の動きで使用）
   const mySalons = myName
     ? salonPeople.filter(p => p.salesRep === myName)
     : salonPeople;
   if (mySalons.length > 0) {
-    const stageCounts = {};
-    SALES_STAGES.forEach(s => stageCounts[s.id] = 0);
-    mySalons.forEach(p => {
-      const s = p.salesStage || 'lead';
-      if (stageCounts[s] !== undefined) stageCounts[s]++;
-    });
-    // 進行中（クロージングまで）のサロンの見込み合計
-    const pipelineSalons = mySalons.filter(p => {
-      const s = p.salesStage || 'lead';
-      return s !== 'won' && s !== 'lost';
-    });
-    const totalPotential = mySalons
-      .flatMap(p => p.activities || [])
-      .reduce((sum, a) => sum + (parseFloat(a.potential) || 0), 0);
-
-    html += `<div class="dash-section">
-      <div class="dash-section-title">📊 ${myName ? '私の' : ''}パイプライン</div>
-      <div class="pipeline-grid">
-        ${SALES_STAGES.filter(s => s.id !== 'lost').map(s => `
-          <button class="pipeline-tile" onclick="openSalonsByStage('${s.id}')"
-                  style="background:${s.bgColor}; border-color:${s.color}33">
-            <div class="pipeline-icon">${s.icon}</div>
-            <div class="pipeline-num" style="color:${s.color}">${stageCounts[s.id]}</div>
-            <div class="pipeline-lbl">${s.label}</div>
-          </button>
-        `).join('')}
-      </div>
-      ${totalPotential > 0 ? `
-      <div class="pipeline-total">
-        <div class="pipeline-total-lbl">パイプライン合計（見込み金額）</div>
-        <div class="pipeline-total-num">¥${totalPotential.toLocaleString()}<span style="font-size:14px;font-weight:500;margin-left:4px">万円</span></div>
-      </div>` : ''}
-      ${stageCounts.lost > 0 ? `
-      <button class="pipeline-lost-btn" onclick="openSalonsByStage('lost')">
-        <span>❌ 失注 ${stageCounts.lost} 件を分析する</span>
-        <svg class="icon"><use href="#i-chevron-right"/></svg>
-      </button>` : ''}
-    </div>`;
-
 
     // 🎨 B層A化（髪質改善カラー）KPI - 営業最重要指標
     if (mySalons.length > 0) {
