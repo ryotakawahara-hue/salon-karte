@@ -2022,38 +2022,24 @@ async function autoLoadFromSheet(isRetry = false) {
   // ローディング表示
   const loadingToast = !hasSalon ? showToast('📡 データを取得しています…', 'info', null, 0) : null;
   try {
+    // サロンは「営業登録サロン」タブのみを参照（旧サロンIDマッピング/サロンマスターは廃止）
+    const hasSalesReg = SALES_REG_GAS_URL && !/PASTE_YOUR/.test(SALES_REG_GAS_URL);
     const fetches = [
-      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
       fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
     ];
-    // 営業登録サロン用GAS（デプロイ済みなら追加で取得）
-    const hasSalesReg = SALES_REG_GAS_URL && !/PASTE_YOUR/.test(SALES_REG_GAS_URL);
     if (hasSalesReg) fetches.push(fetchWithTimeout(SALES_REG_GAS_URL + '?action=getAll'));
     const responses = await Promise.all(fetches);
     const jsons = await Promise.all(responses.map(r => r.json()));
-    const [smJson, sJson, aJson, srJson] = jsons;
+    const [aJson, srJson] = jsons;
 
+    // サロン: 既存ローカル（活動ログ等の保持）+ 営業登録サロンの最新を反映
     let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-    // サロンマスター（MAPPING_SS）優先で取込
-    if (smJson.ok && smJson.data && smJson.data.length > 0) {
-      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged } = mergeSalons(existing, loaded);
-      existing = merged;
-    }
-    // salonMapping（旧GAS）でsalonIdなどを補完
-    if (sJson.ok && sJson.data && sJson.data.length > 0) {
-      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged } = mergeSalons(existing, loaded);
-      existing = merged;
-    }
-    // 営業登録サロン（新タブ）— ここが「真実のソース」として優先反映
     if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
       const loaded = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      // 営業登録分は既存と同じsalonIdなら上書き（最新を優先）
       const idMap = new Map(existing.map(p => [p.salonId, p]));
       loaded.forEach(p => {
         if (p.salonId && idMap.has(p.salonId)) {
+          // 既存の活動ログ等は保持しつつ、シート側の値で上書き
           Object.assign(idMap.get(p.salonId), p);
         } else {
           existing.push({ ...p, _salesRegistered: true });
@@ -2109,27 +2095,28 @@ async function loadFromSheet() {
   btn.textContent = '⏳';
   btn.disabled = true;
   try {
-    const [smRes, sRes, aRes] = await Promise.all([
-      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
-      fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
-    ]);
-    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
+    // サロンは「営業登録サロン」タブのみを参照
+    const hasSalesReg = SALES_REG_GAS_URL && !/PASTE_YOUR/.test(SALES_REG_GAS_URL);
+    const fetches = [fetchWithTimeout(GAS_URL + '?action=getAll&type=agent')];
+    if (hasSalesReg) fetches.push(fetchWithTimeout(SALES_REG_GAS_URL + '?action=getAll'));
+    const responses = await Promise.all(fetches);
+    const jsons = await Promise.all(responses.map(r => r.json()));
+    const [aJson, srJson] = jsons;
 
     let sAdded = 0, aAdded = 0;
-
     let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
-    // サロンマスター（MAPPING_SS）優先
-    if (smJson.ok && smJson.data && smJson.data.length > 0) {
-      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged, added } = mergeSalons(existing, loaded);
-      sAdded += added; existing = merged;
-    }
-    // salonMapping で補完
-    if (sJson.ok && sJson.data && sJson.data.length > 0) {
-      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged, added } = mergeSalons(existing, loaded);
-      sAdded += added; existing = merged;
+    // 営業登録サロンを反映
+    if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
+      const loaded = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      const idMap = new Map(existing.map(p => [p.salonId, p]));
+      loaded.forEach(p => {
+        if (p.salonId && idMap.has(p.salonId)) {
+          Object.assign(idMap.get(p.salonId), p);
+        } else {
+          existing.push({ ...p, _salesRegistered: true });
+          sAdded++;
+        }
+      });
     }
     localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
     salonPeople = existing;
@@ -2173,23 +2160,17 @@ async function reloadFromSheet() {
       if (p.salonId) savedMap[p.salonId] = { activities: p.activities||[], tags: p.tags||[], memo: p.memo||'', status: p.status||'active', salesRep: p.salesRep||'', targetSistri: p.targetSistri||0, targetSales: p.targetSales||0 };
     });
 
-    const [smRes, sRes, aRes] = await Promise.all([
-      fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
-      fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
-      fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
-    ]);
-    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
+    // サロンは「営業登録サロン」タブのみを参照
+    const hasSalesReg = SALES_REG_GAS_URL && !/PASTE_YOUR/.test(SALES_REG_GAS_URL);
+    const fetches = [fetchWithTimeout(GAS_URL + '?action=getAll&type=agent')];
+    if (hasSalesReg) fetches.push(fetchWithTimeout(SALES_REG_GAS_URL + '?action=getAll'));
+    const responses = await Promise.all(fetches);
+    const jsons = await Promise.all(responses.map(r => r.json()));
+    const [aJson, srJson] = jsons;
 
     let fresh = [];
-    if (smJson.ok && smJson.data && smJson.data.length > 0) {
-      const loaded = smJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged } = mergeSalons(fresh, loaded);
-      fresh = merged;
-    }
-    if (sJson.ok && sJson.data && sJson.data.length > 0) {
-      const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
-      const { merged } = mergeSalons(fresh, loaded);
-      fresh = merged;
+    if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
+      fresh = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
     }
 
     // 退避していた活動ログ等を復元
