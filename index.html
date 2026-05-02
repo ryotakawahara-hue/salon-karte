@@ -2725,6 +2725,13 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       </div>
 
       <!-- 住所（郵便番号＋エリア＋住所） -->
+      <!-- 📍 GPS現在地から自動入力 -->
+      <div class="fg salon-only">
+        <button type="button" class="btn btn-outline" onclick="getCurrentLocationAndFill()" id="gpsLocBtn" style="width:100%; padding:12px; gap:8px">
+          <svg class="icon icon-sm"><use href="#i-map-pin"/></svg>
+          📍 現在地から郵便番号・住所を取得
+        </button>
+      </div>
       <div class="frow">
         <div class="fg" style="flex:0 0 160px">
           <label class="flbl">郵便番号 *</label>
@@ -5284,6 +5291,74 @@ function handleCompanySelect() {
 
 // 郵便番号 → 住所・エリア自動入力（zipcloud API使用）
 // PREF_TO_REGION は別途REGION_MAPから生成済み
+// === 現在地（GPS）から郵便番号・住所・エリアを自動入力 ===
+function getCurrentLocationAndFill() {
+  const btn = document.getElementById('gpsLocBtn');
+  if (!navigator.geolocation) {
+    showToast('このブラウザはGPSに対応していません', 'error', null, 3000);
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 現在地を取得中...'; }
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      try {
+        // Nominatim (OpenStreetMap) で逆ジオコーディング
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&accept-language=ja`);
+        const data = await res.json();
+        if (!data || !data.address) {
+          showToast('住所を取得できませんでした', 'warn', null, 3000);
+          return;
+        }
+        const addr = data.address;
+        // 郵便番号取得
+        const postal = (addr.postcode || '').replace(/[^\d-]/g, '');
+        if (postal) {
+          // ハイフン挿入
+          const digits = postal.replace(/[^\d]/g, '');
+          const formatted = digits.length === 7 ? digits.slice(0,3) + '-' + digits.slice(3) : postal;
+          document.getElementById('pPostalCode').value = formatted;
+          // 既存のzipcloudロジックで正確な住所を再取得
+          if (digits.length === 7) {
+            handlePostalLookup();
+          }
+        }
+        // 郵便番号がない場合、Nominatimの住所を直接セット
+        if (!postal || !document.getElementById('pAddress').value.trim()) {
+          const parts = [
+            addr.state || '',
+            addr.city || addr.town || addr.county || '',
+            addr.suburb || addr.neighbourhood || '',
+            addr.road || addr.house_number || ''
+          ].filter(Boolean);
+          if (parts.length) {
+            document.getElementById('pAddress').value = parts.join('');
+          }
+        }
+        // エリア（地方区分）自動セット
+        if (addr.state && PREF_TO_REGION[addr.state]) {
+          document.getElementById('pArea').value = PREF_TO_REGION[addr.state];
+        }
+        showToast(postal ? `📍 取得完了: ${postal}` : '📍 住所を取得しました', 'success', null, 2500);
+      } catch (e) {
+        showToast('住所取得に失敗しました: ' + e.message, 'error', null, 3000);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-sm"><use href="#i-map-pin"/></svg> 📍 現在地から郵便番号・住所を取得'; }
+      }
+    },
+    (err) => {
+      let msg = 'GPSエラー';
+      if (err.code === 1) msg = '⚠️ 位置情報の許可が必要です（設定で許可してください）';
+      else if (err.code === 2) msg = '位置情報を取得できません';
+      else if (err.code === 3) msg = 'タイムアウトしました（再度お試しください）';
+      showToast(msg, 'error', null, 4000);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="icon icon-sm"><use href="#i-map-pin"/></svg> 📍 現在地から郵便番号・住所を取得'; }
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+}
+
 let _postalLookupTimer = null;
 function handlePostalLookup() {
   const raw = document.getElementById('pPostalCode').value;
