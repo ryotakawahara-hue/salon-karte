@@ -1536,6 +1536,10 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           <input class="finput agent-only" id="pCompanyNew" placeholder="新しい代理店名を入力" style="display:none;margin-top:6px">
           <input class="finput salon-only" id="pCompany" placeholder="">
         </div>
+        <div class="fg salon-only">
+          <label class="flbl">サロン名ふりがな</label>
+          <input class="finput" id="pCompanyKana" placeholder="さろんめい">
+        </div>
       </div>
       <div class="frow">
         <div class="fg">
@@ -1810,6 +1814,8 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 // ── Google Sheets 同期設定 ──────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_DIZq1Ljyt4SwVS10qlqbDfyqKUoxpvp-ehu0qt1pY1xKfw/exec';
 const SELL_MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
+// ▼ 営業登録サロン用GAS — デプロイ後にURLを差し替える
+const SALES_REG_GAS_URL = 'PASTE_YOUR_DEPLOYED_GAS_URL_HERE';
 
 // ── Toast 通知 ──────────────────────────────────────
 function showToast(msg, type = 'info', action = null, duration = 4000) {
@@ -1923,6 +1929,7 @@ function parseSalonRow(row) {
     salonId,
     kamidoraId,
     company,
+    companyKana:  cleanStr(String(row['サロン名ふりがな'] || row['サロン名フリガナ'] || row['ふりがな'] || '')),
     legalName:    cleanStr(String(row['法人名']             || '')),
     name:         cleanStr(String(row['代表者/担当者']       || '')),
     phone:        cleanStr(String(row['電話番号']             || '')),
@@ -2015,12 +2022,17 @@ async function autoLoadFromSheet(isRetry = false) {
   // ローディング表示
   const loadingToast = !hasSalon ? showToast('📡 データを取得しています…', 'info', null, 0) : null;
   try {
-    const [smRes, sRes, aRes] = await Promise.all([
+    const fetches = [
       fetchWithTimeout(SELL_MASTER_GAS_URL + '?action=getAll&type=salonMaster'),
       fetchWithTimeout(GAS_URL + '?action=getAll&type=salonMapping'),
       fetchWithTimeout(GAS_URL + '?action=getAll&type=agent'),
-    ]);
-    const [smJson, sJson, aJson] = await Promise.all([smRes.json(), sRes.json(), aRes.json()]);
+    ];
+    // 営業登録サロン用GAS（デプロイ済みなら追加で取得）
+    const hasSalesReg = SALES_REG_GAS_URL && !/PASTE_YOUR/.test(SALES_REG_GAS_URL);
+    if (hasSalesReg) fetches.push(fetchWithTimeout(SALES_REG_GAS_URL + '?action=getAll'));
+    const responses = await Promise.all(fetches);
+    const jsons = await Promise.all(responses.map(r => r.json()));
+    const [smJson, sJson, aJson, srJson] = jsons;
 
     let existing = JSON.parse(localStorage.getItem('karte_salon_v1') || '[]');
     // サロンマスター（MAPPING_SS）優先で取込
@@ -2034,6 +2046,19 @@ async function autoLoadFromSheet(isRetry = false) {
       const loaded = sJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
       const { merged } = mergeSalons(existing, loaded);
       existing = merged;
+    }
+    // 営業登録サロン（新タブ）— ここが「真実のソース」として優先反映
+    if (srJson && srJson.ok && srJson.data && srJson.data.length > 0) {
+      const loaded = srJson.data.map(parseSalonRow).filter(p => p.company || p.salonId);
+      // 営業登録分は既存と同じsalonIdなら上書き（最新を優先）
+      const idMap = new Map(existing.map(p => [p.salonId, p]));
+      loaded.forEach(p => {
+        if (p.salonId && idMap.has(p.salonId)) {
+          Object.assign(idMap.get(p.salonId), p);
+        } else {
+          existing.push({ ...p, _salesRegistered: true });
+        }
+      });
     }
     localStorage.setItem('karte_salon_v1', JSON.stringify(existing));
     salonPeople = existing;
@@ -2317,6 +2342,45 @@ function syncToSheet(type, data) {
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ type, record }),
   }).catch(err => console.warn('スプレッドシート同期失敗:', err));
+}
+
+// 営業登録サロン用: 新タブ「営業登録サロン」へ UPSERT
+function syncSalonToSalesRegSheet(data, isNew) {
+  if (!SALES_REG_GAS_URL || /PASTE_YOUR/.test(SALES_REG_GAS_URL)) {
+    console.warn('SALES_REG_GAS_URL未設定のためスキップ');
+    return;
+  }
+  const salon = {
+    'サロンID':         data.salonId     || '',
+    'サロン名':         data.company     || '',
+    'サロン名ふりがな': data.companyKana || '',
+    '代理店名':         data.agentName   || '',
+    '代理店支店':       data.agentBranch || '',
+    '代理店担当者':     data.agentContact|| '',
+    '法人名':           data.legalName   || '',
+    '代表者/担当者':    data.name        || '',
+    '電話番号':         data.phone       || '',
+    '所在地':           data.address     || '',
+    'HPBリンク':        data.hpbUrl      || '',
+    '担当営業':         data.salesRep    || '',
+    'サロンタイプ':     data.salonType   || '',
+    'ターゲット層':     data.target      || '',
+    'スタッフ数':       data.staffCount  || '',
+    'グループ店舗数':   data.groupStores || '',
+    '年間取引額目安':   data.annualTarget|| '',
+    '備考':             data.memo        || '',
+  };
+  fetch(SALES_REG_GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'upsert', salon }),
+  }).then(() => {
+    if (isNew) showToast('📊 スプレッドシートに登録しました', 'success', null, 2500);
+  }).catch(err => {
+    console.warn('営業登録シート同期失敗:', err);
+    showToast('スプレッドシート同期失敗（ローカルには保存済）', 'warn', null, 3500);
+  });
 }
 
 // 活動ログを MAPPING_SS の「活動ログ」シートに同期（リトライ付き）
@@ -2669,7 +2733,7 @@ function renderMobileList() {
     // 代理店モードで代理店選択中 → その代理店だけ
     if (currentMode === 'agent' && _mbSelectedAgent && p.company !== _mbSelectedAgent) return false;
     // text search
-    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q)) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q) && !(p.companyKana||'').toLowerCase().includes(q)) return false;
     // filter chip
     if (mobileFilter === 'follow') {
       const hasPending = (p.activities||[]).some(a => a.fuStatus === 'pending');
@@ -2773,7 +2837,7 @@ function renderSidebar() {
   if (filterBar) filterBar.style.display = isAgent ? '' : 'none';
 
   let filtered = getPeople().filter(p => {
-    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q)) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.company.toLowerCase().includes(q) && !(p.companyKana||'').toLowerCase().includes(q)) return false;
     if (isAgent) {
       if (sbFilter === 'follow') {
         if (!(p.activities||[]).some(a => a.fuStatus === 'pending')) return false;
@@ -2960,7 +3024,7 @@ function renderBasic(p) {
       <div class="card-hdr"><div class="card-title">基本情報</div></div>
       <div class="card-body">
         <div class="info-grid">
-          <div class="info-item"><label>サロン名</label><span>${esc(p.company) || '—'}</span></div>
+          <div class="info-item"><label>サロン名</label><span>${esc(p.company) || '—'}${p.companyKana ? `<small style="color:var(--muted);margin-left:6px">(${esc(p.companyKana)})</small>` : ''}</span></div>
           <div class="info-item"><label>サロン法人名</label><span>${esc(p.legalName) || '—'}</span></div>
           <div class="info-item"><label>代表者/キー担当者</label><span>${esc(p.name) || '—'}</span></div>
           <div class="info-item"><label>電話番号</label><span>${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:var(--primary)">${esc(p.phone)}</a>` : '—'}</span></div>
@@ -3117,21 +3181,8 @@ function switchTab(el, id) {
 
 // ── Agent Datalist & Company Select ───────────────
 function refreshAgentList() {
-  // 固定リスト ＋ データに独自登録がある場合はマージ（郵便番号・数字のみ除外）
-  const isValidAgent = v => v && !/^[\d\-]+$/.test(v.trim());
-  const extra = agentPeople.map(p => p.company).filter(isValidAgent)
-    .filter(n => !AGENT_NAMES.includes(n));
-  // salonPeopleのagentNameからも有効な代理店名を補完
-  const fromSalons = salonPeople.map(p => p.agentName).filter(isValidAgent)
-    .filter(n => !AGENT_NAMES.includes(n));
-  const names = [...AGENT_NAMES, ...new Set([...extra, ...fromSalons])].sort((a,b) => {
-    // AGENT_NAMESを先頭に固定
-    const ai = AGENT_NAMES.indexOf(a), bi = AGENT_NAMES.indexOf(b);
-    if (ai >= 0 && bi >= 0) return ai - bi;
-    if (ai >= 0) return -1;
-    if (bi >= 0) return 1;
-    return a.localeCompare(b, 'ja');
-  });
+  // 代理店は固定リストのみ（自由入力不可）
+  const names = [...AGENT_NAMES];
 
   // サロンフォームの担当代理店 select を更新
   const agentSel = document.getElementById('pAgentName');
@@ -3266,6 +3317,7 @@ function openEditModal(id) {
     else { sel.value = '__new__'; inp.style.display = 'block'; inp.value = p.company || ''; }
   }
   document.getElementById('pCompany').value = p.company || '';
+  document.getElementById('pCompanyKana').value = p.companyKana || '';
   document.getElementById('pTitle').value = p.title || '';
   document.getElementById('pPhone').value = p.phone || '';
   document.getElementById('pEmail').value = p.email || '';
@@ -3313,6 +3365,7 @@ function savePerson() {
 
   const data = {
     name, company,
+    companyKana: document.getElementById('pCompanyKana').value.trim(),
     title: document.getElementById('pTitle').value.trim(),
     phone: document.getElementById('pPhone').value.trim(),
     email: document.getElementById('pEmail').value.trim(),
@@ -3341,19 +3394,30 @@ function savePerson() {
   };
 
   const pArr = getPeople();
+  let isNewSalon = false;
   if (editingId) {
     const idx = pArr.findIndex(p => p.id === editingId);
     if (idx >= 0) pArr[idx] = { ...pArr[idx], ...data };
     currentId = editingId;
+    // サロンの編集も新タブへ同期（UPSERT）
+    if (currentMode === 'salon' && pArr[idx] && pArr[idx].salonId) {
+      syncSalonToSalesRegSheet({ ...pArr[idx] }, false);
+    }
   } else {
     // サロン新規登録時: サロンIDを自動付与
     if (currentMode === 'salon') {
       data.salonId = generateSalonId();
+      isNewSalon = true;
     }
     const np = { id: uid(), activities: [], sales: [], ...data };
     pArr.push(np);
     currentId = np.id;
-    syncToSheet(currentMode, data); // 新規追加時のみ同期
+    // サロン: 新タブ「営業登録サロン」に書き込み / 代理店: 既存処理のまま
+    if (currentMode === 'salon') {
+      syncSalonToSalesRegSheet(data, true);
+    } else {
+      syncToSheet(currentMode, data);
+    }
   }
 
   save(); closePersonModal(); renderSidebar(); renderMobileList(); renderMain();
@@ -4046,6 +4110,7 @@ function renderSearchView() {
   const baseFilter = p => {
     const matchQ = !q ||
       (p.company    || '').toLowerCase().includes(q) ||
+      (p.companyKana|| '').toLowerCase().includes(q) ||
       (p.kamidoraId || '').toLowerCase().includes(q) ||
       (p.name       || '').toLowerCase().includes(q) ||
       (p.agentName  || '').toLowerCase().includes(q) ||
