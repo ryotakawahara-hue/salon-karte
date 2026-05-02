@@ -7791,7 +7791,8 @@ document.querySelectorAll('.overlay').forEach(o => {
   if (!getMyName()) {
     setTimeout(() => openIdentityModal(false), 500);
   }
-  switchMode(currentMode);
+  // URLを開いたら常にホーム画面でスタート（前回の状態は保持しない）
+  switchMode('home');
   // Mobile: show list immediately
   if (isMobile()) {
     document.getElementById('mobileListView').style.display = 'flex';
