@@ -1166,16 +1166,21 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dormant-tag { font-size: 10px; background: #e9ecef; color: #6c757d; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
 
 /* ── Home Dashboard ── */
-.dash-wrap { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
+.dash-wrap { padding: 16px 16px 20px; max-width: 600px; margin: 0 auto; }
 .dash-greeting {
-  font-size: 34px; font-weight: 700; margin-bottom: 2px;
+  font-size: 22px; font-weight: 700; margin-bottom: 2px;
   color: var(--text);
-  letter-spacing: -.025em; line-height: 1.15;
+  letter-spacing: -.022em; line-height: 1.25;
+  /* 長い名前でも崩れないよう改行可能に */
+  word-break: keep-all;
+}
+.dash-greeting .icon {
+  width: 22px; height: 22px; vertical-align: -3px; margin-right: 4px;
 }
 .dash-date {
-  font-size: 15px; color: var(--label-secondary); margin-bottom: 24px;
+  font-size: 13px; color: var(--label-secondary); margin-bottom: 20px;
   letter-spacing: -.01em;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 .dash-name-edit {
   background: rgba(0,122,255,.10); color: var(--primary);
@@ -1192,12 +1197,12 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   background: rgba(255,149,0,.12); color: var(--warning);
 }
 .dash-name-set:hover { background: rgba(255,149,0,.20); }
-.dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 .dash-stat {
   background: rgba(255,255,255,.78);
   backdrop-filter: saturate(180%) blur(16px);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
-  border-radius: var(--radius-lg); padding: 16px;
+  border-radius: var(--radius-md); padding: 13px;
   box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 4px 16px rgba(0,0,0,.04);
   cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-spring),
@@ -1215,25 +1220,27 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dash-stat:hover { box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px rgba(0,0,0,.08); transform: translateY(-1px); }
 .dash-stat:active { transform: scale(.96); }
 .dash-stat-icon {
-  width: 36px; height: 36px; border-radius: 10px; display: flex;
+  width: 32px; height: 32px; border-radius: 9px; display: flex;
   align-items: center; justify-content: center; flex-shrink: 0;
 }
-.dash-stat-icon .icon { width: 18px; height: 18px; stroke-width: 2.4; }
+.dash-stat-icon .icon { width: 16px; height: 16px; stroke-width: 2.4; }
 .dash-stat-body { flex: 1; min-width: 0; }
 .dash-stat-num {
-  font-size: 24px; font-weight: 700; line-height: 1.1;
+  font-size: 22px; font-weight: 700; line-height: 1.1;
   letter-spacing: -.022em;
 }
 .dash-stat-lbl {
-  font-size: 12px; color: var(--label-secondary); margin-top: 2px; font-weight: 500;
+  font-size: 11px; color: var(--label-secondary); margin-top: 2px; font-weight: 500;
   letter-spacing: -.005em;
 }
-.dash-section { margin-bottom: 20px; }
+.dash-section { margin-bottom: 18px; }
 .dash-section-title {
-  font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--label-secondary);
+  margin-bottom: 8px; padding: 0 4px;
+  display: flex; align-items: center; gap: 6px;
+  text-transform: uppercase; letter-spacing: .04em;
 }
-.dash-section-title .icon { width: 16px; height: 16px; color: var(--muted); }
+.dash-section-title .icon { width: 14px; height: 14px; color: var(--label-tertiary); }
 .dash-fu-item {
   display: flex; align-items: center; gap: 12px; padding: 14px;
   background: rgba(255,255,255,.78);
@@ -1342,8 +1349,8 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 
 /* メインアクション (新規サロン登録) */
 .dash-primary-action {
-  display: flex; align-items: center; gap: 14px; width: 100%;
-  padding: 18px 20px;
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 18px;
   background:
     linear-gradient(180deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 50%),
     linear-gradient(135deg, var(--primary) 0%, #0A84FF 50%, #0040DD 100%);
@@ -1372,16 +1379,16 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .dash-primary-action:hover { box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 12px 32px rgba(0,122,255,.42); transform: translateY(-1px); }
 .dash-primary-action:active { transform: scale(.98); }
 .dash-primary-icon {
-  width: 48px; height: 48px; border-radius: 14px;
+  width: 40px; height: 40px; border-radius: 12px;
   background: rgba(255,255,255,.22);
   backdrop-filter: blur(10px);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 1px 0 rgba(255,255,255,.3) inset;
 }
-.dash-primary-icon .icon { width: 24px; height: 24px; stroke-width: 2.5; }
-.dash-primary-title { font-size: 17px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
-.dash-primary-sub { font-size: 13px; opacity: .9; margin-top: 3px; letter-spacing: -.01em; }
+.dash-primary-icon .icon { width: 20px; height: 20px; stroke-width: 2.5; }
+.dash-primary-title { font-size: 15px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
+.dash-primary-sub { font-size: 12px; opacity: .85; margin-top: 2px; letter-spacing: -.01em; }
 
 /* 最近のサロン (横スクロール) */
 .dash-recent-row {
