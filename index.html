@@ -75,7 +75,8 @@ button:active, a:active { opacity: .8; transform: scale(.97); transition: none; 
 
 /* ── Mode-specific visibility ── */
 body.mode-agent .salon-only { display: none !important; }
-body.mode-salon .agent-only { display: none !important; }
+body.mode-salon .agent-only,
+body.mode-search .agent-only { display: none !important; }
 
 /* ── SVG Icon System ── */
 .icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.125em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
@@ -3418,10 +3419,13 @@ function importSalonCSV(event) {
 function openAddModal() {
   editingId = null; currentTags = [];
   refreshAgentList();
-  const isAgent = currentMode === 'agent';
+  // body class を信頼してモード判定（mode-agent → 代理店登録 / それ以外 → サロン登録）
+  const isAgent = document.body.classList.contains('mode-agent');
+  // currentMode をbody classと同期させて、保存処理が正しく動くようにする
+  if (!isAgent) currentMode = 'salon';
   document.getElementById('personModalTitle').textContent = isAgent ? '新規カルテ登録（代理店）' : '新規カルテ登録（サロン）';
   document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
-  document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : 'Hair Salon〇〇';
+  document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : '美容室〇〇';
   document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
   ['pName','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pSalonType').value = '';
