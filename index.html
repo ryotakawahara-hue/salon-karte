@@ -2730,6 +2730,11 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </select>
         <input class="finput" id="pCompanyNew" placeholder="新しい代理店名を入力" style="display:none;margin-top:6px">
       </div>
+      <!-- 代理店モード時の支店名 -->
+      <div class="fg agent-only">
+        <label class="flbl">支店名</label>
+        <input class="finput" id="pAgentCompanyBranch" placeholder="例: 東京支店 / 大阪支店">
+      </div>
 
       <!-- 2. サロン法人名 -->
       <div class="fg salon-only">
@@ -2789,10 +2794,10 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           📍 現在地から郵便番号・住所を取得
         </button>
       </div>
-      <div class="frow">
+      <div class="frow salon-only">
         <div class="fg" style="flex:0 0 160px">
           <label class="flbl">郵便番号 *</label>
-          <input class="finput salon-only" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
+          <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
         </div>
         <div class="fg">
           <label class="flbl">エリア</label>
@@ -2808,7 +2813,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           </select>
         </div>
       </div>
-      <div class="fg"><label class="flbl">住所</label><input class="finput" id="pAddress" placeholder="東京都渋谷区〇〇 1-2-3"></div>
+      <div class="fg salon-only"><label class="flbl">住所</label><input class="finput" id="pAddress" placeholder="東京都渋谷区〇〇 1-2-3"></div>
 
       <!-- HPB -->
       <div class="fg salon-only"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
@@ -2955,11 +2960,9 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
-      <div class="fsec agent-only">販売目標（月間）</div>
-      <div class="frow agent-only">
-        <div class="fg"><label class="flbl">シストリ目標数（本/月）</label><input class="finput" id="pTargetSistri" type="number" placeholder="10" min="0"></div>
-        <div class="fg"><label class="flbl">売上目標（万円/月）</label><input class="finput" id="pTargetSales" type="number" placeholder="50" min="0"></div>
-      </div>
+      <!-- 販売目標は表示しない（hidden で値だけ保持） -->
+      <input type="hidden" id="pTargetSistri" value="0">
+      <input type="hidden" id="pTargetSales" value="0">
       <div class="fg"><label class="flbl">メモ</label><textarea class="finput" id="pMemo" placeholder="自由記述..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -3634,6 +3637,7 @@ function parseAgentRow(row) {
   return {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     company:  String(row['代理店名']  || row['company']  || ''),
+    agentCompanyBranch: String(row['支店名'] || row['代理店支店'] || ''),
     name:     String(row['担当者名']  || row['name']     || ''),
     title:    String(row['役職']      || row['title']    || ''),
     phone:    String(row['電話']      || row['tel']      || ''),
@@ -5315,11 +5319,12 @@ function renderBasic(p) {
     <div class="card-hdr"><div class="card-title">基本情報</div></div>
     <div class="card-body">
       <div class="info-grid">
+        <div class="info-item"><label>代理店名</label><span>${esc(p.company) || '—'}</span></div>
+        <div class="info-item"><label>支店名</label><span>${esc(p.agentCompanyBranch) || '—'}</span></div>
+        <div class="info-item"><label>担当者名</label><span>${esc(p.name) || '—'}</span></div>
+        <div class="info-item"><label>役職</label><span>${esc(p.title) || '—'}</span></div>
         <div class="info-item"><label>電話番号</label><span>${p.phone ? `<a href="tel:${esc(p.phone)}" style="color:var(--primary)">${esc(p.phone)}</a>` : '—'}</span></div>
         <div class="info-item"><label>メール</label><span>${p.email ? `<a href="mailto:${esc(p.email)}" style="color:var(--primary)">${esc(p.email)}</a>` : '—'}</span></div>
-        <div class="info-item"><label>エリア</label><span>${esc(p.area) || '—'}</span></div>
-        <div class="info-item"><label>住所</label><span>${esc(p.address) || '—'}</span></div>
-        <div class="info-item"><label>役職</label><span>${esc(p.title) || '—'}</span></div>
       </div>
     </div>
   </div>
@@ -5652,7 +5657,7 @@ function openAddModal() {
   document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
   document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : '美容室〇〇';
   document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
-  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget','pCompMain','pCompShampoo','pCompStraightener','pCompColor'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pAgentCompanyBranch','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget','pCompMain','pCompShampoo','pCompStraightener','pCompColor'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pSalonType').value = '';
   document.getElementById('pCompanySelect').value = '';
   document.getElementById('pCompanyNew').value = '';
@@ -5812,6 +5817,10 @@ function openEditModal(id) {
   }
   document.getElementById('pCompany').value = p.company || '';
   document.getElementById('pCompanyKana').value = p.companyKana || '';
+  // 代理店モードの支店名（agentCompanyBranch）
+  if (document.getElementById('pAgentCompanyBranch')) {
+    document.getElementById('pAgentCompanyBranch').value = p.agentCompanyBranch || '';
+  }
   document.getElementById('pTitle').value = p.title || '';
   document.getElementById('pPhone').value = p.phone || '';
   document.getElementById('pEmail').value = p.email || '';
@@ -5906,6 +5915,7 @@ function savePerson() {
     agentName: document.getElementById('pAgentName').value.trim(),
     agentBranch: document.getElementById('pAgentBranch').value.trim(),
     agentContact: document.getElementById('pAgentContact').value.trim(),
+    agentCompanyBranch: document.getElementById('pAgentCompanyBranch')?.value.trim() || '',
     salesRep: document.getElementById('pSalesRep').value.trim(),
     hpbUrl: document.getElementById('pHpbUrl').value.trim(),
     legalName: document.getElementById('pLegalName').value.trim(),
