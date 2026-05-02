@@ -2460,7 +2460,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   </div>
   <!-- Sticky Add Activity Bar -->
   <div class="mobile-add-act-bar" id="mobileAddActBar" style="display:none">
-    <button class="btn btn-primary" onclick="openActModal()">＋ 活動ログを追加</button>
+    <button class="btn btn-primary" onclick="openActModal()">＋ 営業記録を追加</button>
   </div>
 </div>
 
@@ -2898,7 +2898,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 <div class="overlay" id="actModal">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title" id="actModalTitle">活動ログを追加</div>
+      <div class="modal-title" id="actModalTitle">🟦 営業記録を追加</div>
       <button class="modal-close" onclick="closeActModal()"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="modal-body">
@@ -3187,7 +3187,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 <div class="overlay" id="trainModal">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title">📚 講習ログを追加</div>
+      <div class="modal-title">🟪 講習記録を追加</div>
       <button class="modal-close" onclick="closeTrainingModal()"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="modal-body">
@@ -4785,8 +4785,13 @@ function renderMain() {
         </div>
         ${p.phone ? `<div style="margin-top:6px"><a href="tel:${esc(p.phone)}" style="font-size:13px;color:var(--primary);display:inline-flex;align-items:center;gap:4px">📞 ${esc(p.phone)}</a></div>` : ''}
       </div>
-      <div class="profile-actions">
+      <div class="profile-actions" style="flex-wrap:wrap">
+        ${!isAgent ? `
+        <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:13px;padding:8px 14px;border-radius:10px">🟦 営業記録</button>
+        <button class="btn btn-sm" onclick="openTrainingModal()" style="font-size:13px;padding:8px 14px;border-radius:10px;background:#AF52DE;color:white">🟪 講習記録</button>
+        ` : `
         <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:14px;padding:8px 16px;border-radius:10px">＋ 接点記録</button>
+        `}
         <button class="btn btn-outline btn-sm" onclick="openEditModal('${p.id}')" style="padding:8px 14px;border-radius:10px">編集</button>
         <button class="btn btn-outline btn-sm" onclick="deletePerson('${p.id}')" style="padding:8px 12px;border-radius:10px;color:var(--danger);border-color:var(--danger)">削除</button>
       </div>
@@ -4905,8 +4910,8 @@ function renderTimeline(p) {
       <div class="card-hdr">
         <div class="card-title">タイムライン（営業 + 講師の動き）</div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-primary btn-sm" onclick="openActModal()">＋ 接点</button>
-          <button class="btn btn-outline btn-sm" onclick="openTrainingModal()" style="background:rgba(175,82,222,.10);color:#AF52DE">＋ 講習</button>
+          <button class="btn btn-primary btn-sm" onclick="openActModal()" style="font-size:12px;padding:6px 12px">🟦 営業記録</button>
+          <button class="btn btn-sm" onclick="openTrainingModal()" style="background:#AF52DE;color:white;font-size:12px;padding:6px 12px">🟪 講習記録</button>
         </div>
       </div>
       <div class="card-body" style="padding:8px 18px 18px">
@@ -4993,9 +4998,14 @@ function renderBasic(p) {
       <div class="card-body" style="padding-top:14px">
         ${lastSummary}
         ${nextSummary}
-        <button class="btn btn-primary" onclick="openActModal()" style="width:100%; margin-top:10px">
-          <svg class="icon icon-sm"><use href="#i-plus"/></svg> 接点を記録する
-        </button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px">
+          <button class="btn btn-primary" onclick="openActModal()">
+            <svg class="icon icon-sm"><use href="#i-plus"/></svg> 営業記録
+          </button>
+          <button class="btn" onclick="openTrainingModal()" style="background:#AF52DE;color:white">
+            <svg class="icon icon-sm"><use href="#i-plus"/></svg> 講習記録
+          </button>
+        </div>
       </div>
     </div>`;
 
@@ -5996,7 +6006,7 @@ function toggleActDetails() {
 function closeActModal() {
   document.getElementById('actModal').classList.remove('open');
   _quickActPersonId = null;
-  document.getElementById('actModalTitle').textContent = '活動ログを追加';
+  document.getElementById('actModalTitle').textContent = '🟦 営業記録を追加';
 }
 
 function saveAct() {
@@ -6387,7 +6397,7 @@ let _quickActPersonId = null;
 function openActModalForPerson(personId) {
   _quickActPersonId = personId;
   const p = getPerson(personId);
-  if (p) document.getElementById('actModalTitle').textContent = `活動ログを追加 — ${p.company}`;
+  if (p) document.getElementById('actModalTitle').textContent = `🟦 営業記録を追加 — ${p.company}`;
   openActModal();
 }
 
