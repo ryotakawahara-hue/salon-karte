@@ -1228,6 +1228,63 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 .stage-badge-lg {
   padding: 6px 14px; font-size: 14px;
 }
+/* === HQC (B層A化・髪質改善カラー) KPI === */
+.hqc-kpi-card {
+  background: linear-gradient(135deg, rgba(255,45,85,.06), rgba(255,45,85,.02));
+  border: 1px solid rgba(255,45,85,.18);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+.hqc-kpi-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 12px;
+}
+.hqc-kpi-tile {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer; font-family: inherit; border: none;
+  transition: transform var(--duration-fast) var(--ease-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+.hqc-kpi-tile:active { transform: scale(.94); }
+.hqc-kpi-icon { font-size: 20px; margin-bottom: 2px; }
+.hqc-kpi-num { font-size: 26px; font-weight: 700; line-height: 1.1; letter-spacing: -.022em; }
+.hqc-kpi-lbl { font-size: 11px; color: var(--label-secondary); font-weight: 500; margin-top: 2px; }
+.hqc-conversion {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.hqc-action-btn {
+  width: 100%; padding: 11px 14px;
+  background: rgba(255,149,0,.10); color: var(--warning);
+  border: none; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: inherit; letter-spacing: -.01em;
+  transition: all var(--duration-fast) var(--ease-standard);
+  margin-top: 4px;
+}
+.hqc-action-btn:hover { background: rgba(255,149,0,.18); }
+.hqc-action-btn:active { transform: scale(.98); }
+.hqc-action-btn .icon { width: 14px; height: 14px; stroke-width: 2.5; }
+.hqc-rejects {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.hqc-reject-row {
+  display: flex; align-items: center;
+  font-size: 13px; padding: 4px 0;
+  letter-spacing: -.005em;
+  border-bottom: .5px solid var(--separator);
+}
+.hqc-reject-row:last-child { border-bottom: none; }
+
 /* === Strategy KPI (ホーム画面の達成率バー) === */
 .strategy-kpi {
   background: rgba(255,255,255,.78);
@@ -2701,6 +2758,37 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         <input type="hidden" id="pAdoptionLevel" value="">
       </div>
 
+      <!-- B層A化（髪質改善カラー）専用セクション -->
+      <div class="fsec salon-only" style="color:#FF2D55">🎨 B層A化（髪質改善カラー）</div>
+      <div class="fg salon-only">
+        <label class="flbl">推奨サロン</label>
+        <label class="bool-opt" id="pHqcRecommendedLabel" onclick="toggleBoolOpt(this,'pHqcRecommended')">
+          <input type="checkbox" id="pHqcRecommended">
+          <span class="bool-icon">🎯</span><span id="pHqcRecommendedText">このサロンを髪質改善カラー提案の重点先にする</span>
+        </label>
+      </div>
+      <div class="fg salon-only">
+        <label class="flbl">提案ステータス</label>
+        <div class="stage-picker" id="pHqcPicker"></div>
+        <input type="hidden" id="pHqcStatus" value="">
+      </div>
+      <div class="frow salon-only">
+        <div class="fg" id="pHqcProposedDateWrap" style="display:none">
+          <label class="flbl">提案日</label>
+          <input class="finput" id="pHqcProposedDate" type="date">
+        </div>
+        <div class="fg" id="pHqcAdoptedDateWrap" style="display:none">
+          <label class="flbl">導入日</label>
+          <input class="finput" id="pHqcAdoptedDate" type="date">
+        </div>
+      </div>
+      <div class="fg salon-only" id="pHqcRejectReasonWrap" style="display:none">
+        <label class="flbl">不採用理由</label>
+        <select class="finput" id="pHqcRejectReason">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+
       <!-- 競合製品情報 -->
       <div class="fsec salon-only">競合・現使用製品</div>
       <div class="frow salon-only">
@@ -3369,6 +3457,12 @@ function parseSalonRow(row) {
     lostReason:   String(row['失注理由']             || ''),
     lostDate:     String(row['失注日']               || ''),
     adoptionLevel: String(row['導入レベル']          || ''),
+    // B層A化（髪質改善カラー）
+    hqcStatus:       String(row['髪質改善カラー状態'] || ''),
+    hqcProposedDate: String(row['髪質改善カラー提案日'] || ''),
+    hqcAdoptedDate:  String(row['髪質改善カラー導入日'] || ''),
+    hqcRejectReason: String(row['髪質改善カラー不採用理由'] || ''),
+    hqcRecommended:  row['髪質改善カラー推奨'] === 'true' || row['髪質改善カラー推奨'] === true,
     // 競合製品情報
     compShampoo:    cleanStr(String(row['競合シャンプー']   || '')),
     compStraightener: cleanStr(String(row['競合矯正剤']     || '')),
@@ -3836,6 +3930,12 @@ function syncSalonToSalesRegSheet(data, isNew) {
     '失注理由':         data.lostReason  || '',
     '失注日':           data.lostDate    || '',
     '導入レベル':       data.adoptionLevel || '',
+    // B層A化（髪質改善カラー）
+    '髪質改善カラー状態':       data.hqcStatus       || '',
+    '髪質改善カラー提案日':     data.hqcProposedDate || '',
+    '髪質改善カラー導入日':     data.hqcAdoptedDate  || '',
+    '髪質改善カラー不採用理由': data.hqcRejectReason || '',
+    '髪質改善カラー推奨':       data.hqcRecommended ? 'true' : '',
     // 競合情報
     '主要取引メーカー': data.compMain    || '',
     '切替可能性':       data.switchPot   || '',
@@ -4045,6 +4145,28 @@ const LOST_REASONS = [
 
 // 切替可能性
 const SWITCH_POTENTIAL = ['高（積極的に切替検討）', '中（条件次第）', '低（既存メーカー固定）'];
+
+// === 髪質改善カラー（B層A化）ステータス ===
+const HQC_STATUSES = [
+  { id: '',          label: '未提案',         icon: '⚪', color: '#8E8E93', bgColor: 'rgba(142,142,147,.12)' },
+  { id: 'proposed',  label: '提案済',         icon: '💡', color: '#5AC8FA', bgColor: 'rgba(90,200,250,.15)' },
+  { id: 'closing',   label: 'クロージング中', icon: '🤝', color: '#FF9500', bgColor: 'rgba(255,149,0,.15)' },
+  { id: 'adopted',   label: '導入済',         icon: '✅', color: '#34C759', bgColor: 'rgba(52,199,89,.18)' },
+  { id: 'rejected',  label: '不採用',         icon: '❌', color: '#FF3B30', bgColor: 'rgba(255,59,48,.15)' },
+];
+function getHQCStatus(id) { return HQC_STATUSES.find(s => s.id === (id || '')) || HQC_STATUSES[0]; }
+
+// 髪質改善カラー 不採用理由
+const HQC_REJECT_REASONS = [
+  '価格が合わない',
+  '既存薬剤との相性',
+  'スタッフの理解不足',
+  '売上見込みが立たない',
+  '試した結果、効果が分からなかった',
+  'お客様反応が薄い',
+  'タイミングが合わない',
+  'その他',
+];
 
 // === 戦略タスク（メーカーとしてサロンに対してやるべきこと） ===
 const STRATEGY_TASKS = [
@@ -4884,6 +5006,28 @@ function renderBasic(p) {
       </div>
     </div>`;
 
+    // B層A化（髪質改善カラー）バッジ
+    const hqc = getHQCStatus(p.hqcStatus);
+    const hqcBadge = `<span class="stage-badge stage-badge-lg" style="background:${hqc.bgColor};color:${hqc.color}">${hqc.icon} 髪改カラー: ${hqc.label}</span>`;
+    const hqcRecommendBadge = p.hqcRecommended ? '<span class="stage-badge" style="background:rgba(255,45,85,.15);color:#FF2D55">🎯 推奨先</span>' : '';
+    const hqcDetailCard = (p.hqcStatus || p.hqcRecommended) ? `
+    <div class="card" style="border-left: 3px solid #FF2D55">
+      <div class="card-hdr">
+        <div class="card-title" style="color:#FF2D55">🎨 B層A化（髪質改善カラー）</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px">
+          ${hqcRecommendBadge}
+          ${hqcBadge}
+        </div>
+        ${p.hqcProposedDate ? `<div style="font-size:13px; color:var(--label-secondary)">💡 提案日: ${p.hqcProposedDate}</div>` : ''}
+        ${p.hqcAdoptedDate ? `<div style="font-size:13px; color:var(--success); font-weight:600; margin-top:4px">✅ 導入日: ${p.hqcAdoptedDate}</div>` : ''}
+        ${p.hqcStatus === 'rejected' && p.hqcRejectReason ? `<div style="background:rgba(255,59,48,.10); border-radius:8px; padding:8px 12px; margin-top:8px">
+          <div style="font-size:11px; color:var(--danger); font-weight:600; margin-bottom:2px">❌ 不採用理由</div>
+          <div style="font-size:13px; font-weight:500">${esc(p.hqcRejectReason)}</div>
+        </div>` : ''}
+      </div>
+    </div>` : '';
     return `
     ${summaryCard}
     <div class="card">
@@ -4898,6 +5042,7 @@ function renderBasic(p) {
         </div>
       </div>
     </div>
+    ${hqcDetailCard}
     ${lostCard}
     <div class="card">
       <div class="card-hdr"><div class="card-title">基本情報</div></div>
@@ -5249,6 +5394,16 @@ function openAddModal() {
     document.getElementById('pAdoptionLevel').value = '';
     initAdoptionPicker('');
   }
+  // 髪質改善カラー
+  if (document.getElementById('pHqcStatus')) {
+    document.getElementById('pHqcStatus').value = '';
+    initHqcPicker('');
+    initHqcRejectReasonOptions();
+    document.getElementById('pHqcProposedDate').value = '';
+    document.getElementById('pHqcAdoptedDate').value = '';
+    document.getElementById('pHqcRejectReason').value = '';
+    setBoolOpt('pHqcRecommended', false);
+  }
   renderTags();
   const modal = document.getElementById('personModal');
   modal.classList.add('open');
@@ -5296,6 +5451,50 @@ function selectAdoption(id) {
   const cur = document.getElementById('pAdoptionLevel').value;
   document.getElementById('pAdoptionLevel').value = (cur === id) ? '' : id;
   initAdoptionPicker(document.getElementById('pAdoptionLevel').value);
+}
+
+// 髪質改善カラー ステータスピッカー
+function initHqcPicker(currentStatus) {
+  const picker = document.getElementById('pHqcPicker');
+  if (!picker) return;
+  picker.innerHTML = HQC_STATUSES.map(s => `
+    <button type="button" class="stage-chip ${s.id === currentStatus ? 'active' : ''}"
+            data-hqc="${s.id}" onclick="selectHqc('${s.id}')"
+            style="${s.id === currentStatus ? `background:${s.bgColor};color:${s.color}` : ''}">
+      ${s.icon} ${s.label}
+    </button>
+  `).join('');
+  toggleHqcDateVisibility(currentStatus);
+}
+function selectHqc(id) {
+  document.getElementById('pHqcStatus').value = id;
+  initHqcPicker(id);
+  // 自動で日付を入れる
+  const today = toDay();
+  if (id === 'proposed' && !document.getElementById('pHqcProposedDate').value) {
+    document.getElementById('pHqcProposedDate').value = today;
+  }
+  if (id === 'adopted' && !document.getElementById('pHqcAdoptedDate').value) {
+    document.getElementById('pHqcAdoptedDate').value = today;
+  }
+}
+function toggleHqcDateVisibility(status) {
+  const propWrap = document.getElementById('pHqcProposedDateWrap');
+  const adoptWrap = document.getElementById('pHqcAdoptedDateWrap');
+  const rejectWrap = document.getElementById('pHqcRejectReasonWrap');
+  if (propWrap) propWrap.style.display = (status === 'proposed' || status === 'closing' || status === 'adopted' || status === 'rejected') ? 'block' : 'none';
+  if (adoptWrap) adoptWrap.style.display = status === 'adopted' ? 'block' : 'none';
+  if (rejectWrap) rejectWrap.style.display = status === 'rejected' ? 'block' : 'none';
+}
+function initHqcRejectReasonOptions() {
+  const sel = document.getElementById('pHqcRejectReason');
+  if (!sel) return;
+  if (sel.children.length > 1) return;
+  HQC_REJECT_REASONS.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r; o.textContent = r;
+    sel.appendChild(o);
+  });
 }
 function initLostReasonOptions() {
   const sel = document.getElementById('pLostReason');
@@ -5366,6 +5565,16 @@ function openEditModal(id) {
   if (document.getElementById('pAdoptionLevel')) {
     document.getElementById('pAdoptionLevel').value = p.adoptionLevel || '';
     initAdoptionPicker(p.adoptionLevel || '');
+  }
+  // 髪質改善カラー
+  if (document.getElementById('pHqcStatus')) {
+    document.getElementById('pHqcStatus').value = p.hqcStatus || '';
+    initHqcPicker(p.hqcStatus || '');
+    initHqcRejectReasonOptions();
+    document.getElementById('pHqcProposedDate').value = p.hqcProposedDate || '';
+    document.getElementById('pHqcAdoptedDate').value = p.hqcAdoptedDate || '';
+    document.getElementById('pHqcRejectReason').value = p.hqcRejectReason || '';
+    setBoolOpt('pHqcRecommended', p.hqcRecommended || false);
   }
   // 競合・現使用製品
   document.getElementById('pCompMain').value = p.compMain || '';
@@ -5440,6 +5649,12 @@ function savePerson() {
     lostReason: document.getElementById('pLostReason')?.value || '',
     lostDate: (document.getElementById('pSalesStage')?.value === 'lost') ? toDay() : '',
     adoptionLevel: document.getElementById('pAdoptionLevel')?.value || '',
+    // B層A化（髪質改善カラー）
+    hqcStatus:       document.getElementById('pHqcStatus')?.value || '',
+    hqcProposedDate: document.getElementById('pHqcProposedDate')?.value || '',
+    hqcAdoptedDate:  document.getElementById('pHqcAdoptedDate')?.value || '',
+    hqcRejectReason: document.getElementById('pHqcRejectReason')?.value || '',
+    hqcRecommended:  document.getElementById('pHqcRecommended')?.checked || false,
     compMain:        document.getElementById('pCompMain')?.value.trim() || '',
     switchPot:       document.getElementById('pSwitchPot')?.value || '',
     compShampoo:     document.getElementById('pCompShampoo')?.value.trim() || '',
@@ -6375,7 +6590,16 @@ function renderSearchView() {
     // 提案ステージフィルタ（ホームから遷移した場合）
     const matchStage = !_svStageFilter || (p.salesStage || 'lead') === _svStageFilter;
     const matchAdoption = !_svAdoptionFilter || p.adoptionLevel === _svAdoptionFilter;
-    return matchQ && matchAgent && matchType && matchRep && matchArea && matchStage && matchAdoption;
+    // 髪質改善カラー フィルタ
+    let matchHqc = true;
+    if (_svHqcFilter) {
+      if (_svHqcFilter === 'recommend_pending') {
+        matchHqc = p.hqcRecommended && !p.hqcStatus;
+      } else {
+        matchHqc = (p.hqcStatus || '') === _svHqcFilter;
+      }
+    }
+    return matchQ && matchAgent && matchType && matchRep && matchArea && matchStage && matchAdoption && matchHqc;
   };
 
   const baseResults = salonPeople.filter(baseFilter);
@@ -7125,6 +7349,74 @@ function renderDashboard() {
     </div>`;
 
 
+    // 🎨 B層A化（髪質改善カラー）KPI - 営業最重要指標
+    if (mySalons.length > 0) {
+      const proposedSalons = mySalons.filter(p => p.hqcStatus && p.hqcStatus !== '');
+      const adoptedSalons = mySalons.filter(p => p.hqcStatus === 'adopted');
+      const rejectedSalons = mySalons.filter(p => p.hqcStatus === 'rejected');
+      const closingSalons = mySalons.filter(p => p.hqcStatus === 'closing');
+      const recommendedNotProposed = mySalons.filter(p => p.hqcRecommended && !p.hqcStatus);
+      const conversionRate = proposedSalons.length > 0 ? Math.round(adoptedSalons.length / proposedSalons.length * 100) : 0;
+
+      // 不採用理由の集計
+      const rejectReasonCounts = {};
+      rejectedSalons.forEach(p => {
+        const r = p.hqcRejectReason || '理由未記録';
+        rejectReasonCounts[r] = (rejectReasonCounts[r] || 0) + 1;
+      });
+      const topReasons = Object.entries(rejectReasonCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+      html += `<div class="dash-section">
+        <div class="dash-section-title" style="color:#FF2D55">🎨 ${myName ? '私の' : ''}B層A化（髪質改善カラー）</div>
+        <div class="hqc-kpi-card">
+          <div class="hqc-kpi-grid">
+            <div class="hqc-kpi-tile" onclick="openSalonsByHqc('proposed')" style="background:rgba(90,200,250,.10)">
+              <div class="hqc-kpi-icon">💡</div>
+              <div class="hqc-kpi-num" style="color:#5AC8FA">${proposedSalons.length}</div>
+              <div class="hqc-kpi-lbl">提案済</div>
+            </div>
+            <div class="hqc-kpi-tile" onclick="openSalonsByHqc('closing')" style="background:rgba(255,149,0,.10)">
+              <div class="hqc-kpi-icon">🤝</div>
+              <div class="hqc-kpi-num" style="color:#FF9500">${closingSalons.length}</div>
+              <div class="hqc-kpi-lbl">クロージング中</div>
+            </div>
+            <div class="hqc-kpi-tile" onclick="openSalonsByHqc('adopted')" style="background:rgba(52,199,89,.10)">
+              <div class="hqc-kpi-icon">✅</div>
+              <div class="hqc-kpi-num" style="color:#34C759">${adoptedSalons.length}</div>
+              <div class="hqc-kpi-lbl">導入済</div>
+            </div>
+          </div>
+          <div class="hqc-conversion">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div>
+                <div style="font-size:11px; color:var(--label-secondary); font-weight:500">提案 → 導入 転換率</div>
+                <div style="font-size:24px; font-weight:700; color:#FF2D55; letter-spacing:-.022em; line-height:1.1">${conversionRate}<span style="font-size:14px">%</span></div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px; color:var(--label-secondary); font-weight:500">推奨先で未提案</div>
+                <div style="font-size:18px; font-weight:700; color:${recommendedNotProposed.length > 0 ? 'var(--warning)' : 'var(--label-tertiary)'}; letter-spacing:-.022em">${recommendedNotProposed.length}<span style="font-size:12px">件</span></div>
+              </div>
+            </div>
+          </div>
+          ${recommendedNotProposed.length > 0 ? `
+          <button class="hqc-action-btn" onclick="openSalonsByHqc('recommend_pending')">
+            <span>🎯 推奨サロンに提案を進める</span>
+            <svg class="icon"><use href="#i-chevron-right"/></svg>
+          </button>` : ''}
+          ${rejectedSalons.length > 0 ? `
+          <div class="hqc-rejects">
+            <div style="font-size:12px; font-weight:600; color:var(--danger); margin-bottom:6px; padding:0 4px">❌ 不採用理由 TOP3 (${rejectedSalons.length}件)</div>
+            ${topReasons.map(r => `
+              <div class="hqc-reject-row">
+                <span style="flex:1">${esc(r[0])}</span>
+                <span style="color:var(--danger); font-weight:600">${r[1]}件</span>
+              </div>
+            `).join('')}
+          </div>` : ''}
+        </div>
+      </div>`;
+    }
+
     // 全社の動き（全営業・全講師の今週の動き）
     const allActsWeek = allActs.filter(a => a.date >= weekStartStr);
     const allTrainingsWeek = salonPeople.flatMap(p => (p.trainings || []).map(t => ({ ...t, _person: p })))
@@ -7409,6 +7701,25 @@ function openSalonsByAdoption(adoptionId) {
     if (typeof renderSearchView === 'function') renderSearchView();
     const a = getAdoption(adoptionId);
     if (a) showToast(`${a.icon} ${a.label}でフィルタ中`, 'info', { label: '解除', fn: () => { _svStageFilter = ''; _svAdoptionFilter = ''; renderSearchView(); } }, 5000);
+  }, 100);
+}
+
+// 髪質改善カラー ステータス別フィルタ
+let _svHqcFilter = '';
+function openSalonsByHqc(filterId) {
+  _svStageFilter = '';
+  _svAdoptionFilter = '';
+  _svHqcFilter = filterId;
+  switchMode('search');
+  setTimeout(() => {
+    if (typeof renderSearchView === 'function') renderSearchView();
+    let label = '';
+    if (filterId === 'recommend_pending') label = '🎯 推奨先・未提案';
+    else {
+      const s = getHQCStatus(filterId);
+      label = `🎨 髪改カラー ${s.label}`;
+    }
+    showToast(`${label}でフィルタ中`, 'info', { label: '解除', fn: () => { _svHqcFilter = ''; renderSearchView(); } }, 5000);
   }, 100);
 }
 
