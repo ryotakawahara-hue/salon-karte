@@ -139,9 +139,9 @@ body {
   from { opacity: 0; transform: translateY(12px) scale(.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* backwards: アニメーション開始前は from を、終了後は要素本来のスタイル（opacity:1）を維持 */
 .cascade > * {
-  opacity: 0;
-  animation: ios-cascade var(--duration-slow) var(--ease-emphasized) forwards;
+  animation: ios-cascade var(--duration-slow) var(--ease-emphasized) backwards;
 }
 .cascade > *:nth-child(1) { animation-delay: .04s; }
 .cascade > *:nth-child(2) { animation-delay: .08s; }
@@ -1168,22 +1168,30 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 /* ── Home Dashboard ── */
 .dash-wrap { padding: 20px 16px; max-width: 600px; margin: 0 auto; }
 .dash-greeting {
-  font-size: 34px; font-weight: 700; margin-bottom: 2px; color: var(--text);
+  font-size: 34px; font-weight: 700; margin-bottom: 2px;
+  color: var(--text);
   letter-spacing: -.025em; line-height: 1.15;
-  animation: ios-slide-down var(--duration-slow) var(--ease-emphasized);
-  /* iOS Large Title */
-  background: linear-gradient(180deg, var(--text) 0%, rgba(0,0,0,.85) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 .dash-date {
   font-size: 15px; color: var(--label-secondary); margin-bottom: 24px;
   letter-spacing: -.01em;
-  animation: ios-slide-down var(--duration-slow) var(--ease-emphasized);
-  animation-delay: .04s;
-  animation-fill-mode: backwards;
+  display: flex; align-items: center; gap: 10px;
 }
+.dash-name-edit {
+  background: rgba(0,122,255,.10); color: var(--primary);
+  border: none; padding: 4px 10px; border-radius: 9999px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: inherit; letter-spacing: -.01em;
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+.dash-name-edit:hover { background: rgba(0,122,255,.18); }
+.dash-name-edit:active { transform: scale(.94); }
+.dash-name-edit .icon { width: 12px; height: 12px; stroke-width: 2.5; }
+.dash-name-set {
+  background: rgba(255,149,0,.12); color: var(--warning);
+}
+.dash-name-set:hover { background: rgba(255,149,0,.20); }
 .dash-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
 .dash-stat {
   background: rgba(255,255,255,.78);
@@ -2596,6 +2604,29 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 </div>
 
 <!-- ── Training Modal （講習ログ） ── -->
+<!-- ── My Identity Modal （初回起動 or 名前変更） ── -->
+<div class="overlay" id="identityModal">
+  <div class="modal" style="max-width: 420px">
+    <div class="modal-hdr">
+      <div class="modal-title">あなたの名前を教えてください</div>
+      <button class="modal-close" onclick="closeIdentityModal()" style="display:none" id="identityClose"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px; color:var(--label-secondary); margin-bottom:16px; line-height:1.5">
+        営業ごとの活動を集計するため、あなたの名前を設定します。<br>
+        この情報はこの端末にのみ保存され、活動ログ記録時に自動入力されます。
+      </div>
+      <div class="fg">
+        <label class="flbl">あなたの名前 *</label>
+        <input class="finput" id="myNameInput" placeholder="例: 髪ドラ太郎" autocomplete="name">
+      </div>
+    </div>
+    <div class="modal-footer" style="gap:10px">
+      <button class="btn btn-primary btn-lg" onclick="saveMyIdentity()" style="flex:1">設定する</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="trainModal">
   <div class="modal">
     <div class="modal-hdr">
@@ -4737,7 +4768,7 @@ function openActModal() {
 
   // 詳細フィールドリセット
   document.getElementById('aDate').value = toDay();
-  document.getElementById('aRepName').value = localStorage.getItem('karte_last_rep') || '';
+  document.getElementById('aRepName').value = getMyName() || localStorage.getItem('karte_last_rep') || '';
   document.getElementById('aKind').value = '未導入訪問';
   document.querySelectorAll('#aKindChips .type-chip').forEach(c =>
     c.classList.toggle('active', c.dataset.val === '未導入訪問'));
@@ -5906,29 +5937,34 @@ function copyReport() {
 // ── Home Dashboard ───────────────────────────────
 function renderDashboard() {
   const today = toDay();
+  const myName = getMyName();
   const allPeople = [...agentPeople, ...salonPeople];
   const allActs = allPeople.flatMap(p => (p.activities || []).map(a => ({ ...a, _person: p })));
 
-  // 今日の活動件数
-  const todayActs = allActs.filter(a => a.date === today);
+  // 自分の活動だけフィルタ（営業ごとに独立した数字を表示）
+  const isMine = (a) => myName && (a.repName === myName || (a._person.salesRep === myName && !a.repName));
+  const myActs = myName ? allActs.filter(isMine) : allActs;
 
-  // 今週の活動件数（月曜起点）
+  // 今日の活動件数 (自分のもの)
+  const todayActs = myActs.filter(a => a.date === today);
+
+  // 今週の活動件数（月曜起点・自分のもの）
   const now = new Date();
   const dayOfWeek = now.getDay() || 7;
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - dayOfWeek + 1);
   const weekStartStr = weekStart.toISOString().slice(0, 10);
-  const weekActs = allActs.filter(a => a.date >= weekStartStr && a.date <= today);
+  const weekActs = myActs.filter(a => a.date >= weekStartStr && a.date <= today);
 
-  // 要フォローアップ
-  const pendingFUs = allActs
+  // 要フォローアップ (自分のもの)
+  const pendingFUs = myActs
     .filter(a => a.fuStatus === 'pending')
     .sort((a, b) => (a.fuDate || '9999').localeCompare(b.fuDate || '9999'));
   const overdueFUs = pendingFUs.filter(a => a.fuDate && a.fuDate < today);
   const todayFUs = pendingFUs.filter(a => a.fuDate === today);
   const upcomingFUs = pendingFUs.filter(a => a.fuDate && a.fuDate > today && a.fuDate <= new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10));
 
-  // 最近の活動 (10件)
+  // 最近の活動 (全員、10件)
   const recentActs = [...allActs]
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
     .slice(0, 10);
@@ -5969,9 +6005,12 @@ function renderDashboard() {
   const greetText = nowDate.getHours() < 11 ? 'おはようございます' : nowDate.getHours() < 17 ? 'おつかれさまです' : 'おつかれさまでした';
   const dormantCount = salonPeople.filter(p => { const ld = (p.activities||[]).reduce((m,a) => a.date>m?a.date:m,''); return (ld ? Math.floor((new Date()-new Date(ld))/86400000) : 9999) >= 60; }).length;
 
+  // 名前のサフィックス（設定済みなら「○○さん」を表示）
+  const namePart = myName ? `${esc(myName)}さん、` : '';
+
   let html = `
-    <div class="dash-greeting"><svg class="icon icon-md" style="vertical-align:-3px;margin-right:4px"><use href="${greetIcon}"/></svg>${greetText}</div>
-    <div class="dash-date">${dateStr}</div>
+    <div class="dash-greeting"><svg class="icon icon-md" style="vertical-align:-3px;margin-right:4px"><use href="${greetIcon}"/></svg>${namePart}${greetText}</div>
+    <div class="dash-date">${dateStr} ${myName ? `<button class="dash-name-edit" onclick="openIdentityModal(true)" title="名前を変更"><svg class="icon"><use href="#i-edit"/></svg></button>` : `<button class="dash-name-edit dash-name-set" onclick="openIdentityModal(true)">＋ 名前を設定</button>`}</div>
 
     <!-- 検索バー（ホームから直接サロン検索） -->
     <div class="dash-search-wrap">
@@ -5994,14 +6033,14 @@ function renderDashboard() {
         <div class="dash-stat-icon" style="background:var(--primary-bg);color:var(--primary)"><svg class="icon"><use href="#i-activity"/></svg></div>
         <div class="dash-stat-body">
           <div class="dash-stat-num" style="color:var(--primary)">${todayActs.length}</div>
-          <div class="dash-stat-lbl">今日の活動</div>
+          <div class="dash-stat-lbl">${myName ? '私の' : ''}今日の活動</div>
         </div>
       </div>
       <div class="dash-stat" onclick="switchMode('report')">
         <div class="dash-stat-icon" style="background:#EFF6FF;color:#2563EB"><svg class="icon"><use href="#i-trending-up"/></svg></div>
         <div class="dash-stat-body">
           <div class="dash-stat-num" style="color:#2563EB">${weekActs.length}</div>
-          <div class="dash-stat-lbl">今週の活動</div>
+          <div class="dash-stat-lbl">${myName ? '私の' : ''}今週の活動</div>
         </div>
       </div>
       <div class="dash-stat" onclick="switchMode('search');setTimeout(()=>{const c=document.querySelector('[data-q=\\'overdue\\']')||document.querySelector('[data-q=\\'pending\\']');if(c)c.click();},100)">
@@ -6153,6 +6192,35 @@ function clearDashSearch() {
 }
 
 // 最近開いたサロンを記録
+// ── My Identity System (営業ごとに自分の名前を保持) ──
+const MY_NAME_KEY = 'karte_my_name';
+function getMyName() {
+  return localStorage.getItem(MY_NAME_KEY) || '';
+}
+function openIdentityModal(allowClose = true) {
+  const myName = getMyName();
+  document.getElementById('myNameInput').value = myName || '';
+  document.getElementById('identityClose').style.display = allowClose ? 'flex' : 'none';
+  document.getElementById('identityModal').classList.add('open');
+  setTimeout(() => document.getElementById('myNameInput').focus(), 100);
+}
+function closeIdentityModal() {
+  document.getElementById('identityModal').classList.remove('open');
+}
+function saveMyIdentity() {
+  const name = document.getElementById('myNameInput').value.trim();
+  if (!name) { alert('名前を入力してください'); return; }
+  localStorage.setItem(MY_NAME_KEY, name);
+  closeIdentityModal();
+  // 活動ログのデフォルト記入名にも反映
+  localStorage.setItem('karte_last_rep', name);
+  showToast(`${name} として設定しました`, 'success', null, 2200);
+  // 即座にダッシュボードを更新
+  if (currentMode === 'home' || document.body.classList.contains('mode-home')) {
+    renderDashboard();
+  }
+}
+
 function rememberRecentSalon(id) {
   if (!id) return;
   let list = JSON.parse(localStorage.getItem('karte_recent_salons') || '[]');
@@ -6167,6 +6235,10 @@ document.querySelectorAll('.overlay').forEach(o => {
 
 // ── Init ──────────────────────────────────────────
 (function init() {
+  // 初回起動時: 名前が未設定なら設定モーダルを表示（閉じれない）
+  if (!getMyName()) {
+    setTimeout(() => openIdentityModal(false), 500);
+  }
   switchMode(currentMode);
   // Mobile: show list immediately
   if (isMobile()) {
