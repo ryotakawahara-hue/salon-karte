@@ -97,38 +97,13 @@
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
-  /* === iOS 18+ Liquid Glass: 強い色味の壁紙感 === */
-  background:
-    radial-gradient(circle at 15% 10%, rgba(0,122,255,.20) 0%, transparent 40%),
-    radial-gradient(circle at 85% 90%, rgba(175,82,222,.18) 0%, transparent 40%),
-    radial-gradient(circle at 85% 15%, rgba(255,149,0,.12) 0%, transparent 35%),
-    radial-gradient(circle at 15% 85%, rgba(52,199,89,.10) 0%, transparent 35%),
-    radial-gradient(circle at 50% 50%, rgba(255,45,85,.06) 0%, transparent 50%),
-    #EBEBF0;
-  background-attachment: fixed;
+  background: #F2F2F7;
   color: var(--text);
   height: 100vh; display: flex; flex-direction: column; overflow: hidden;
   font-size: 15px; line-height: 1.4; letter-spacing: -.01em;
   padding-left:  var(--safe-left);
   padding-right: var(--safe-right);
   text-rendering: optimizeLegibility;
-}
-
-/* 動くオーラ（壁紙が動いている感を演出） */
-body::before {
-  content: '';
-  position: fixed; inset: -10%;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(0,122,255,.08) 0%, transparent 30%),
-    radial-gradient(circle at 70% 70%, rgba(175,82,222,.06) 0%, transparent 30%);
-  z-index: -1;
-  pointer-events: none;
-  animation: aura-float 24s ease-in-out infinite alternate;
-}
-@keyframes aura-float {
-  0%   { transform: translate(0, 0) scale(1); opacity: .8; }
-  50%  { transform: translate(2%, -2%) scale(1.05); opacity: 1; }
-  100% { transform: translate(-2%, 2%) scale(.95); opacity: .8; }
 }
 
 /* === iOS 18 Liquid Glass Material System (より透け感を強化) === */
@@ -925,6 +900,12 @@ body:not(.mode-search) .search-view { display: none; }
 .report-view {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
   background: var(--bg);
+  /* モバイル時、下部タブバーに被らないように余白を確保 */
+  padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
+  box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  .report-view { padding-bottom: 0; }
 }
 body.mode-report .layout { display: none; }
 body.mode-report .search-view { display: none; }
