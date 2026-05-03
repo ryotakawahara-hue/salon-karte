@@ -2989,6 +2989,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           <button type="button" class="type-chip active" data-val="訪問"       onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-walk"/></svg> 訪問</button>
           <button type="button" class="type-chip"        data-val="電話"       onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-phone"/></svg> 電話</button>
           <button type="button" class="type-chip"        data-val="メール"     onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-mail"/></svg> メール</button>
+          <button type="button" class="type-chip"        data-val="LINE"       onclick="selectActType(this)">💬 LINE</button>
           <button type="button" class="type-chip"        data-val="オンライン" onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-monitor"/></svg> オンライン</button>
           <button type="button" class="type-chip"        data-val="展示会"     onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-target"/></svg> 展示会</button>
           <button type="button" class="type-chip"        data-val="体験会"     onclick="selectActType(this)"><svg class="icon icon-sm"><use href="#i-sparkles"/></svg> 体験会</button>
@@ -3015,9 +3016,27 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         <input type="hidden" id="aResult" value="">
       </div>
 
-      <!-- ③ 面談者（誰と話したか） -->
+      <!-- ③ 今回の目的 -->
+      <div class="act-section">
+        <div class="act-section-lbl">今回の訪問目的</div>
+        <div class="act-topic-row" id="aPurposeChips">
+          <button type="button" class="act-topic-chip" data-val="導入店フォロー"   onclick="selectActChipSingle(this,'aPurpose')">🔁 導入店フォロー</button>
+          <button type="button" class="act-topic-chip" data-val="未導入サロン訪問" onclick="selectActChipSingle(this,'aPurpose')">🆕 未導入サロン訪問</button>
+          <button type="button" class="act-topic-chip" data-val="新規開拓"         onclick="selectActChipSingle(this,'aPurpose')">🌱 新規開拓</button>
+          <button type="button" class="act-topic-chip" data-val="クロージング"     onclick="selectActChipSingle(this,'aPurpose')">🤝 クロージング</button>
+          <button type="button" class="act-topic-chip" data-val="関係構築"         onclick="selectActChipSingle(this,'aPurpose')">💬 関係構築</button>
+          <button type="button" class="act-topic-chip" data-val="クレーム対応"     onclick="selectActChipSingle(this,'aPurpose')">⚠️ クレーム対応</button>
+          <button type="button" class="act-topic-chip" data-val="既存先深耕"       onclick="selectActChipSingle(this,'aPurpose')">📈 既存先深耕</button>
+          <button type="button" class="act-topic-chip" data-val="その他"           onclick="selectActChipSingle(this,'aPurpose')">その他</button>
+        </div>
+        <input type="hidden" id="aPurpose" value="">
+      </div>
+
+      <!-- ④ 面談者（名前 + 役割） -->
       <div class="act-section" id="aMetSection">
-        <div class="act-section-lbl">面談者 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+        <div class="act-section-lbl">面談者の名前</div>
+        <input class="finput" id="aMetName" placeholder="例: 田中オーナー / 山田店長" style="margin-bottom:8px">
+        <div class="act-section-lbl" style="font-size:11px; color:var(--label-tertiary)">役割 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・複数選択可）</span></div>
         <div class="act-topic-row" id="aMetChips">
           <button type="button" class="act-topic-chip" data-val="オーナー"       onclick="toggleActChipMulti(this,'aMet')">オーナー</button>
           <button type="button" class="act-topic-chip" data-val="店長"           onclick="toggleActChipMulti(this,'aMet')">店長</button>
@@ -3027,6 +3046,12 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
           <button type="button" class="act-topic-chip" data-val="代理店担当"     onclick="toggleActChipMulti(this,'aMet')">代理店担当</button>
         </div>
         <input type="hidden" id="aMet" value="">
+      </div>
+
+      <!-- ⑤ 補足メモ（上に移動：早めに自由記述できるように） -->
+      <div class="act-section">
+        <div class="act-section-lbl">📝 補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・競合情報なども）</span></div>
+        <textarea class="finput" id="aContent" placeholder="例: 〇〇社のシャンプー使用中／オーナーが体験会興味あり／次回サンプル持参予定…" style="min-height:80px"></textarea>
       </div>
 
       <!-- ④ 話した内容 -->
@@ -3148,12 +3173,6 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         <div class="act-fu-date-hint" id="aFuDateHint"></div>
         <input type="hidden" id="aFuStatus" value="none">
         <input type="hidden" id="aFuDate" value="">
-      </div>
-
-      <!-- ⑩ 補足メモ -->
-      <div class="act-section">
-        <div class="act-section-lbl">補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・競合情報なども）</span></div>
-        <textarea class="finput" id="aContent" placeholder="例: 〇〇社のシャンプー使用中／オーナーが体験会興味あり／次回サンプル持参予定…" style="min-height:80px"></textarea>
       </div>
 
       <!-- ⑥ 詳細トグル -->
@@ -5065,8 +5084,10 @@ function renderTimeline(p) {
           </div>
           <div class="timeline-title">
             <span class="act-type">${esc(e.type || '')}</span>
+            ${e.purpose ? `<span class="timeline-mini-badge" style="background:rgba(52,199,89,.10);color:#34C759">${esc(e.purpose)}</span>` : ''}
             ${e.result ? `<span style="font-size:13px">${esc(e.result)}</span>` : ''}
           </div>
+          ${e.metName ? `<div style="font-size:12px;color:var(--label-secondary);margin-top:2px">👤 ${esc(e.metName)}</div>` : ''}
           ${e.content ? `<div class="timeline-content">${esc(e.content.slice(0, 120))}${e.content.length > 120 ? '…' : ''}</div>` : ''}
           ${e.next ? `<div class="timeline-next">🎯 ${esc(e.next)}${e.fuDate ? ` <span style="color:var(--label-tertiary);font-size:11px">(${e.fuDate})</span>` : ''}</div>` : ''}
           <div style="margin-top:6px;display:flex;gap:6px">
@@ -6102,6 +6123,19 @@ function selectActSingle(el, hiddenId) {
   document.getElementById(hiddenId).value = el.dataset.val;
 }
 
+// act-topic-chip の単一選択版
+function selectActChipSingle(el, hiddenId) {
+  const isActive = el.classList.contains('active');
+  const parent = el.parentElement;
+  parent.querySelectorAll('.act-topic-chip').forEach(c => c.classList.remove('active'));
+  if (!isActive) {
+    el.classList.add('active');
+    document.getElementById(hiddenId).value = el.dataset.val;
+  } else {
+    document.getElementById(hiddenId).value = '';
+  }
+}
+
 // 次回の目的（テンプレート → aNext入力欄に挿入）
 function selectNextPurpose(el, purpose) {
   // 同じチップを再選択した場合は解除
@@ -6197,12 +6231,12 @@ function openActModal() {
   // 話題チップリセット
   document.querySelectorAll('#aTopicChips .act-topic-chip').forEach(c => c.classList.remove('active'));
 
-  // 新フィールドのチップ系リセット（面談者・提案商品・提供物・温度感）
-  ['aMetChips', 'aProductChips', 'aGiveChips'].forEach(parentId => {
+  // 新フィールドのチップ系リセット（目的・面談者・提案商品・提供物・温度感）
+  ['aPurposeChips', 'aMetChips', 'aProductChips', 'aGiveChips'].forEach(parentId => {
     document.querySelectorAll('#' + parentId + ' .act-topic-chip').forEach(c => c.classList.remove('active'));
   });
   document.querySelectorAll('#aInterestChips .type-chip').forEach(c => c.classList.remove('active'));
-  ['aMet', 'aProducts', 'aGives', 'aInterest', 'aPotential', 'aDuration', 'aAccompany'].forEach(id => {
+  ['aPurpose', 'aMet', 'aMetName', 'aProducts', 'aGives', 'aInterest', 'aPotential', 'aDuration', 'aAccompany'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -6341,6 +6375,8 @@ function saveAct() {
     topics: topics,
     content,
     // 追加フィールド: 営業精度向上のための情報
+    purpose:    document.getElementById('aPurpose')?.value || '',
+    metName:    document.getElementById('aMetName')?.value.trim() || '',
     met:        (document.getElementById('aMet')?.value || '').split(',').filter(Boolean),
     products:   (document.getElementById('aProducts')?.value || '').split(',').filter(Boolean),
     interest:   document.getElementById('aInterest')?.value || '',
