@@ -2755,6 +2755,19 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
+      <!-- 🪄 まとめ貼り付け（HPBページ／名刺の文字をそのまま貼り付けて自動振り分け） -->
+      <div class="salon-only" style="background:linear-gradient(135deg,rgba(0,122,255,.08),rgba(88,86,214,.06));border:1px dashed rgba(0,122,255,.3);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:18px">🪄</span>
+          <div style="font-size:12px;font-weight:600;color:var(--primary)">まとめ貼り付け（時短）</div>
+        </div>
+        <div style="font-size:11px;color:var(--label-secondary);margin-bottom:6px;line-height:1.5">
+          HPBページや名刺の文字をまるごとここに貼り付けると、<b>電話番号・郵便番号・住所・HPBリンク</b>を自動で振り分けます
+        </div>
+        <textarea id="pSmartPaste" placeholder="ここにHPBページのテキストや名刺情報を貼り付け…&#10;例: 〒150-0001 東京都渋谷区… 03-1234-5678 https://beauty.hotpepper.jp/sln…" style="width:100%;min-height:60px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical" oninput="smartParseAndFill(this.value)"></textarea>
+        <div id="pSmartPasteResult" style="font-size:11px;color:#34C759;margin-top:4px;min-height:14px"></div>
+      </div>
+
       <!-- 5. 担当代理店 -->
       <div class="fg salon-only">
         <label class="flbl">担当代理店</label>
@@ -2781,15 +2794,16 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
-      <!-- 連絡先（電話 or 郵便番号 のどちらかは必須：後工程の名寄せ用） -->
+      <!-- 連絡先（電話 or 郵便番号 or HPBリンク のいずれか必須：後工程の名寄せ用） -->
       <div class="frow">
-        <div class="fg"><label class="flbl">電話番号 <span class="salon-only" style="font-weight:400;font-size:11px;color:#FF9500">★郵便番号の代わりにこちらでもOK</span></label><input class="finput" id="pPhone" type="tel" placeholder="03-1234-5678" inputmode="tel"></div>
+        <div class="fg"><label class="flbl">電話番号 <span class="salon-only" style="font-weight:400;font-size:11px;color:#FF9500">★突合キー</span></label><input class="finput" id="pPhone" type="tel" placeholder="03-1234-5678" inputmode="tel"></div>
         <div class="fg"><label class="flbl">メール</label><input class="finput" id="pEmail" type="email" placeholder="tanaka@example.com"></div>
       </div>
 
       <!-- 後工程突合用ヒント -->
       <div class="salon-only" style="background:rgba(255,149,0,.08);border-left:3px solid #FF9500;padding:8px 12px;border-radius:6px;font-size:12px;color:var(--label-secondary);margin-bottom:8px;line-height:1.5">
-        💡 後でサロン情報を突合するため、<b style="color:#FF9500">郵便番号 か 電話番号 のどちらか</b>は必ず入力してください
+        💡 後でサロン情報を突合するため、<b style="color:#FF9500">電話番号・郵便番号・HPBリンク のいずれか</b>は必ず入力してください<br>
+        <span style="font-size:11px">（HPBリンクは1サロン1URLなので、URLバーをコピーするだけでOK）</span>
       </div>
 
       <!-- 住所（郵便番号＋エリア＋住所） -->
@@ -2822,7 +2836,10 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       </div>
 
       <!-- HPB -->
-      <div class="fg salon-only"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
+      <div class="fg salon-only">
+        <label class="flbl">HPBリンク <span style="font-weight:400;font-size:11px;color:#FF9500">★突合キー（最も簡単・URLバーから貼り付け）</span></label>
+        <input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/slnH000XXXXXX/" inputmode="url">
+      </div>
 
       <!-- 提案ステージ -->
       <div class="fsec salon-only">提案ステージ・パイプライン</div>
@@ -5622,6 +5639,81 @@ function handlePostalLookup() {
   }, 250);
 }
 
+// 🪄 まとめ貼り付け: HPBページ・名刺などのテキストから情報を自動抽出
+function smartParseAndFill(text) {
+  if (!text || text.length < 3) {
+    document.getElementById('pSmartPasteResult').textContent = '';
+    return;
+  }
+  const filled = [];
+
+  // 1) HPB URL を抽出
+  const urlMatch = text.match(/https?:\/\/[^\s　「」（）()【】]+hotpepper[^\s　「」（）()【】]*/i)
+                || text.match(/https?:\/\/[^\s　「」（）()【】]+/);
+  if (urlMatch) {
+    const urlEl = document.getElementById('pHpbUrl');
+    if (urlEl && !urlEl.value.trim() && /hotpepper/i.test(urlMatch[0])) {
+      urlEl.value = urlMatch[0];
+      filled.push('HPBリンク');
+    }
+  }
+
+  // 2) 郵便番号を抽出（〒150-0001 / 150-0001 / 1500001）
+  const postalMatch = text.match(/〒?\s*(\d{3})[-－‐]?(\d{4})/);
+  if (postalMatch) {
+    const postalEl = document.getElementById('pPostalCode');
+    if (postalEl && !postalEl.value.trim()) {
+      postalEl.value = postalMatch[1] + '-' + postalMatch[2];
+      filled.push('郵便番号');
+      // 住所も自動で引き込み
+      handlePostalLookup();
+    }
+  }
+
+  // 3) 電話番号を抽出（03-1234-5678 / 0312345678 / 090-1234-5678 など）
+  const phoneCandidates = text.match(/0\d{1,4}[-－‐()(\s]?\d{1,4}[-－‐()(\s]?\d{3,4}/g) || [];
+  // 郵便番号と被らないものを優先選択（10〜11桁の市外局番付き電話）
+  const validPhone = phoneCandidates.find(p => {
+    const d = p.replace(/[^\d]/g, '');
+    return d.length >= 10 && d.length <= 11 && !/^\d{7}$/.test(d);
+  });
+  if (validPhone) {
+    const phoneEl = document.getElementById('pPhone');
+    if (phoneEl && !phoneEl.value.trim()) {
+      phoneEl.value = validPhone.replace(/[（）()\s]/g, '').replace(/[－‐]/g, '-');
+      filled.push('電話番号');
+    }
+  }
+
+  // 4) 住所っぽい行を抽出（都道府県を含む行）
+  const addrMatch = text.match(/(東京都|北海道|(?:京都|大阪)府|(?:[^\n、]{2,3}県))[^\n、]{2,40}/);
+  if (addrMatch) {
+    const addrEl = document.getElementById('pAddress');
+    if (addrEl && !addrEl.value.trim()) {
+      addrEl.value = addrMatch[0].trim();
+      filled.push('住所');
+    }
+  }
+
+  // 5) サロン名（「サロン名:」「店舗名:」「店名:」のパターン）
+  const nameMatch = text.match(/(?:サロン名|店舗名|店名|salon name)\s*[:：]\s*([^\n]+)/i);
+  if (nameMatch) {
+    const companyEl = document.getElementById('pCompany');
+    if (companyEl && !companyEl.value.trim()) {
+      companyEl.value = nameMatch[1].trim();
+      filled.push('サロン名');
+    }
+  }
+
+  const resultEl = document.getElementById('pSmartPasteResult');
+  if (resultEl) {
+    resultEl.textContent = filled.length
+      ? `✅ 自動入力: ${filled.join(' / ')}`
+      : '（パターンを検出できませんでした。各項目に直接入力してください）';
+    resultEl.style.color = filled.length ? '#34C759' : '#FF9500';
+  }
+}
+
 // ── CSV Import ────────────────────────────────────
 function parseCSV(text) {
   const rows = [];
@@ -5698,7 +5790,8 @@ function openAddModal() {
   document.getElementById('pName').placeholder = isAgent ? '田中 太郎' : '山田 一郎';
   document.getElementById('pCompany').placeholder = isAgent ? '株式会社〇〇商事' : '美容室〇〇';
   document.getElementById('pTitle').placeholder = isAgent ? '営業部長' : '10';
-  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pAgentCompanyBranch','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget','pCompMain','pCompShampoo','pCompStraightener','pCompColor'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['pName','pCompanyKana','pCompany','pTitle','pPhone','pEmail','pArea','pAddress','pPostalCode','pMemo','pAgentName','pAgentBranch','pAgentContact','pAgentCompanyBranch','pSalesRep','pHpbUrl','pLegalName','pTarget','pStaffCount','pGroupStores','pAnnualTarget','pCompMain','pCompShampoo','pCompStraightener','pCompColor','pSmartPaste'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const _spr = document.getElementById('pSmartPasteResult'); if (_spr) _spr.textContent = '';
   document.getElementById('pSalonType').value = '';
   document.getElementById('pCompanySelect').value = '';
   document.getElementById('pCompanyNew').value = '';
@@ -5934,23 +6027,23 @@ function savePerson() {
     company = document.getElementById('pCompany').value.trim();
   }
   if (!company) { alert(currentMode === 'agent' ? '代理店名は必須です' : 'サロン名は必須です'); return; }
-  // サロン登録時は「郵便番号 OR 電話番号」のどちらか必須
+  // サロン登録時は「電話番号 OR 郵便番号 OR HPBリンク」のいずれか必須
   // （後工程でサロン名＋いずれかの情報で突合するため）
   if (currentMode !== 'agent') {
     const postal = document.getElementById('pPostalCode').value.trim();
     const phone  = document.getElementById('pPhone').value.trim();
+    const hpbUrl = document.getElementById('pHpbUrl').value.trim();
     const postalOk = postal && postal.replace(/[^\d]/g, '').length === 7;
     const phoneOk  = phone && phone.replace(/[^\d]/g, '').length >= 10;
-    if (!postalOk && !phoneOk) {
-      alert('後工程の名寄せ用に、郵便番号（7桁）か電話番号（10桁以上）のどちらかは必ず入力してください');
-      // 郵便番号が部分入力されていればそれをフォーカス、そうでなければ電話番号
-      const focusEl = postal ? 'pPostalCode' : 'pPhone';
+    const hpbOk    = hpbUrl && /^https?:\/\/.*hotpepper/i.test(hpbUrl);
+    if (!postalOk && !phoneOk && !hpbOk) {
+      alert('後工程の名寄せ用に、以下のいずれか1つは必ず入力してください\n・電話番号（10桁以上）\n・郵便番号（7桁）\n・HPBリンク（URLバーから貼り付け）');
+      const focusEl = phone ? 'pPhone' : (postal ? 'pPostalCode' : 'pHpbUrl');
       document.getElementById(focusEl).focus();
       return;
     }
-    // 部分入力された郵便番号は妥当性チェック（7桁未満で何か入っているならエラー）
     if (postal && !postalOk) {
-      alert('郵便番号は7桁で入力してください（例: 150-0001）。電話番号がある場合は郵便番号は空でもOKです');
+      alert('郵便番号は7桁で入力してください（例: 150-0001）。電話番号やHPBリンクがあれば郵便番号は空でもOKです');
       document.getElementById('pPostalCode').focus();
       return;
     }
