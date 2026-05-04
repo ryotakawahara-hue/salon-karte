@@ -2781,16 +2781,21 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
 
-      <!-- 連絡先 -->
+      <!-- 連絡先（電話 or 郵便番号 のどちらかは必須：後工程の名寄せ用） -->
       <div class="frow">
-        <div class="fg"><label class="flbl">電話番号</label><input class="finput" id="pPhone" type="tel" placeholder="090-1234-5678"></div>
+        <div class="fg"><label class="flbl">電話番号 <span class="salon-only" style="font-weight:400;font-size:11px;color:#FF9500">★郵便番号の代わりにこちらでもOK</span></label><input class="finput" id="pPhone" type="tel" placeholder="03-1234-5678" inputmode="tel"></div>
         <div class="fg"><label class="flbl">メール</label><input class="finput" id="pEmail" type="email" placeholder="tanaka@example.com"></div>
+      </div>
+
+      <!-- 後工程突合用ヒント -->
+      <div class="salon-only" style="background:rgba(255,149,0,.08);border-left:3px solid #FF9500;padding:8px 12px;border-radius:6px;font-size:12px;color:var(--label-secondary);margin-bottom:8px;line-height:1.5">
+        💡 後でサロン情報を突合するため、<b style="color:#FF9500">郵便番号 か 電話番号 のどちらか</b>は必ず入力してください
       </div>
 
       <!-- 住所（郵便番号＋エリア＋住所） -->
       <div class="frow salon-only">
         <div class="fg" style="flex:0 0 200px">
-          <label class="flbl">郵便番号 * <span style="font-weight:400;font-size:11px;color:var(--label-secondary)">（入力で住所自動入力）</span></label>
+          <label class="flbl">郵便番号 <span style="font-weight:400;font-size:11px;color:var(--label-secondary)">（入力で住所自動入力）</span></label>
           <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()" inputmode="numeric">
         </div>
         <div class="fg">
@@ -5929,11 +5934,23 @@ function savePerson() {
     company = document.getElementById('pCompany').value.trim();
   }
   if (!company) { alert(currentMode === 'agent' ? '代理店名は必須です' : 'サロン名は必須です'); return; }
-  // サロン登録時は郵便番号必須
+  // サロン登録時は「郵便番号 OR 電話番号」のどちらか必須
+  // （後工程でサロン名＋いずれかの情報で突合するため）
   if (currentMode !== 'agent') {
     const postal = document.getElementById('pPostalCode').value.trim();
-    if (!postal || postal.replace(/[^\d]/g, '').length !== 7) {
-      alert('郵便番号は7桁で入力してください（例: 150-0001）');
+    const phone  = document.getElementById('pPhone').value.trim();
+    const postalOk = postal && postal.replace(/[^\d]/g, '').length === 7;
+    const phoneOk  = phone && phone.replace(/[^\d]/g, '').length >= 10;
+    if (!postalOk && !phoneOk) {
+      alert('後工程の名寄せ用に、郵便番号（7桁）か電話番号（10桁以上）のどちらかは必ず入力してください');
+      // 郵便番号が部分入力されていればそれをフォーカス、そうでなければ電話番号
+      const focusEl = postal ? 'pPostalCode' : 'pPhone';
+      document.getElementById(focusEl).focus();
+      return;
+    }
+    // 部分入力された郵便番号は妥当性チェック（7桁未満で何か入っているならエラー）
+    if (postal && !postalOk) {
+      alert('郵便番号は7桁で入力してください（例: 150-0001）。電話番号がある場合は郵便番号は空でもOKです');
       document.getElementById('pPostalCode').focus();
       return;
     }
