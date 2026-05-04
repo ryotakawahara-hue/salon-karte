@@ -1064,6 +1064,7 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
 }
 .act-detail-toggle:hover { border-color: var(--primary); color: var(--primary); background: #f0f7ff; }
 .act-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+.act-more-details { margin-top: 8px; padding-top: 4px; display: flex; flex-direction: column; gap: 14px; }
 
 /* ── Type Chips (horizontal scroll row) ── */
 .type-chips {
@@ -2787,17 +2788,10 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
       </div>
 
       <!-- 住所（郵便番号＋エリア＋住所） -->
-      <!-- 📍 GPS現在地から自動入力 -->
-      <div class="fg salon-only">
-        <button type="button" class="btn btn-outline" onclick="getCurrentLocationAndFill()" id="gpsLocBtn" style="width:100%; padding:12px; gap:8px">
-          <svg class="icon icon-sm"><use href="#i-map-pin"/></svg>
-          📍 現在地から郵便番号・住所を取得
-        </button>
-      </div>
       <div class="frow salon-only">
-        <div class="fg" style="flex:0 0 160px">
-          <label class="flbl">郵便番号 *</label>
-          <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()">
+        <div class="fg" style="flex:0 0 200px">
+          <label class="flbl">郵便番号 * <span style="font-weight:400;font-size:11px;color:var(--label-secondary)">（入力で住所自動入力）</span></label>
+          <input class="finput" id="pPostalCode" type="tel" placeholder="150-0001" maxlength="8" oninput="handlePostalLookup()" inputmode="numeric">
         </div>
         <div class="fg">
           <label class="flbl">エリア</label>
@@ -2814,6 +2808,13 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         </div>
       </div>
       <div class="fg salon-only"><label class="flbl">住所</label><input class="finput" id="pAddress" placeholder="東京都渋谷区〇〇 1-2-3"></div>
+      <!-- 📍 補助：現地でだけ使えるGPS（小さめのリンク風） -->
+      <div class="fg salon-only" style="margin-top:-4px">
+        <button type="button" onclick="getCurrentLocationAndFill()" id="gpsLocBtn" style="background:none;border:none;color:var(--primary);font-size:12px;cursor:pointer;padding:4px 0;text-align:left;display:inline-flex;align-items:center;gap:4px">
+          <svg class="icon" style="width:14px;height:14px"><use href="#i-map-pin"/></svg>
+          📍 現地にいる場合は GPS で自動取得
+        </button>
+      </div>
 
       <!-- HPB -->
       <div class="fg salon-only"><label class="flbl">HPBリンク</label><input class="finput" id="pHpbUrl" type="url" placeholder="https://beauty.hotpepper.jp/..."></div>
@@ -3032,117 +3033,13 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         <input type="hidden" id="aPurpose" value="">
       </div>
 
-      <!-- ④ 面談者（名前 + 役割） -->
-      <div class="act-section" id="aMetSection">
-        <div class="act-section-lbl">面談者の名前</div>
-        <input class="finput" id="aMetName" placeholder="例: 田中オーナー / 山田店長" style="margin-bottom:8px">
-        <div class="act-section-lbl" style="font-size:11px; color:var(--label-tertiary)">役割 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・複数選択可）</span></div>
-        <div class="act-topic-row" id="aMetChips">
-          <button type="button" class="act-topic-chip" data-val="オーナー"       onclick="toggleActChipMulti(this,'aMet')">オーナー</button>
-          <button type="button" class="act-topic-chip" data-val="店長"           onclick="toggleActChipMulti(this,'aMet')">店長</button>
-          <button type="button" class="act-topic-chip" data-val="スタイリスト"   onclick="toggleActChipMulti(this,'aMet')">スタイリスト</button>
-          <button type="button" class="act-topic-chip" data-val="受付"           onclick="toggleActChipMulti(this,'aMet')">受付</button>
-          <button type="button" class="act-topic-chip" data-val="アシスタント"   onclick="toggleActChipMulti(this,'aMet')">アシスタント</button>
-          <button type="button" class="act-topic-chip" data-val="代理店担当"     onclick="toggleActChipMulti(this,'aMet')">代理店担当</button>
-        </div>
-        <input type="hidden" id="aMet" value="">
-      </div>
-
-      <!-- ⑤ 補足メモ（上に移動：早めに自由記述できるように） -->
+      <!-- ④ 補足メモ（クイック入力の中心：自由記述で何でも残す） -->
       <div class="act-section">
-        <div class="act-section-lbl">📝 補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・競合情報なども）</span></div>
-        <textarea class="finput" id="aContent" placeholder="例: 〇〇社のシャンプー使用中／オーナーが体験会興味あり／次回サンプル持参予定…" style="min-height:80px"></textarea>
+        <div class="act-section-lbl">📝 補足メモ <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・競合情報・面談者名なども）</span></div>
+        <textarea class="finput" id="aContent" placeholder="例: 田中オーナーと面談／〇〇社シャンプー使用中／体験会興味あり…" style="min-height:80px"></textarea>
       </div>
 
-      <!-- ④ 話した内容 -->
-      <div class="act-section">
-        <div class="act-section-lbl">話した内容 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
-        <div class="act-topic-row" id="aTopicChips">
-          <button type="button" class="act-topic-chip" data-val="新商品紹介"     onclick="toggleActTopic(this)">新商品紹介</button>
-          <button type="button" class="act-topic-chip" data-val="シストリ提案"   onclick="toggleActTopic(this)">シストリ提案</button>
-          <button type="button" class="act-topic-chip" data-val="つるりんちょ提案" onclick="toggleActTopic(this)">つるりんちょ提案</button>
-          <button type="button" class="act-topic-chip" data-val="ホームケア提案" onclick="toggleActTopic(this)">ホームケア提案</button>
-          <button type="button" class="act-topic-chip" data-val="定番補充"       onclick="toggleActTopic(this)">定番補充</button>
-          <button type="button" class="act-topic-chip" data-val="臨店講習"       onclick="toggleActTopic(this)">臨店講習</button>
-          <button type="button" class="act-topic-chip" data-val="クレーム対応"   onclick="toggleActTopic(this)">クレーム対応</button>
-          <button type="button" class="act-topic-chip" data-val="情報収集"       onclick="toggleActTopic(this)">情報収集</button>
-          <button type="button" class="act-topic-chip" data-val="体験会案内"     onclick="toggleActTopic(this)">体験会案内</button>
-          <button type="button" class="act-topic-chip" data-val="その他"         onclick="toggleActTopic(this)">その他</button>
-        </div>
-      </div>
-
-      <!-- ⑤ 提案商品 (業務品 / ホームケア で分類) -->
-      <div class="act-section">
-        <div class="act-section-lbl">提案商品 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
-        <!-- 業務品 -->
-        <div style="background:rgba(0,122,255,.08); border-radius:10px; padding:10px 12px; margin-bottom:8px">
-          <div style="font-size:12px; font-weight:600; color:#007AFF; margin-bottom:8px; letter-spacing:-.005em">💼 業務品（プロ用）</div>
-          <div class="act-topic-row" id="aProductProChips">
-            <button type="button" class="act-topic-chip" data-val="シストリ"           onclick="toggleActChipMulti(this,'aProducts')">シストリ</button>
-            <button type="button" class="act-topic-chip" data-val="つるりんちょの素"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょの素</button>
-            <button type="button" class="act-topic-chip" data-val="つるりんちょZERO"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょZERO</button>
-            <button type="button" class="act-topic-chip" data-val="矯正剤"             onclick="toggleActChipMulti(this,'aProducts')">矯正剤</button>
-            <button type="button" class="act-topic-chip" data-val="カラー剤"           onclick="toggleActChipMulti(this,'aProducts')">カラー剤</button>
-            <button type="button" class="act-topic-chip" data-val="美髪の掟"           onclick="toggleActChipMulti(this,'aProducts')">美髪の掟</button>
-            <button type="button" class="act-topic-chip" data-val="いるかのせなか（業務品）" onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
-          </div>
-        </div>
-        <!-- ホームケア -->
-        <div style="background:rgba(52,199,89,.08); border-radius:10px; padding:10px 12px">
-          <div style="font-size:12px; font-weight:600; color:#34C759; margin-bottom:8px; letter-spacing:-.005em">🏠 ホームケア（お客様用）</div>
-          <div class="act-topic-row" id="aProductHomeChips">
-            <button type="button" class="act-topic-chip" data-val="つるりんちょシャンプー"     onclick="toggleActChipMulti(this,'aProducts')">つるりんちょシャンプー</button>
-            <button type="button" class="act-topic-chip" data-val="つるりんちょトリートメント" onclick="toggleActChipMulti(this,'aProducts')">トリートメント</button>
-            <button type="button" class="act-topic-chip" data-val="いるかのせなか（ホームケア）"   onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
-            <button type="button" class="act-topic-chip" data-val="ヘアオイル"               onclick="toggleActChipMulti(this,'aProducts')">ヘアオイル</button>
-            <button type="button" class="act-topic-chip" data-val="スカルプケア"             onclick="toggleActChipMulti(this,'aProducts')">スカルプケア</button>
-          </div>
-        </div>
-        <input type="hidden" id="aProducts" value="">
-      </div>
-
-      <!-- ⑥ 温度感（関心度） -->
-      <div class="act-section">
-        <div class="act-section-lbl">関心度・温度感</div>
-        <div class="type-chips" id="aInterestChips">
-          <button type="button" class="type-chip" data-val="高い"     onclick="selectActSingle(this,'aInterest')">🔥 高い</button>
-          <button type="button" class="type-chip" data-val="中"       onclick="selectActSingle(this,'aInterest')">中</button>
-          <button type="button" class="type-chip" data-val="低い"     onclick="selectActSingle(this,'aInterest')">低い</button>
-          <button type="button" class="type-chip" data-val="検討中"   onclick="selectActSingle(this,'aInterest')">🤔 検討中</button>
-          <button type="button" class="type-chip" data-val="否定的"   onclick="selectActSingle(this,'aInterest')">否定的</button>
-        </div>
-        <input type="hidden" id="aInterest" value="">
-      </div>
-
-      <!-- ⑦ サンプル/資料提供 -->
-      <div class="act-section">
-        <div class="act-section-lbl">提供物 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
-        <div class="act-topic-row" id="aGiveChips">
-          <button type="button" class="act-topic-chip" data-val="商品サンプル"   onclick="toggleActChipMulti(this,'aGives')">商品サンプル</button>
-          <button type="button" class="act-topic-chip" data-val="カタログ"       onclick="toggleActChipMulti(this,'aGives')">カタログ</button>
-          <button type="button" class="act-topic-chip" data-val="価格表"         onclick="toggleActChipMulti(this,'aGives')">価格表</button>
-          <button type="button" class="act-topic-chip" data-val="動画/QR"        onclick="toggleActChipMulti(this,'aGives')">動画/QR</button>
-          <button type="button" class="act-topic-chip" data-val="POP"            onclick="toggleActChipMulti(this,'aGives')">POP</button>
-          <button type="button" class="act-topic-chip" data-val="見積もり"       onclick="toggleActChipMulti(this,'aGives')">見積もり</button>
-        </div>
-        <input type="hidden" id="aGives" value="">
-      </div>
-
-      <!-- ⑧ 見込み金額 + 滞在時間 -->
-      <div class="act-section">
-        <div class="frow">
-          <div class="fg">
-            <label class="flbl">見込み金額（万円）</label>
-            <input class="finput" id="aPotential" type="number" placeholder="例: 30" min="0" step="0.5">
-          </div>
-          <div class="fg">
-            <label class="flbl">滞在時間（分）</label>
-            <input class="finput" id="aDuration" type="number" placeholder="例: 30" min="0">
-          </div>
-        </div>
-      </div>
-
-      <!-- ⑨ 次回の目的（最重要・営業の核心） -->
+      <!-- ⑤ 次回の目的（最重要・営業の核心） -->
       <div class="act-section" style="background:linear-gradient(135deg, rgba(0,122,255,.06), rgba(0,122,255,.02)); border-radius:12px; padding:14px; margin-top:14px">
         <div class="act-section-lbl" style="color:var(--primary); font-size:13px">
           <svg class="icon icon-sm" style="vertical-align:-2px"><use href="#i-target"/></svg>
@@ -3174,6 +3071,124 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
         <input type="hidden" id="aFuStatus" value="none">
         <input type="hidden" id="aFuDate" value="">
       </div>
+
+      <!-- 🪄 ここまでで保存OK。下は任意項目 -->
+      <div style="margin-top:14px;padding:8px 12px;background:rgba(52,199,89,.08);border-radius:8px;font-size:12px;color:#1B7C32;text-align:center">
+        ✅ ここまで入力すれば保存できます。下の項目は任意です
+      </div>
+
+      <!-- ⑥ もっと詳しく入力（任意）トグル -->
+      <button class="act-detail-toggle" id="actMoreToggle" onclick="toggleActMoreDetails()" type="button" style="margin-top:10px">
+        ＋ もっと詳しく入力（任意：面談者・話題・提案商品など）
+      </button>
+
+      <!-- ⑦ 任意セクション（折りたたみ） -->
+      <div class="act-more-details" id="actMoreDetails" style="display:none">
+
+        <!-- 面談者（名前 + 役割） -->
+        <div class="act-section" id="aMetSection">
+          <div class="act-section-lbl">面談者の名前</div>
+          <input class="finput" id="aMetName" placeholder="例: 田中オーナー / 山田店長" style="margin-bottom:8px">
+          <div class="act-section-lbl" style="font-size:11px; color:var(--label-tertiary)">役割 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（任意・複数選択可）</span></div>
+          <div class="act-topic-row" id="aMetChips">
+            <button type="button" class="act-topic-chip" data-val="オーナー"       onclick="toggleActChipMulti(this,'aMet')">オーナー</button>
+            <button type="button" class="act-topic-chip" data-val="店長"           onclick="toggleActChipMulti(this,'aMet')">店長</button>
+            <button type="button" class="act-topic-chip" data-val="スタイリスト"   onclick="toggleActChipMulti(this,'aMet')">スタイリスト</button>
+            <button type="button" class="act-topic-chip" data-val="受付"           onclick="toggleActChipMulti(this,'aMet')">受付</button>
+            <button type="button" class="act-topic-chip" data-val="アシスタント"   onclick="toggleActChipMulti(this,'aMet')">アシスタント</button>
+            <button type="button" class="act-topic-chip" data-val="代理店担当"     onclick="toggleActChipMulti(this,'aMet')">代理店担当</button>
+          </div>
+          <input type="hidden" id="aMet" value="">
+        </div>
+
+        <!-- 話した内容 -->
+        <div class="act-section">
+          <div class="act-section-lbl">話した内容 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+          <div class="act-topic-row" id="aTopicChips">
+            <button type="button" class="act-topic-chip" data-val="新商品紹介"     onclick="toggleActTopic(this)">新商品紹介</button>
+            <button type="button" class="act-topic-chip" data-val="シストリ提案"   onclick="toggleActTopic(this)">シストリ提案</button>
+            <button type="button" class="act-topic-chip" data-val="つるりんちょ提案" onclick="toggleActTopic(this)">つるりんちょ提案</button>
+            <button type="button" class="act-topic-chip" data-val="ホームケア提案" onclick="toggleActTopic(this)">ホームケア提案</button>
+            <button type="button" class="act-topic-chip" data-val="定番補充"       onclick="toggleActTopic(this)">定番補充</button>
+            <button type="button" class="act-topic-chip" data-val="臨店講習"       onclick="toggleActTopic(this)">臨店講習</button>
+            <button type="button" class="act-topic-chip" data-val="クレーム対応"   onclick="toggleActTopic(this)">クレーム対応</button>
+            <button type="button" class="act-topic-chip" data-val="情報収集"       onclick="toggleActTopic(this)">情報収集</button>
+            <button type="button" class="act-topic-chip" data-val="体験会案内"     onclick="toggleActTopic(this)">体験会案内</button>
+            <button type="button" class="act-topic-chip" data-val="その他"         onclick="toggleActTopic(this)">その他</button>
+          </div>
+        </div>
+
+        <!-- 提案商品 -->
+        <div class="act-section">
+          <div class="act-section-lbl">提案商品 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+          <div style="background:rgba(0,122,255,.08); border-radius:10px; padding:10px 12px; margin-bottom:8px">
+            <div style="font-size:12px; font-weight:600; color:#007AFF; margin-bottom:8px; letter-spacing:-.005em">💼 業務品（プロ用）</div>
+            <div class="act-topic-row" id="aProductProChips">
+              <button type="button" class="act-topic-chip" data-val="シストリ"           onclick="toggleActChipMulti(this,'aProducts')">シストリ</button>
+              <button type="button" class="act-topic-chip" data-val="つるりんちょの素"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょの素</button>
+              <button type="button" class="act-topic-chip" data-val="つるりんちょZERO"   onclick="toggleActChipMulti(this,'aProducts')">つるりんちょZERO</button>
+              <button type="button" class="act-topic-chip" data-val="矯正剤"             onclick="toggleActChipMulti(this,'aProducts')">矯正剤</button>
+              <button type="button" class="act-topic-chip" data-val="カラー剤"           onclick="toggleActChipMulti(this,'aProducts')">カラー剤</button>
+              <button type="button" class="act-topic-chip" data-val="美髪の掟"           onclick="toggleActChipMulti(this,'aProducts')">美髪の掟</button>
+              <button type="button" class="act-topic-chip" data-val="いるかのせなか（業務品）" onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
+            </div>
+          </div>
+          <div style="background:rgba(52,199,89,.08); border-radius:10px; padding:10px 12px">
+            <div style="font-size:12px; font-weight:600; color:#34C759; margin-bottom:8px; letter-spacing:-.005em">🏠 ホームケア（お客様用）</div>
+            <div class="act-topic-row" id="aProductHomeChips">
+              <button type="button" class="act-topic-chip" data-val="つるりんちょシャンプー"     onclick="toggleActChipMulti(this,'aProducts')">つるりんちょシャンプー</button>
+              <button type="button" class="act-topic-chip" data-val="つるりんちょトリートメント" onclick="toggleActChipMulti(this,'aProducts')">トリートメント</button>
+              <button type="button" class="act-topic-chip" data-val="いるかのせなか（ホームケア）"   onclick="toggleActChipMulti(this,'aProducts')">いるかのせなか</button>
+              <button type="button" class="act-topic-chip" data-val="ヘアオイル"               onclick="toggleActChipMulti(this,'aProducts')">ヘアオイル</button>
+              <button type="button" class="act-topic-chip" data-val="スカルプケア"             onclick="toggleActChipMulti(this,'aProducts')">スカルプケア</button>
+            </div>
+          </div>
+          <input type="hidden" id="aProducts" value="">
+        </div>
+
+        <!-- 関心度・温度感 -->
+        <div class="act-section">
+          <div class="act-section-lbl">関心度・温度感</div>
+          <div class="type-chips" id="aInterestChips">
+            <button type="button" class="type-chip" data-val="高い"     onclick="selectActSingle(this,'aInterest')">🔥 高い</button>
+            <button type="button" class="type-chip" data-val="中"       onclick="selectActSingle(this,'aInterest')">中</button>
+            <button type="button" class="type-chip" data-val="低い"     onclick="selectActSingle(this,'aInterest')">低い</button>
+            <button type="button" class="type-chip" data-val="検討中"   onclick="selectActSingle(this,'aInterest')">🤔 検討中</button>
+            <button type="button" class="type-chip" data-val="否定的"   onclick="selectActSingle(this,'aInterest')">否定的</button>
+          </div>
+          <input type="hidden" id="aInterest" value="">
+        </div>
+
+        <!-- サンプル/資料提供 -->
+        <div class="act-section">
+          <div class="act-section-lbl">提供物 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">（複数選択可）</span></div>
+          <div class="act-topic-row" id="aGiveChips">
+            <button type="button" class="act-topic-chip" data-val="商品サンプル"   onclick="toggleActChipMulti(this,'aGives')">商品サンプル</button>
+            <button type="button" class="act-topic-chip" data-val="カタログ"       onclick="toggleActChipMulti(this,'aGives')">カタログ</button>
+            <button type="button" class="act-topic-chip" data-val="価格表"         onclick="toggleActChipMulti(this,'aGives')">価格表</button>
+            <button type="button" class="act-topic-chip" data-val="動画/QR"        onclick="toggleActChipMulti(this,'aGives')">動画/QR</button>
+            <button type="button" class="act-topic-chip" data-val="POP"            onclick="toggleActChipMulti(this,'aGives')">POP</button>
+            <button type="button" class="act-topic-chip" data-val="見積もり"       onclick="toggleActChipMulti(this,'aGives')">見積もり</button>
+          </div>
+          <input type="hidden" id="aGives" value="">
+        </div>
+
+        <!-- 見込み金額 + 滞在時間 -->
+        <div class="act-section">
+          <div class="frow">
+            <div class="fg">
+              <label class="flbl">見込み金額（万円）</label>
+              <input class="finput" id="aPotential" type="number" placeholder="例: 30" min="0" step="0.5">
+            </div>
+            <div class="fg">
+              <label class="flbl">滞在時間（分）</label>
+              <input class="finput" id="aDuration" type="number" placeholder="例: 30" min="0">
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <!-- /actMoreDetails -->
 
       <!-- ⑥ 詳細トグル -->
       <button class="act-detail-toggle" id="actDetailToggle" onclick="toggleActDetails()" type="button">
@@ -6217,6 +6232,11 @@ function openActModal() {
   // 詳細セクションを閉じた状態でリセット
   document.getElementById('actDetails').style.display = 'none';
   document.getElementById('actDetailToggle').textContent = '詳細（日付・担当営業・行動種類など） ▼';
+  // もっと詳しく入力（任意）も閉じた状態でリセット
+  const moreSec = document.getElementById('actMoreDetails');
+  const moreBtn = document.getElementById('actMoreToggle');
+  if (moreSec) moreSec.style.display = 'none';
+  if (moreBtn) moreBtn.textContent = '＋ もっと詳しく入力（任意：面談者・話題・提案商品など）';
 
   // 接触方法リセット → 訪問
   document.getElementById('aType').value = '訪問';
@@ -6321,6 +6341,16 @@ function toggleActDetails() {
   btn.textContent = open
     ? '詳細を追加（日付・フォロー期限・議事録リンクなど） ▼'
     : '詳細を閉じる ▲';
+}
+
+function toggleActMoreDetails() {
+  const sec = document.getElementById('actMoreDetails');
+  const btn = document.getElementById('actMoreToggle');
+  const open = sec.style.display !== 'none';
+  sec.style.display = open ? 'none' : 'flex';
+  btn.textContent = open
+    ? '＋ もっと詳しく入力（任意：面談者・話題・提案商品など）'
+    : '− 任意項目を閉じる';
 }
 
 function closeActModal() {
