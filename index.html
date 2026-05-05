@@ -8552,20 +8552,40 @@ function openMasterSalon(salonId) {
     srcEl.style.display = 'none';
   }
 
+  // 日付フォーマッター: Date型 or 'YYYY-MM-DDT...' or 'YYYY-MM-DD' すべて対応
+  const fmtDate = (v) => {
+    if (!v) return '';
+    if (v instanceof Date) {
+      const y = v.getFullYear();
+      const m = String(v.getMonth() + 1).padStart(2, '0');
+      const d = String(v.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(v).trim();
+    // ISO 文字列の場合
+    if (s.includes('T')) return s.split('T')[0];
+    return s.slice(0, 10);
+  };
+
   // 住所（郵便番号 + 住所）
   const addrParts = [];
   if (s['郵便番号']) addrParts.push('〒' + s['郵便番号']);
   if (s['住所']) addrParts.push(s['住所']);
-  const addrText = addrParts.join(' ') || '—';
-  setText('msModalAddr', addrText);
-  document.getElementById('msModalAddrRow').style.display = (addrText === '—') ? 'none' : '';
+  const addrText = addrParts.join(' ');
+  const addrRow = document.getElementById('msModalAddrRow');
+  if (addrText) {
+    setText('msModalAddr', addrText);
+    addrRow.style.display = '';
+  } else {
+    addrRow.style.display = 'none';
+  }
 
   // 電話番号（tel: リンク）
   const phoneEl = document.getElementById('msModalPhone');
   const phoneRow = document.getElementById('msModalPhoneRow');
   if (s['電話番号']) {
     phoneEl.textContent = s['電話番号'];
-    phoneEl.href = 'tel:' + s['電話番号'].replace(/[^\d+]/g, '');
+    phoneEl.href = 'tel:' + String(s['電話番号']).replace(/[^\d+]/g, '');
     phoneRow.style.display = '';
   } else {
     phoneRow.style.display = 'none';
@@ -8582,14 +8602,29 @@ function openMasterSalon(salonId) {
     mailRow.style.display = 'none';
   }
 
+  // 連絡先セクション全体: 全部 hidden なら非表示に
+  const contactSection = addrRow.parentElement;
+  const hasAnyContact = (addrRow.style.display !== 'none')
+    || (phoneRow.style.display !== 'none')
+    || (mailRow.style.display !== 'none');
+  contactSection.style.display = hasAnyContact ? '' : 'none';
+
   // 取引期間
-  const period = (s['初回取引日'] && s['最終取引日'])
-    ? `${s['初回取引日']} 〜 ${s['最終取引日']}`
-    : (s['初回取引日'] || s['最終取引日'] || '—');
+  const firstD = fmtDate(s['初回取引日']);
+  const lastD  = fmtDate(s['最終取引日']);
+  const period = (firstD && lastD)
+    ? `${firstD} 〜 ${lastD}`
+    : (firstD || lastD || '—');
   setText('msModalPeriod', period);
 
   // オーナー名
-  setText('msModalOwner', s['オーナー名'] ? `オーナー: ${s['オーナー名']}` : '—');
+  const ownerRow = document.getElementById('msModalOwner').parentElement;
+  if (s['オーナー名']) {
+    setText('msModalOwner', `オーナー: ${s['オーナー名']}`);
+    ownerRow.style.display = '';
+  } else {
+    ownerRow.style.display = 'none';
+  }
 
   // モーダル開く
   document.getElementById('masterSalonModal').classList.add('open');
