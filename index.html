@@ -1793,6 +1793,76 @@ body.mode-search .mobile-detail:not(.open) { visibility: hidden; }
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 600;
 }
+/* マスタ ステータスバッジ */
+.master-salons-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--label-secondary);
+  padding: 4px 10px;
+  background: rgba(142,142,147,.10);
+  border-radius: 999px;
+  margin: 4px 0 10px;
+  transition: background .25s;
+}
+.master-salons-badge.loaded {
+  background: rgba(52,199,89,.10);
+  color: #1a8c3e;
+}
+.master-salons-badge .ms-dot {
+  font-size: 8px; line-height: 1; color: #34C759;
+}
+.master-salons-badge .ms-dot-gray { color: #8E8E93; }
+.master-salons-badge .ms-time { opacity: .7; font-size: 10px; }
+.master-salons-badge .ms-reload {
+  border: none; background: transparent; cursor: pointer; padding: 0 4px;
+  font-size: 12px; color: var(--primary);
+}
+
+/* 代理店フィルタ pills */
+.dash-agent-filter {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.dash-agent-filter:empty { display: none; }
+.dash-agent-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px; font-weight: 500;
+  background: rgba(255,255,255,.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: .5px solid var(--separator);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--label-primary);
+}
+.dash-agent-pill:hover { background: rgba(0,122,255,.08); border-color: rgba(0,122,255,.3); }
+.dash-agent-pill.active {
+  background: var(--primary); color: white; border-color: var(--primary);
+}
+.dash-agent-cnt {
+  font-size: 10px; opacity: .7; font-weight: 400;
+}
+
+/* 検索結果のセクション見出し + マスタ行 */
+.dash-search-section {
+  font-size: 10px; font-weight: 600;
+  color: var(--label-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 6px 14px 4px;
+  background: rgba(0,0,0,.02);
+}
+.dash-search-result.master-row {
+  background: rgba(255,149,0,.03);
+}
+.dash-search-result.master-row:hover {
+  background: rgba(255,149,0,.08);
+}
+.master-avatar {
+  background: linear-gradient(135deg, #FF9500, #FF6B35) !important;
+}
+
 .dash-search-results {
   margin-bottom: 12px;
 }
@@ -3535,6 +3605,79 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbz6FB5_j1qoBDdYOq3SdMD_
 const SELL_MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbziWzeWpYwdm7TAL3woS_a0F0lU_JZ8CHx8HaHAuBiUL-QE9TPkJ52bW9HM3l2PxsdW/exec';
 // ▼ 営業登録サロン用GAS（新タブ「営業登録サロン」へUPSERT）
 const SALES_REG_GAS_URL = 'https://script.google.com/macros/s/AKfycbzooGRW5tsc-TKc59CdNTHlfuEnaKhmbsk0Z736iywR5Ohx1MRGwZkiC2DDnx4Che-JEA/exec';
+// ▼ サロンマスタ_統合（FIT 1,650件）取得用GAS
+//    /exec?action=getMasterSalons → { ok:true, data:[...], count:1650 }
+const MASTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbwwgr-pgbm-jXXPfNwYNYLWMA6-03w-YoMhKNN5BYcSztMZ6K62lUIKtCmHK8N6AMSfuA/exec';
+
+// ─── サロンマスタ（FIT等）グローバル状態 ─────────────────────────
+let masterSalons = [];        // 全件
+let masterSalonsLoadedAt = 0; // タイムスタンプ
+const MASTER_SALONS_CACHE_KEY = 'masterSalonsCache_v1';
+const MASTER_SALONS_TTL_MS = 30 * 60 * 1000; // 30分
+
+async function loadMasterSalons(force = false) {
+  // localStorage キャッシュを先に使う
+  try {
+    const cached = localStorage.getItem(MASTER_SALONS_CACHE_KEY);
+    if (cached && !force) {
+      const { ts, data } = JSON.parse(cached);
+      if (Date.now() - ts < MASTER_SALONS_TTL_MS) {
+        masterSalons = data;
+        masterSalonsLoadedAt = ts;
+        console.log(`[masterSalons] cache hit: ${data.length} salons`);
+        renderMasterSalonsBadge();
+        return data;
+      }
+    }
+  } catch (e) { console.warn('cache read fail', e); }
+  try {
+    const res = await fetchWithTimeout(MASTER_GAS_URL + '?action=getMasterSalons', 25000);
+    const json = await res.json();
+    if (json && json.ok && Array.isArray(json.data)) {
+      masterSalons = json.data;
+      masterSalonsLoadedAt = Date.now();
+      try {
+        localStorage.setItem(MASTER_SALONS_CACHE_KEY, JSON.stringify({ ts: masterSalonsLoadedAt, data: masterSalons }));
+      } catch(e) {}
+      console.log(`[masterSalons] fetched ${masterSalons.length} salons`);
+      renderMasterSalonsBadge();
+      return masterSalons;
+    }
+  } catch (e) { console.warn('[masterSalons] fetch failed:', e); }
+  renderMasterSalonsBadge();
+  return [];
+}
+
+function renderMasterSalonsBadge() {
+  const el = document.getElementById('masterSalonsBadge');
+  if (!el) return;
+  const n = masterSalons.length;
+  if (n > 0) {
+    const ts = new Date(masterSalonsLoadedAt);
+    el.innerHTML = `<span class="ms-dot">●</span> マスタ ${n.toLocaleString()}件 <span class="ms-time">(${ts.getHours()}:${String(ts.getMinutes()).padStart(2,'0')}更新)</span>`;
+    el.classList.add('loaded');
+  } else {
+    el.innerHTML = `<span class="ms-dot ms-dot-gray">●</span> マスタ 0件 <button onclick="loadMasterSalons(true)" class="ms-reload">↻</button>`;
+    el.classList.remove('loaded');
+  }
+}
+
+// 代理店プルダウン × ふりがな部分一致 検索
+function searchMasterSalons(query, agentFilter) {
+  if (!masterSalons.length) return [];
+  const q = (query || '').trim().toLowerCase();
+  // カタカナ→ひらがな正規化（双方向対応）
+  const norm = s => String(s || '').toLowerCase()
+    .replace(/[ァ-ン]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/\s+/g, '');
+  const qNorm = norm(q);
+  return masterSalons.filter(s => {
+    if (agentFilter && s['主要代理店'] !== agentFilter) return false;
+    if (!qNorm) return true;
+    const fields = [s['サロン名'], s['ふりがな'], s['法人名'], s['オーナー名'], s['住所'], s['代理店元コード']];
+    return fields.some(f => norm(f).includes(qNorm));
+  });
+}
 
 // ── Toast 通知 ──────────────────────────────────────
 function showToast(msg, type = 'info', action = null, duration = 4000) {
@@ -7831,12 +7974,16 @@ function renderDashboard() {
     <div class="dash-greeting"><svg class="icon icon-md" style="vertical-align:-3px;margin-right:4px"><use href="${greetIcon}"/></svg>${namePart}${greetText}</div>
     <div class="dash-date">${dateStr} ${myName ? `<button class="dash-name-edit" onclick="openIdentityModal(true)" title="名前を変更"><svg class="icon"><use href="#i-edit"/></svg></button>` : `<button class="dash-name-edit dash-name-set" onclick="openIdentityModal(true)">＋ 名前を設定</button>`}</div>
 
-    <!-- 検索バー（ホームから直接サロン検索） -->
+    <!-- サロンマスタ ステータスバッジ -->
+    <div id="masterSalonsBadge" class="master-salons-badge"><span class="ms-dot ms-dot-gray">●</span> マスタ読み込み中...</div>
+
+    <!-- 検索バー（ホームから直接サロン検索 / マスタ統合 + 代理店フィルタ） -->
     <div class="dash-search-wrap">
       <svg class="icon dash-search-ico"><use href="#i-search"/></svg>
-      <input type="text" class="dash-search" id="dashSearchInput" placeholder="サロン名・住所・代理店で検索..." oninput="handleDashSearch()">
+      <input type="text" class="dash-search" id="dashSearchInput" placeholder="サロン名・ふりがな・住所で検索…" oninput="handleDashSearch()">
       <button class="dash-search-clear" id="dashSearchClear" onclick="clearDashSearch()" style="display:none">✕</button>
     </div>
+    <div class="dash-agent-filter" id="dashAgentFilter"></div>
     <div class="dash-search-results" id="dashSearchResults"></div>
 
     <!-- メインアクション: 新規サロン登録 -->
@@ -8135,6 +8282,9 @@ function renderDashboard() {
   }
 
   document.getElementById('dashContent').innerHTML = html;
+  // マスタバッジ・代理店フィルタを反映
+  renderMasterSalonsBadge();
+  renderDashAgentFilter();
 }
 
 // ── ホームから新規サロン登録へジャンプ ──
@@ -8149,40 +8299,113 @@ function goToSalonRegistration() {
 
 // ── ホーム画面のインライン検索 ──
 let _dashSearchTimer = null;
+// 代理店フィルタの状態
+let _dashAgentFilter = '';
+function setDashAgentFilter(name) {
+  _dashAgentFilter = (_dashAgentFilter === name) ? '' : name;
+  renderDashAgentFilter();
+  handleDashSearch();
+}
+function renderDashAgentFilter() {
+  const el = document.getElementById('dashAgentFilter');
+  if (!el) return;
+  // マスタの代理店名一覧を集計
+  const agents = {};
+  for (const s of masterSalons) {
+    const a = s['主要代理店'] || '';
+    if (!a) continue;
+    agents[a] = (agents[a] || 0) + 1;
+  }
+  const entries = Object.entries(agents).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = entries.map(([name, count]) => `
+    <button class="dash-agent-pill ${_dashAgentFilter === name ? 'active' : ''}" onclick="setDashAgentFilter('${esc(name)}')">${esc(name)} <span class="dash-agent-cnt">${count}</span></button>
+  `).join('');
+}
+
 function handleDashSearch() {
-  const q = (document.getElementById('dashSearchInput').value || '').trim().toLowerCase();
+  const q = (document.getElementById('dashSearchInput').value || '').trim();
   document.getElementById('dashSearchClear').style.display = q ? 'flex' : 'none';
   clearTimeout(_dashSearchTimer);
   _dashSearchTimer = setTimeout(() => {
     const results = document.getElementById('dashSearchResults');
-    if (!q) { results.innerHTML = ''; return; }
-    const matched = salonPeople.filter(p =>
-      (p.company || '').toLowerCase().includes(q) ||
-      (p.companyKana || '').toLowerCase().includes(q) ||
-      (p.address || '').toLowerCase().includes(q) ||
-      (p.agentName || '').toLowerCase().includes(q) ||
-      (p.salonId || '').toLowerCase().includes(q)
-    ).slice(0, 8);
-    if (matched.length === 0) {
+    if (!q && !_dashAgentFilter) { results.innerHTML = ''; return; }
+
+    // ① ローカルの salonPeople から検索
+    const ql = q.toLowerCase();
+    const localMatched = salonPeople.filter(p =>
+      (p.company || '').toLowerCase().includes(ql) ||
+      (p.companyKana || '').toLowerCase().includes(ql) ||
+      (p.address || '').toLowerCase().includes(ql) ||
+      (p.agentName || '').toLowerCase().includes(ql) ||
+      (p.salonId || '').toLowerCase().includes(ql)
+    );
+
+    // ② マスタ（FIT等 1,650件）から検索
+    const masterMatched = searchMasterSalons(q, _dashAgentFilter).slice(0, 30);
+
+    if (localMatched.length === 0 && masterMatched.length === 0) {
       results.innerHTML = `<div class="dash-search-empty">該当するサロンがありません</div>`;
       return;
     }
-    results.innerHTML = matched.map(p => `
-      <div class="dash-search-result" onclick="openSalonFromSearch('${p.id}');clearDashSearch()">
-        <div class="dash-search-avatar">${esc((p.company || '?').charAt(0))}</div>
-        <div class="dash-search-info">
-          <div class="dash-search-name">${esc(p.company || '無題')}</div>
-          <div class="dash-search-meta">${esc(p.agentName || '')}${p.address ? ' · ' + esc(p.address.slice(0, 25)) : ''}</div>
+
+    let html = '';
+    if (localMatched.length) {
+      html += `<div class="dash-search-section">📂 営業登録 (${localMatched.length})</div>`;
+      html += localMatched.slice(0, 5).map(p => `
+        <div class="dash-search-result" onclick="openSalonFromSearch('${p.id}');clearDashSearch()">
+          <div class="dash-search-avatar">${esc((p.company || '?').charAt(0))}</div>
+          <div class="dash-search-info">
+            <div class="dash-search-name">${esc(p.company || '無題')}</div>
+            <div class="dash-search-meta">${esc(p.agentName || '')}${p.address ? ' · ' + esc(p.address.slice(0, 25)) : ''}</div>
+          </div>
+          <svg class="icon dash-search-arrow"><use href="#i-chevron-right"/></svg>
         </div>
-        <svg class="icon dash-search-arrow"><use href="#i-chevron-right"/></svg>
-      </div>
-    `).join('');
+      `).join('');
+    }
+    if (masterMatched.length) {
+      html += `<div class="dash-search-section">🌐 マスタ (${masterMatched.length}${masterMatched.length === 30 ? '+' : ''})</div>`;
+      html += masterMatched.map(s => `
+        <div class="dash-search-result master-row" onclick="openMasterSalon('${esc(s['サロンID'])}')">
+          <div class="dash-search-avatar master-avatar">${esc((s['サロン名'] || '?').charAt(0))}</div>
+          <div class="dash-search-info">
+            <div class="dash-search-name">${esc(s['サロン名'] || '無題')}</div>
+            <div class="dash-search-meta">${esc(s['ふりがな'] || '')} · ${esc(s['主要代理店'] || '')} · ${esc((s['住所'] || '').slice(0, 20))}</div>
+          </div>
+          <svg class="icon dash-search-arrow"><use href="#i-chevron-right"/></svg>
+        </div>
+      `).join('');
+    }
+    results.innerHTML = html;
   }, 150);
 }
 function clearDashSearch() {
   document.getElementById('dashSearchInput').value = '';
   document.getElementById('dashSearchResults').innerHTML = '';
   document.getElementById('dashSearchClear').style.display = 'none';
+  _dashAgentFilter = '';
+  renderDashAgentFilter();
+}
+// マスタからサロンを開く（読み取り専用情報を表示）
+function openMasterSalon(salonId) {
+  const s = masterSalons.find(x => x['サロンID'] === salonId);
+  if (!s) { showToast('サロンが見つかりません', 'error'); return; }
+  const lines = [
+    `🌐 マスタ参照（読み取り専用）`,
+    ``,
+    `サロンID: ${s['サロンID']}`,
+    `サロン名: ${s['サロン名']}`,
+    `ふりがな: ${s['ふりがな'] || '(未設定)'}`,
+    `代理店: ${s['主要代理店'] || ''}`,
+    `代理店元コード: ${s['代理店元コード'] || ''}`,
+    `郵便番号: ${s['郵便番号'] || ''}`,
+    `住所: ${s['住所'] || ''}`,
+    `電話番号: ${s['電話番号'] || ''}`,
+    `メール: ${s['メール'] || ''}`,
+    `初回取引: ${s['初回取引日'] || ''}`,
+    `最終取引: ${s['最終取引日'] || ''}`,
+  ];
+  alert(lines.join('\n'));
 }
 
 // 最近開いたサロンを記録
@@ -8287,6 +8510,10 @@ document.querySelectorAll('.overlay').forEach(o => {
   updateCacheAgeLabel();
   // 起動時にスプシから自動読込（サイレント・キャッシュ有効時はスキップ）
   autoLoadFromSheet();
+  // サロンマスタ_統合 (FIT 1,650件) を読み込み（バックグラウンド・キャッシュあり）
+  loadMasterSalons().then(() => {
+    renderDashAgentFilter();
+  }).catch(() => {});
   // 未同期の活動ログを再送
   if (_syncQueue.length) setTimeout(retrySyncQueue, 5000);
   // 営業登録の失敗キューを再送
